@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
 import { getUsersCollection } from "@/lib/db/collections";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
+import type { LoginHistoryEntry } from "@/types";
+
+const MAX_LOGIN_HISTORY = 50;
 
 export async function POST(request: Request) {
   try {
@@ -41,10 +43,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update last login
+    // Extract IP and user agent for login history
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ipAddress = forwardedFor?.split(",")[0]?.trim() || 
+                      request.headers.get("x-real-ip") || 
+                      "unknown";
+    const userAgent = request.headers.get("user-agent") || undefined;
+
+    const now = new Date();
+    const loginEntry: LoginHistoryEntry = {
+      loginAt: now,
+      ipAddress,
+      userAgent,
+    };
+
+    // Get existing login history (or empty array)
+    const existingHistory = user.loginHistory || [];
+    
+    // Add new entry and keep only last MAX_LOGIN_HISTORY entries
+    const updatedHistory = [loginEntry, ...existingHistory].slice(0, MAX_LOGIN_HISTORY);
+
+    // Update last login and login history
     await users.updateOne(
       { _id: user._id },
-      { $set: { lastLoginAt: new Date() } }
+      { 
+        $set: { 
+          lastLoginAt: now,
+          loginHistory: updatedHistory,
+        } 
+      }
     );
 
     // Create session

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
-import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill, DollarSign, UserCog } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface SidebarProps {
@@ -36,6 +36,7 @@ export function Sidebar({ role }: SidebarProps) {
   // Add doctor-specific items
   if (role === "doctor") {
     navItems.push({ href: "/templates", label: "Rx Templates", icon: Pill });
+    navItems.push({ href: "/staff", label: "Staff", icon: UserCog });
   }
 
   return (

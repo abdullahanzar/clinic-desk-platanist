@@ -52,6 +52,12 @@ export type ClinicInsert = Omit<Clinic, "_id">;
 // ============================================
 export type UserRole = "doctor" | "frontdesk";
 
+export interface LoginHistoryEntry {
+  loginAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 export interface User {
   _id: ObjectId;
   clinicId: ObjectId;
@@ -61,6 +67,8 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   lastLoginAt?: Date;
+  loginHistory: LoginHistoryEntry[]; // Last 50 login entries
+  createdByUserId?: ObjectId; // Who created this user (for staff created by doctor)
   createdAt: Date;
   updatedAt: Date;
 }

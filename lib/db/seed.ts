@@ -62,6 +62,7 @@ export async function seedDatabase() {
     passwordHash: doctorPassword,
     role: "doctor",
     isActive: true,
+    loginHistory: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -78,6 +79,7 @@ export async function seedDatabase() {
     passwordHash: frontdeskPassword,
     role: "frontdesk",
     isActive: true,
+    loginHistory: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };

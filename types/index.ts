@@ -329,3 +329,142 @@ export interface DiagnosisTemplate {
 }
 
 export type DiagnosisTemplateInsert = Omit<DiagnosisTemplate, "_id">;
+
+// ============================================
+// BILLING - EXPENSE TRACKING
+// ============================================
+export type ExpenseCategory = 
+  | "rent" 
+  | "salary" 
+  | "supplies" 
+  | "utilities" 
+  | "equipment" 
+  | "maintenance"
+  | "marketing"
+  | "insurance"
+  | "taxes"
+  | "other";
+
+export type RecurringFrequency = "monthly" | "quarterly" | "yearly";
+
+export interface Expense {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  description: string;
+  amount: number;
+  category: ExpenseCategory;
+  
+  expenseDate: Date;
+  
+  // Recurring expense tracking
+  isRecurring: boolean;
+  recurringFrequency?: RecurringFrequency;
+  
+  // Optional reference/notes
+  vendor?: string;
+  invoiceNumber?: string;
+  notes?: string;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ExpenseInsert = Omit<Expense, "_id">;
+
+// ============================================
+// BILLING - BUDGET TARGETS
+// ============================================
+export interface BudgetTarget {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  month: number; // 1-12
+  year: number;
+  
+  targetRevenue: number;
+  targetExpenses?: number;
+  
+  notes?: string;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type BudgetTargetInsert = Omit<BudgetTarget, "_id">;
+
+// ============================================
+// BILLING - SERVICE CATEGORIES
+// ============================================
+export interface ServiceCategory {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  name: string; // "Consultation", "Lab Test", "Procedure", etc.
+  defaultAmount?: number;
+  description?: string;
+  
+  isActive: boolean;
+  sortOrder: number;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ServiceCategoryInsert = Omit<ServiceCategory, "_id">;
+
+// ============================================
+// BILLING - ANALYTICS TYPES (for API responses)
+// ============================================
+export interface MonthlyRevenue {
+  month: number;
+  year: number;
+  totalRevenue: number;
+  totalReceipts: number;
+  paidAmount: number;
+  unpaidAmount: number;
+  totalDiscount: number;
+  avgReceiptValue: number;
+}
+
+export interface PaymentModeBreakdown {
+  mode: PaymentMode | "unpaid";
+  count: number;
+  amount: number;
+  percentage: number;
+}
+
+export interface DailyRevenue {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  receipts: number;
+}
+
+export interface BillingOverview {
+  today: {
+    revenue: number;
+    receipts: number;
+    pending: number;
+  };
+  thisMonth: {
+    revenue: number;
+    receipts: number;
+    pending: number;
+    target?: number;
+  };
+  lastMonth: {
+    revenue: number;
+    receipts: number;
+  };
+  allTime: {
+    totalRevenue: number;
+    totalReceipts: number;
+    avgReceiptValue: number;
+  };
+}

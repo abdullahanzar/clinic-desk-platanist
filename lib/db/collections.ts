@@ -10,6 +10,9 @@ import type {
   MedicationTemplate,
   AdviceTemplate,
   DiagnosisTemplate,
+  Expense,
+  BudgetTarget,
+  ServiceCategory,
 } from "@/types";
 
 // Collection accessors
@@ -56,6 +59,21 @@ export async function getAdviceTemplatesCollection(): Promise<Collection<AdviceT
 export async function getDiagnosisTemplatesCollection(): Promise<Collection<DiagnosisTemplate>> {
   const db = await getDb();
   return db.collection<DiagnosisTemplate>("diagnosisTemplates");
+}
+
+export async function getExpensesCollection(): Promise<Collection<Expense>> {
+  const db = await getDb();
+  return db.collection<Expense>("expenses");
+}
+
+export async function getBudgetTargetsCollection(): Promise<Collection<BudgetTarget>> {
+  const db = await getDb();
+  return db.collection<BudgetTarget>("budgetTargets");
+}
+
+export async function getServiceCategoriesCollection(): Promise<Collection<ServiceCategory>> {
+  const db = await getDb();
+  return db.collection<ServiceCategory>("serviceCategories");
 }
 
 // ============================================
@@ -126,6 +144,27 @@ export async function ensureIndexes(): Promise<void> {
     { key: { clinicId: 1, usageCount: -1 } },
   ];
   await db.collection("diagnosisTemplates").createIndexes(diagnosisTemplatesIndexes);
+
+  // Expenses indexes
+  const expensesIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, expenseDate: -1 } },
+    { key: { clinicId: 1, category: 1 } },
+    { key: { clinicId: 1, isRecurring: 1 } },
+  ];
+  await db.collection("expenses").createIndexes(expensesIndexes);
+
+  // Budget targets indexes
+  const budgetTargetsIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, year: 1, month: 1 }, unique: true },
+  ];
+  await db.collection("budgetTargets").createIndexes(budgetTargetsIndexes);
+
+  // Service categories indexes
+  const serviceCategoriesIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, name: 1 } },
+    { key: { clinicId: 1, sortOrder: 1 } },
+  ];
+  await db.collection("serviceCategories").createIndexes(serviceCategoriesIndexes);
 
   console.log("✅ Database indexes ensured");
 }

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
-import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill, DollarSign } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ export function Sidebar({ role }: SidebarProps) {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/visits", label: "Visits", icon: Users },
     { href: "/receipts", label: "Receipts", icon: Receipt },
+    { href: "/billing", label: "Billing", icon: DollarSign },
   ];
 
   // Add role-specific items

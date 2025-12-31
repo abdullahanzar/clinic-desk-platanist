@@ -243,6 +243,8 @@ export interface SessionPayload {
 // ============================================
 // CUSTOM MEDICATION TEMPLATES
 // ============================================
+export type MedicationSource = "allopathic" | "homeopathic" | "custom";
+
 export interface MedicationTemplate {
   _id: ObjectId;
   clinicId: ObjectId;
@@ -255,6 +257,11 @@ export interface MedicationTemplate {
   
   // Categorization
   category?: string; // "Analgesic", "Antibiotic", etc.
+  description?: string; // Detailed description of the medication
+  
+  // Source tracking
+  source: MedicationSource; // "allopathic", "homeopathic", or "custom"
+  isDefault: boolean; // true = system default, cannot be deleted
   
   // Usage tracking
   usageCount: number;
@@ -281,6 +288,9 @@ export interface AdviceTemplate {
   // Categorization
   category?: string; // "Fever", "Diet", "Post-op", etc.
   
+  // Source tracking
+  isDefault: boolean; // true = system default, cannot be deleted
+  
   // Usage tracking
   usageCount: number;
   
@@ -301,6 +311,13 @@ export interface DiagnosisTemplate {
   
   name: string; // "Acute Upper Respiratory Infection"
   icdCode?: string; // Optional ICD-10 code
+  
+  // Categorization
+  category?: string; // "Respiratory", "Cardiovascular", etc.
+  description?: string; // Brief description of the diagnosis
+  
+  // Source tracking
+  isDefault: boolean; // true = system default, cannot be deleted
   
   // Usage tracking
   usageCount: number;

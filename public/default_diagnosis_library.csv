@@ -1,0 +1,58 @@
+name,category,description,icd10_code
+Acute Upper Respiratory Tract Infection,Respiratory,"Acute infection involving nose, throat, or sinuses presenting with cold, cough, or sore throat.",J06.9
+Acute Pharyngitis,Respiratory,"Inflammation of the pharynx causing sore throat, often viral or bacterial.",J02.9
+Acute Tonsillitis,Respiratory,"Inflammation of tonsils with throat pain, fever, and difficulty swallowing.",J03.9
+Acute Bronchitis,Respiratory,"Acute inflammation of bronchial tubes causing cough and sputum production.",J20.9
+Allergic Rhinitis,Respiratory,"Inflammation of nasal mucosa due to allergens causing sneezing and runny nose.",J30.9
+Bronchial Asthma,Respiratory,"Chronic inflammatory airway disease with episodic wheeze and breathlessness.",J45.9
+Chronic Obstructive Pulmonary Disease,Respiratory,"Chronic airflow limitation commonly associated with smoking.",J44.9
+
+Acute Gastroenteritis,Gastrointestinal,"Acute inflammation of stomach and intestines causing diarrhea and vomiting.",A09
+Acid Peptic Disease,Gastrointestinal,"Gastric acid–related disorder causing epigastric pain or dyspepsia.",K27.9
+Gastroesophageal Reflux Disease,Gastrointestinal,"Reflux of gastric contents causing heartburn and regurgitation.",K21.9
+Irritable Bowel Syndrome,Gastrointestinal,"Functional bowel disorder with abdominal pain and altered bowel habits.",K58.9
+Constipation,Gastrointestinal,"Infrequent or difficult bowel movements.",K59.0
+
+Essential Hypertension,Cardiovascular,"Persistently elevated blood pressure without secondary cause.",I10
+Type 2 Diabetes Mellitus,Endocrine,"Chronic metabolic disorder characterized by hyperglycemia due to insulin resistance.",E11.9
+Dyslipidemia,Endocrine,"Abnormal lipid levels increasing cardiovascular risk.",E78.5
+Hypothyroidism,Endocrine,"Reduced thyroid hormone production causing metabolic slowing.",E03.9
+
+Acute Febrile Illness,General Medicine,"Short-duration fever without localized source at presentation.",R50.9
+Viral Fever,General Medicine,"Self-limiting febrile illness likely of viral origin.",B34.9
+Urinary Tract Infection,Genitourinary,"Infection of urinary tract presenting with dysuria or frequency.",N39.0
+
+Low Back Pain,Musculoskeletal,"Pain localized to lumbar region with or without radiation.",M54.5
+Cervical Spondylosis,Musculoskeletal,"Degenerative changes in cervical spine causing neck pain or stiffness.",M47.812
+Osteoarthritis,Musculoskeletal,"Degenerative joint disease causing pain and reduced mobility.",M19.9
+Myalgia,Musculoskeletal,"Generalized muscle pain.",M79.1
+Sprain / Strain,Musculoskeletal,"Injury to ligaments or muscles causing pain and swelling.",T14.9
+
+Tension-Type Headache,Neurology,"Primary headache disorder with band-like head pain.",G44.2
+Migraine,Neurology,"Recurrent headache disorder often associated with nausea and photophobia.",G43.9
+Vertigo,Neurology,"Sensation of spinning or dizziness.",R42
+
+Anxiety Disorder,Mental Health,"Excessive worry or anxiety affecting daily activities.",F41.9
+Depressive Disorder,Mental Health,"Persistent low mood and loss of interest affecting functioning.",F32.9
+Sleep Disorder,Mental Health,"Disturbance in sleep pattern affecting health or functioning.",G47.9
+
+Anemia,Hematology,"Reduced hemoglobin concentration causing fatigue and weakness.",D64.9
+Iron Deficiency Anemia,Hematology,"Anemia due to inadequate iron levels.",D50.9
+
+Dermatitis,Skin,"Inflammatory skin condition with itching and rash.",L30.9
+Fungal Skin Infection,Skin,"Superficial fungal infection of skin or nails.",B35.9
+Urticaria,Skin,"Allergic skin reaction with itchy wheals.",L50.9
+Acne Vulgaris,Skin,"Inflammatory disorder of pilosebaceous units.",L70.0
+
+Dental Caries,Dental,"Tooth decay causing pain or sensitivity.",K02.9
+Acute Dental Pain,Dental,"Tooth-related pain requiring dental evaluation.",K08.8
+
+Pediatric Upper Respiratory Infection,Pediatrics,"Common childhood respiratory infection presenting with cold or cough.",J06.9
+Pediatric Fever,Pediatrics,"Fever in children requiring age-appropriate evaluation.",R50.9
+
+Pregnancy – Routine Antenatal Care,Obstetrics,"Normal ongoing pregnancy under routine antenatal supervision.",Z34.9
+Dysmenorrhea,Women’s Health,"Painful menstruation.",N94.6
+Polycystic Ovarian Syndrome,Women’s Health,"Hormonal disorder causing irregular periods and hyperandrogenism.",E28.2
+
+Follow-up Visit,Administrative,"Review visit for ongoing treatment or test results.",Z09
+General Medical Examination,Administrative,"Routine or preventive health check-up.",Z00.0

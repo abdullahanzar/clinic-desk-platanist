@@ -106,6 +106,24 @@ export async function DELETE(
     }
 
     const templates = await getDiagnosisTemplatesCollection();
+
+    // Check if it's a default diagnosis
+    const template = await templates.findOne({
+      _id: new ObjectId(id),
+      clinicId: new ObjectId(session.clinicId),
+    });
+
+    if (!template) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
+
+    if (template.isDefault) {
+      return NextResponse.json(
+        { error: "Cannot delete default diagnoses" },
+        { status: 403 }
+      );
+    }
+
     const result = await templates.deleteOne({
       _id: new ObjectId(id),
       clinicId: new ObjectId(session.clinicId),

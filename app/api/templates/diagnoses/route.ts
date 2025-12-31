@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const category = searchParams.get("category") || "";
     const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = parseInt(searchParams.get("skip") || "0");
 
     const templates = await getDiagnosisTemplatesCollection();
 
@@ -26,22 +28,43 @@ export async function GET(request: NextRequest) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { icdCode: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
       ];
     }
+
+    // Add category filter
+    if (category) {
+      query.category = category;
+    }
+
+    // Get total count for pagination
+    const totalCount = await templates.countDocuments(query);
 
     const results = await templates
       .find(query)
       .sort({ usageCount: -1, name: 1 })
+      .skip(skip)
       .limit(limit)
       .toArray();
+
+    // Get all categories for filter dropdown
+    const categories = await templates.distinct("category", {
+      clinicId: new ObjectId(session.clinicId),
+      category: { $exists: true, $ne: "" },
+    });
 
     return NextResponse.json({
       templates: results.map((t) => ({
         _id: t._id.toString(),
         name: t.name,
         icdCode: t.icdCode,
+        category: t.category,
+        description: t.description,
+        isDefault: t.isDefault || false,
         usageCount: t.usageCount,
       })),
+      categories: categories.filter(Boolean).sort(),
+      totalCount,
     });
   } catch (error) {
     console.error("Error fetching diagnosis templates:", error);
@@ -69,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, icdCode } = body;
+    const { name, icdCode, category, description } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -98,6 +121,9 @@ export async function POST(request: NextRequest) {
       clinicId: new ObjectId(session.clinicId),
       name: name.trim(),
       icdCode: icdCode?.trim() || undefined,
+      category: category?.trim() || undefined,
+      description: description?.trim() || undefined,
+      isDefault: false,
       usageCount: 0,
       createdBy: new ObjectId(session.userId),
       createdAt: now,
@@ -110,6 +136,9 @@ export async function POST(request: NextRequest) {
         _id: result.insertedId.toString(),
         name: name.trim(),
         icdCode: icdCode?.trim(),
+        category: category?.trim(),
+        description: description?.trim(),
+        isDefault: false,
       },
     });
   } catch (error) {

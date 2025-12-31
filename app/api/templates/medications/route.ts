@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category");
+    const source = searchParams.get("source"); // "allopathic", "homeopathic", "custom", or null for all
     const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = parseInt(searchParams.get("skip") || "0");
 
     const templates = await getMedicationTemplatesCollection();
 
@@ -35,17 +37,30 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
+    // Add source filter
+    if (source) {
+      query.source = source;
+    }
+
+    // Get total count for pagination
+    const totalCount = await templates.countDocuments(query);
+
     const results = await templates
       .find(query)
       .sort({ usageCount: -1, name: 1 })
+      .skip(skip)
       .limit(limit)
       .toArray();
 
-    // Get unique categories for filtering
-    const categories = await templates.distinct("category", {
+    // Get unique categories for filtering (filtered by source if specified)
+    const categoryQuery: Record<string, unknown> = {
       clinicId: new ObjectId(session.clinicId),
       category: { $exists: true, $ne: "" },
-    });
+    };
+    if (source) {
+      categoryQuery.source = source;
+    }
+    const categories = await templates.distinct("category", categoryQuery);
 
     return NextResponse.json({
       templates: results.map((t) => ({
@@ -55,9 +70,13 @@ export async function GET(request: NextRequest) {
         duration: t.duration,
         instructions: t.instructions,
         category: t.category,
+        description: t.description,
+        source: t.source || "custom",
+        isDefault: t.isDefault || false,
         usageCount: t.usageCount,
       })),
       categories: categories.filter(Boolean),
+      totalCount,
     });
   } catch (error) {
     console.error("Error fetching medication templates:", error);
@@ -85,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, dosage, duration, instructions, category } = body;
+    const { name, dosage, duration, instructions, category, description } = body;
 
     if (!name?.trim() || !dosage?.trim() || !duration?.trim()) {
       return NextResponse.json(
@@ -117,6 +136,9 @@ export async function POST(request: NextRequest) {
       duration: duration.trim(),
       instructions: instructions?.trim() || undefined,
       category: category?.trim() || undefined,
+      description: description?.trim() || undefined,
+      source: "custom",
+      isDefault: false,
       usageCount: 0,
       createdBy: new ObjectId(session.userId),
       createdAt: now,
@@ -132,6 +154,9 @@ export async function POST(request: NextRequest) {
         duration: duration.trim(),
         instructions: instructions?.trim(),
         category: category?.trim(),
+        description: description?.trim(),
+        source: "custom",
+        isDefault: false,
       },
     });
   } catch (error) {

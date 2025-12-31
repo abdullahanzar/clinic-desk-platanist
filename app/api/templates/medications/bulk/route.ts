@@ -114,6 +114,8 @@ export async function POST(request: NextRequest) {
       duration: med.duration,
       instructions: med.instructions,
       category: med.category,
+      source: "custom",
+      isDefault: false,
       usageCount: 0,
       createdBy: userId,
       createdAt: now,

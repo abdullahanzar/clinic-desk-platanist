@@ -1,0 +1,42 @@
+title,category,advice_text
+General Medication Advice,General,"Take medicines exactly as prescribed. Do not skip doses or stop early unless advised. Inform the doctor if you experience any side effects."
+Hydration Advice,General,"Drink adequate fluids (2–3 liters per day unless fluid restricted). Increase fluid intake during fever, diarrhea, or hot weather."
+Rest Advice,General,"Take adequate rest and avoid strenuous physical activity until recovery."
+Follow-up Advice,General,"Review after the advised duration or earlier if symptoms worsen or new symptoms appear."
+Dietary Advice (General),General,"Maintain a balanced diet. Avoid outside food during illness. Prefer freshly prepared, light meals."
+
+Fever Care,Fever & Infection,"Take medicines as prescribed. Maintain hydration and rest. Lukewarm sponging may be done if fever is high."
+Antibiotic Compliance,Fever & Infection,"Complete the full course of antibiotics even if symptoms improve. Do not self-medicate or reuse leftover antibiotics."
+Fever Warning Signs,Fever & Infection,"Seek medical attention if fever persists beyond 3 days, exceeds 102°F, or is associated with breathlessness, confusion, or severe weakness."
+Infection Control,Fever & Infection,"Maintain personal hygiene. Wash hands frequently and avoid close contact with others if infectious symptoms are present."
+
+Cough & Cold Care,Respiratory,"Steam inhalation twice daily. Avoid cold drinks, smoking, and exposure to dust or pollution."
+Asthma / Wheeze Care,Respiratory,"Use inhaler as demonstrated. Do not skip maintenance inhalers even if symptoms improve."
+Respiratory Red Flags,Respiratory,"Seek urgent care if breathing difficulty increases, chest pain occurs, lips turn bluish, or inhaler provides no relief."
+
+Acidity / Gastritis Care,Gastrointestinal,"Avoid spicy, oily, and acidic foods. Eat small frequent meals. Do not lie down immediately after meals."
+Diarrhea Care,Gastrointestinal,"Continue oral rehydration solution after each loose stool. Maintain hydration and light diet."
+Vomiting Care,Gastrointestinal,"Take small sips of fluids frequently. Avoid oily and spicy foods until symptoms subside."
+GI Warning Signs,Gastrointestinal,"Seek care if diarrhea or vomiting persists, blood is present in stools, or signs of dehydration appear."
+
+Back Pain / Muscle Pain,Musculoskeletal,"Avoid heavy lifting and sudden movements. Apply hot or cold compress as advised."
+Joint Pain Care,Musculoskeletal,"Continue gentle movements within pain limits. Avoid prolonged rest unless advised."
+Musculoskeletal Red Flags,Musculoskeletal,"Seek medical advice if pain is severe, persistent, associated with numbness, weakness, or trauma."
+
+Diabetes Lifestyle Advice,Chronic Disease,"Maintain regular meals, avoid sugary foods, and monitor blood sugar as advised. Do not skip medications."
+Hypertension Lifestyle Advice,Chronic Disease,"Reduce salt intake, avoid stress, exercise regularly, and take medicines at the same time daily."
+Chronic Disease Follow-up,Chronic Disease,"Regular follow-up and monitoring are essential. Do not stop long-term medications without medical advice."
+
+Pregnancy General Advice,Women’s Health,"Take prescribed supplements regularly. Avoid self-medication. Attend regular antenatal check-ups."
+Menstrual Pain Advice,Women’s Health,"Rest, warm compress, and prescribed medications may help. Seek care if pain is severe or unusual."
+
+Pediatric Fever Advice,Pediatric,"Give medicines as per weight-based dosing. Do not use adult medications. Ensure adequate fluids."
+Pediatric Nutrition Advice,Pediatric,"Continue normal feeding during illness. Avoid force-feeding and junk food."
+Pediatric Red Flags,Pediatric,"Seek immediate care if child is lethargic, not feeding, has fast breathing, or persistent vomiting."
+
+Lifestyle Modification,Lifestyle & Preventive,"Avoid smoking, alcohol, and tobacco. Maintain regular sleep and physical activity."
+Weight Management Advice,Lifestyle & Preventive,"Adopt a balanced diet and regular exercise. Avoid crash diets."
+Preventive Care Advice,Lifestyle & Preventive,"Regular health check-ups help early detection and prevention of disease."
+
+Return Immediately Advice,Red Flags,"Return immediately if symptoms worsen, new symptoms develop, or no improvement is seen as expected."
+Emergency Symptoms Advice,Red Flags,"Seek emergency care for chest pain, sudden breathlessness, loss of consciousness, severe bleeding, or seizures."

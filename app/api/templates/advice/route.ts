@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category");
     const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = parseInt(searchParams.get("skip") || "0");
 
     const templates = await getAdviceTemplatesCollection();
 
@@ -36,17 +37,22 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
+    // Get total count for pagination
+    const totalCount = await templates.countDocuments(query);
+
     const results = await templates
       .find(query)
       .sort({ usageCount: -1, title: 1 })
+      .skip(skip)
       .limit(limit)
       .toArray();
 
     // Get unique categories for filtering
-    const categories = await templates.distinct("category", {
+    const categoryQuery: Record<string, unknown> = {
       clinicId: new ObjectId(session.clinicId),
       category: { $exists: true, $ne: "" },
-    });
+    };
+    const categories = await templates.distinct("category", categoryQuery);
 
     return NextResponse.json({
       templates: results.map((t) => ({
@@ -54,9 +60,11 @@ export async function GET(request: NextRequest) {
         title: t.title,
         content: t.content,
         category: t.category,
+        isDefault: t.isDefault || false,
         usageCount: t.usageCount,
       })),
       categories: categories.filter(Boolean),
+      totalCount,
     });
   } catch (error) {
     console.error("Error fetching advice templates:", error);
@@ -114,6 +122,7 @@ export async function POST(request: NextRequest) {
       title: title.trim(),
       content: content.trim(),
       category: category?.trim() || undefined,
+      isDefault: false,
       usageCount: 0,
       createdBy: new ObjectId(session.userId),
       createdAt: now,
@@ -127,6 +136,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         content: content.trim(),
         category: category?.trim(),
+        isDefault: false,
       },
     });
   } catch (error) {

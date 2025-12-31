@@ -38,6 +38,9 @@ export async function GET(
         duration: template.duration,
         instructions: template.instructions,
         category: template.category,
+        description: template.description,
+        source: template.source || "custom",
+        isDefault: template.isDefault || false,
         usageCount: template.usageCount,
       },
     });
@@ -156,6 +159,24 @@ export async function DELETE(
     }
 
     const templates = await getMedicationTemplatesCollection();
+    
+    // Check if it's a default medication
+    const template = await templates.findOne({
+      _id: new ObjectId(id),
+      clinicId: new ObjectId(session.clinicId),
+    });
+
+    if (!template) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
+
+    if (template.isDefault) {
+      return NextResponse.json(
+        { error: "Cannot delete default medications. You can only delete custom medications." },
+        { status: 403 }
+      );
+    }
+
     const result = await templates.deleteOne({
       _id: new ObjectId(id),
       clinicId: new ObjectId(session.clinicId),

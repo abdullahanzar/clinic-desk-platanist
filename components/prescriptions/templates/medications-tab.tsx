@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   Search,
@@ -10,7 +10,17 @@ import {
   Loader2,
   Check,
   AlertCircle,
+  Pill,
+  Leaf,
+  User,
+  AlertTriangle,
+  Download,
+  Lock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+const ITEMS_PER_PAGE = 20;
 
 interface MedicationTemplate {
   _id: string;
@@ -19,8 +29,60 @@ interface MedicationTemplate {
   duration: string;
   instructions?: string;
   category?: string;
+  description?: string;
+  source: "allopathic" | "homeopathic" | "custom";
+  isDefault: boolean;
   usageCount: number;
 }
+
+interface MedicationStats {
+  allopathic: number;
+  homeopathic: number;
+  custom: number;
+}
+
+const HOMEOPATHIC_DISCLAIMER = "Homeopathic remedies are included for patient preference and historical use. They are not supported by robust clinical evidence for most conditions. For serious, acute, or potentially life-threatening problems, always seek conventional medical care. This list is informational — dosing patterns shown are typical retail potencies and not individualized medical advice.";
+
+const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean }) => {
+  const badge = (() => {
+    switch (source) {
+      case "allopathic":
+        return (
+          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
+            <Pill className="w-3 h-3" />
+            Allopathic
+          </span>
+        );
+      case "homeopathic":
+        return (
+          <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-md">
+            <Leaf className="w-3 h-3" />
+            Homeopathic
+          </span>
+        );
+      case "custom":
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md">
+            <User className="w-3 h-3" />
+            Custom
+          </span>
+        );
+    }
+  })();
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {badge}
+      {isDefault && (
+        <span className="inline-flex items-center gap-0.5 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md">
+          <Lock className="w-2.5 h-2.5" />
+          Default
+        </span>
+      )}
+    </div>
+  );
+};
 
 export default function MedicationsTab() {
   const [templates, setTemplates] = useState<MedicationTemplate[]>([]);
@@ -28,6 +90,18 @@ export default function MedicationsTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSource, setSelectedSource] = useState<string>("allopathic");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Stats state
+  const [stats, setStats] = useState<MedicationStats | null>(null);
+  const [seeding, setSeeding] = useState(false);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -37,6 +111,7 @@ export default function MedicationsTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -47,31 +122,90 @@ export default function MedicationsTab() {
     category: "",
   });
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/templates/medications/seed");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, []);
+
+  const seedDefaultMedications = async () => {
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/templates/medications/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force: false }),
+      });
+      if (res.ok) {
+        await fetchStats();
+        await fetchTemplates();
+      }
+    } catch (error) {
+      console.error("Error seeding medications:", error);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (selectedCategory) params.set("category", selectedCategory);
-      params.set("limit", "100");
+      if (selectedSource) params.set("source", selectedSource);
+      params.set("limit", String(ITEMS_PER_PAGE));
+      params.set("skip", String((currentPage - 1) * ITEMS_PER_PAGE));
 
       const res = await fetch(`/api/templates/medications?${params}`);
       if (res.ok) {
         const data = await res.json();
         setTemplates(data.templates || []);
         setCategories(data.categories || []);
+        setTotalCount(data.totalCount || 0);
       }
     } catch (error) {
       console.error("Error fetching medications:", error);
     } finally {
       setLoading(false);
     }
-  }, [search, selectedCategory]);
+  }, [search, selectedCategory, selectedSource, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategory, selectedSource]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     const debounce = setTimeout(fetchTemplates, 300);
     return () => clearTimeout(debounce);
   }, [fetchTemplates]);
+
+  // Handle click outside for category dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filter categories based on search
+  const filteredCategories = categories.filter((cat) =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase())
+  );
 
   const openAddModal = () => {
     setEditingTemplate(null);
@@ -137,6 +271,7 @@ export default function MedicationsTab() {
   };
 
   const handleDelete = async (id: string) => {
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/templates/medications/${id}`, {
         method: "DELETE",
@@ -144,15 +279,83 @@ export default function MedicationsTab() {
 
       if (res.ok) {
         setTemplates((prev) => prev.filter((t) => t._id !== id));
+      } else {
+        const data = await res.json();
+        setDeleteError(data.error || "Failed to delete medication");
+        setTimeout(() => setDeleteError(null), 3000);
       }
     } catch (error) {
       console.error("Error deleting medication:", error);
+      setDeleteError("Failed to delete medication");
+      setTimeout(() => setDeleteError(null), 3000);
     }
     setDeleteConfirm(null);
   };
 
   return (
     <div className="p-5 sm:p-6">
+      {/* Stats & Seed Section */}
+      {stats && (
+        <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h4 className="text-sm font-medium text-slate-900 mb-2">Medication Database</h4>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <span className="inline-flex items-center gap-1.5 text-blue-700">
+                  <Pill className="w-4 h-4" />
+                  {stats.allopathic} Allopathic
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-green-700">
+                  <Leaf className="w-4 h-4" />
+                  {stats.homeopathic} Homeopathic
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-purple-700">
+                  <User className="w-4 h-4" />
+                  {stats.custom} Custom
+                </span>
+              </div>
+            </div>
+            {(stats.allopathic === 0 && stats.homeopathic === 0) && (
+              <button
+                onClick={seedDefaultMedications}
+                disabled={seeding}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                {seeding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading medications...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Load Default Medications
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Homeopathic Disclaimer - only show when filtering by homeopathic */}
+      {selectedSource === "homeopathic" && (
+        <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 leading-relaxed">
+            {HOMEOPATHIC_DISCLAIMER}
+          </p>
+        </div>
+      )}
+
+      {/* Delete error toast */}
+      {deleteError && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {deleteError}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -168,13 +371,13 @@ export default function MedicationsTab() {
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors font-medium text-sm"
         >
           <Plus className="w-4 h-4" />
-          Add Medication
+          Add Custom Medication
         </button>
       </div>
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -184,19 +387,88 @@ export default function MedicationsTab() {
             className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
           />
         </div>
+        <select
+          value={selectedSource}
+          onChange={(e) => setSelectedSource(e.target.value)}
+          className="flex-shrink-0 w-full sm:w-36 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+        >
+          <option value="">All Types</option>
+          <option value="allopathic">Allopathic</option>
+          <option value="homeopathic">Homeopathic</option>
+          <option value="custom">Custom</option>
+        </select>
         {categories.length > 0 && (
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-          >
-            <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          <div ref={categoryRef} className="relative flex-shrink-0 w-full sm:w-56">
+            <div
+              className="flex items-center gap-2 px-3 py-2.5 border border-slate-300 rounded-xl text-sm cursor-pointer hover:border-slate-400 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white"
+              onClick={() => setShowCategoryDropdown(true)}
+            >
+              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={showCategoryDropdown ? categorySearch : (selectedCategory || "")}
+                onChange={(e) => {
+                  setCategorySearch(e.target.value);
+                  setShowCategoryDropdown(true);
+                }}
+                onFocus={() => setShowCategoryDropdown(true)}
+                placeholder="All Categories"
+                className="flex-1 min-w-0 outline-none bg-transparent text-slate-900 placeholder:text-slate-500"
+              />
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCategory("");
+                    setCategorySearch("");
+                  }}
+                  className="p-0.5 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {showCategoryDropdown && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("");
+                    setCategorySearch("");
+                    setShowCategoryDropdown(false);
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+                    !selectedCategory ? "bg-brand-50 text-brand-700 font-medium" : "text-slate-700"
+                  }`}
+                >
+                  All Categories
+                </button>
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setCategorySearch("");
+                        setShowCategoryDropdown(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+                        selectedCategory === cat ? "bg-brand-50 text-brand-700 font-medium" : "text-slate-700"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-sm text-slate-500">
+                    No categories found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -232,9 +504,12 @@ export default function MedicationsTab() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-slate-900 truncate">
-                    {template.name}
-                  </h4>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h4 className="font-medium text-slate-900">
+                      {template.name}
+                    </h4>
+                    <SourceBadge source={template.source} isDefault={template.isDefault} />
+                  </div>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 text-xs">
                       {template.dosage}
@@ -253,49 +528,86 @@ export default function MedicationsTab() {
                       </span>
                     )}
                   </div>
+                  {template.description && (
+                    <p className="text-xs text-slate-500 mt-2 line-clamp-2">
+                      {template.description}
+                    </p>
+                  )}
                   <p className="text-xs text-slate-400 mt-2">
                     Used {template.usageCount} time
                     {template.usageCount !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => openEditModal(template)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  {deleteConfirm === template._id ? (
-                    <div className="flex items-center gap-1">
+                  {!template.isDefault && (
+                    <>
                       <button
-                        onClick={() => handleDelete(template._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Confirm delete"
+                        onClick={() => openEditModal(template)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                        title="Edit"
                       >
-                        <Check className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
-                        title="Cancel"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirm(template._id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {deleteConfirm === template._id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDelete(template._id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Confirm delete"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(template._id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalCount > ITEMS_PER_PAGE && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-slate-500">
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} medications
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-slate-600 px-2">
+              Page {currentPage} of {Math.ceil(totalCount / ITEMS_PER_PAGE)}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(Math.ceil(totalCount / ITEMS_PER_PAGE), p + 1))}
+              disabled={currentPage >= Math.ceil(totalCount / ITEMS_PER_PAGE)}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       )}
 

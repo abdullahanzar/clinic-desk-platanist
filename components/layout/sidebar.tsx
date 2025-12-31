@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
-import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface SidebarProps {
@@ -30,6 +30,11 @@ export function Sidebar({ role }: SidebarProps) {
   // Add role-specific items
   if (role === "frontdesk") {
     navItems.splice(2, 0, { href: "/visits/new", label: "New Visit", icon: UserPlus });
+  }
+
+  // Add doctor-specific items
+  if (role === "doctor") {
+    navItems.push({ href: "/templates", label: "Rx Templates", icon: Pill });
   }
 
   return (

@@ -1,0 +1,340 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  X,
+  Loader2,
+  Check,
+  AlertCircle,
+} from "lucide-react";
+
+interface DiagnosisTemplate {
+  _id: string;
+  name: string;
+  icdCode?: string;
+  usageCount: number;
+}
+
+export default function DiagnosesTab() {
+  const [templates, setTemplates] = useState<DiagnosisTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<DiagnosisTemplate | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    icdCode: "",
+  });
+
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      params.set("limit", "100");
+
+      const res = await fetch(`/api/templates/diagnoses?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTemplates(data.templates || []);
+      }
+    } catch (error) {
+      console.error("Error fetching diagnoses:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    const debounce = setTimeout(fetchTemplates, 300);
+    return () => clearTimeout(debounce);
+  }, [fetchTemplates]);
+
+  const openAddModal = () => {
+    setEditingTemplate(null);
+    setFormData({
+      name: "",
+      icdCode: "",
+    });
+    setError("");
+    setShowModal(true);
+  };
+
+  const openEditModal = (template: DiagnosisTemplate) => {
+    setEditingTemplate(template);
+    setFormData({
+      name: template.name,
+      icdCode: template.icdCode || "",
+    });
+    setError("");
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setError("Diagnosis name is required");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const url = editingTemplate
+        ? `/api/templates/diagnoses/${editingTemplate._id}`
+        : "/api/templates/diagnoses";
+      const method = editingTemplate ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to save diagnosis");
+        return;
+      }
+
+      setShowModal(false);
+      fetchTemplates();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/templates/diagnoses/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setTemplates((prev) => prev.filter((t) => t._id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting diagnosis:", error);
+    }
+    setDeleteConfirm(null);
+  };
+
+  return (
+    <div className="p-5 sm:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">
+            Diagnosis Templates
+          </h3>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Save common diagnoses for quick selection
+          </p>
+        </div>
+        <button
+          onClick={openAddModal}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors font-medium text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Add Diagnosis
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search diagnoses..."
+          className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+        />
+      </div>
+
+      {/* Templates List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+        </div>
+      ) : templates.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <Plus className="w-6 h-6 text-slate-400" />
+          </div>
+          <h4 className="text-sm font-medium text-slate-900 mb-1">
+            No diagnoses saved
+          </h4>
+          <p className="text-sm text-slate-500 mb-4">
+            Add your commonly used diagnoses for quick access
+          </p>
+          <button
+            onClick={openAddModal}
+            className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+          >
+            Add your first diagnosis
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {templates.map((template) => (
+            <div
+              key={template._id}
+              className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-slate-200 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-slate-900 truncate">
+                    {template.name}
+                  </h4>
+                  {template.icdCode && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      ICD-10: {template.icdCode}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-400 mt-1">
+                    Used {template.usageCount} time
+                    {template.usageCount !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => openEditModal(template)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  {deleteConfirm === template._id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleDelete(template._id)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Confirm delete"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="p-1.5 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                        title="Cancel"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(template._id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-auto">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingTemplate ? "Edit Diagnosis" : "Add Diagnosis"}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Diagnosis Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="e.g., Acute Upper Respiratory Infection"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  ICD-10 Code (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.icdCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, icdCode: e.target.value })
+                  }
+                  placeholder="e.g., J06.9"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2.5 text-slate-600 hover:text-slate-800 font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors font-medium text-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    {editingTemplate ? "Update" : "Save"} Diagnosis
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

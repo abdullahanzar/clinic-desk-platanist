@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection } from "@/lib/db/collections";
+import { getVisitsCollection, getPrescriptionsCollection } from "@/lib/db/collections";
 import { ObjectId } from "mongodb";
 import { notFound } from "next/navigation";
 import ReceiptForm from "@/components/receipts/receipt-form";
@@ -21,6 +21,7 @@ export default async function VisitReceiptPage({
   }
 
   const visits = await getVisitsCollection();
+  const prescriptions = await getPrescriptionsCollection();
 
   const visit = await visits.findOne({
     _id: new ObjectId(id),
@@ -30,6 +31,9 @@ export default async function VisitReceiptPage({
   if (!visit) {
     notFound();
   }
+
+  // Fetch prescription if exists
+  const prescription = await prescriptions.findOne({ visitId: visit._id });
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -54,6 +58,10 @@ export default async function VisitReceiptPage({
         visitId={id}
         patientName={visit.patient.name}
         patientPhone={visit.patient.phone}
+        prescriptionData={prescription ? {
+          diagnosis: prescription.diagnosis,
+          advice: prescription.advice,
+        } : undefined}
       />
     </div>
   );

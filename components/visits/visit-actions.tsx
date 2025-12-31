@@ -79,8 +79,8 @@ export function VisitActions({
           </Link>
         )}
 
-        {/* Receipt generation - both roles, during consultation */}
-        {status === "in-consultation" && (
+        {/* Receipt generation - both roles, during consultation OR doctor with prescription */}
+        {(status === "in-consultation" || (role === "doctor" && hasPrescription)) && (
           <Link
             href={`/visits/${visitId}/receipt`}
             className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-700 hover:to-violet-800 transition-all shadow-lg shadow-violet-500/20 font-medium"

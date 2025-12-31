@@ -7,6 +7,9 @@ import type {
   Prescription,
   Receipt,
   CallbackRequest,
+  MedicationTemplate,
+  AdviceTemplate,
+  DiagnosisTemplate,
 } from "@/types";
 
 // Collection accessors
@@ -38,6 +41,21 @@ export async function getReceiptsCollection(): Promise<Collection<Receipt>> {
 export async function getCallbackRequestsCollection(): Promise<Collection<CallbackRequest>> {
   const db = await getDb();
   return db.collection<CallbackRequest>("callbackRequests");
+}
+
+export async function getMedicationTemplatesCollection(): Promise<Collection<MedicationTemplate>> {
+  const db = await getDb();
+  return db.collection<MedicationTemplate>("medicationTemplates");
+}
+
+export async function getAdviceTemplatesCollection(): Promise<Collection<AdviceTemplate>> {
+  const db = await getDb();
+  return db.collection<AdviceTemplate>("adviceTemplates");
+}
+
+export async function getDiagnosisTemplatesCollection(): Promise<Collection<DiagnosisTemplate>> {
+  const db = await getDb();
+  return db.collection<DiagnosisTemplate>("diagnosisTemplates");
 }
 
 // ============================================
@@ -85,6 +103,29 @@ export async function ensureIndexes(): Promise<void> {
     { key: { clinicId: 1, status: 1, createdAt: -1 } },
   ];
   await db.collection("callbackRequests").createIndexes(callbackRequestsIndexes);
+
+  // Medication templates indexes
+  const medicationTemplatesIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, name: 1 } },
+    { key: { clinicId: 1, category: 1 } },
+    { key: { clinicId: 1, usageCount: -1 } },
+  ];
+  await db.collection("medicationTemplates").createIndexes(medicationTemplatesIndexes);
+
+  // Advice templates indexes
+  const adviceTemplatesIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, title: 1 } },
+    { key: { clinicId: 1, category: 1 } },
+    { key: { clinicId: 1, usageCount: -1 } },
+  ];
+  await db.collection("adviceTemplates").createIndexes(adviceTemplatesIndexes);
+
+  // Diagnosis templates indexes
+  const diagnosisTemplatesIndexes: IndexDescription[] = [
+    { key: { clinicId: 1, name: 1 } },
+    { key: { clinicId: 1, usageCount: -1 } },
+  ];
+  await db.collection("diagnosisTemplates").createIndexes(diagnosisTemplatesIndexes);
 
   console.log("✅ Database indexes ensured");
 }

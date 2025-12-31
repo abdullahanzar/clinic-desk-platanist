@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Medication } from "@/types";
-import { Stethoscope, Pill, ClipboardList, Plus, Trash2, AlertTriangle, Loader2, Check } from "lucide-react";
+import { Stethoscope, Pill, ClipboardList, Plus, AlertTriangle, Loader2, Check, Settings } from "lucide-react";
+import MedicationAutosuggest from "./medication-autosuggest";
+import AdviceAutosuggest from "./advice-autosuggest";
+import DiagnosisAutosuggest from "./diagnosis-autosuggest";
+import Link from "next/link";
 
 interface PrescriptionFormProps {
   visitId: string;
@@ -52,16 +56,6 @@ export default function PrescriptionForm({
     if (medications.length > 1) {
       setMedications(medications.filter((_, i) => i !== index));
     }
-  };
-
-  const updateMedication = (
-    index: number,
-    field: keyof Medication,
-    value: string
-  ) => {
-    const updated = [...medications];
-    updated[index] = { ...updated[index], [field]: value };
-    setMedications(updated);
   };
 
   const handleSave = async (finalize = false) => {
@@ -162,13 +156,11 @@ export default function PrescriptionForm({
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Diagnosis
             </label>
-            <input
-              type="text"
+            <DiagnosisAutosuggest
               value={formData.diagnosis}
-              onChange={(e) =>
-                setFormData({ ...formData, diagnosis: e.target.value })
+              onChange={(value) =>
+                setFormData({ ...formData, diagnosis: value })
               }
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400"
               placeholder="e.g., Acute Upper Respiratory Infection"
             />
           </div>
@@ -182,76 +174,37 @@ export default function PrescriptionForm({
             <Pill className="w-5 h-5 text-brand-600" />
             Medications
           </h3>
-          <button
-            type="button"
-            onClick={addMedication}
-            className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" /> Add Medication
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/visits/${visitId}/prescription/templates`}
+              className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 text-sm"
+            >
+              <Settings className="w-4 h-4" /> Manage Templates
+            </Link>
+            <button
+              type="button"
+              onClick={addMedication}
+              className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" /> Add Medication
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
           {medications.map((med, index) => (
-            <div
+            <MedicationAutosuggest
               key={index}
-              className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3"
-            >
-              <div className="flex justify-between items-start">
-                <span className="text-xs font-medium text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
-                  #{index + 1}
-                </span>
-                {medications.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeMedication(index)}
-                    className="text-red-500 hover:text-red-700 text-sm font-medium"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2">
-                  <input
-                    type="text"
-                    value={med.name}
-                    onChange={(e) =>
-                      updateMedication(index, "name", e.target.value)
-                    }
-                    placeholder="Medication name (e.g., Tab. Paracetamol 500mg)"
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={med.dosage}
-                  onChange={(e) =>
-                    updateMedication(index, "dosage", e.target.value)
-                  }
-                  placeholder="Dosage (e.g., 1-0-1)"
-                  className="px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                />
-                <input
-                  type="text"
-                  value={med.duration}
-                  onChange={(e) =>
-                    updateMedication(index, "duration", e.target.value)
-                  }
-                  placeholder="Duration (e.g., 5 days)"
-                  className="px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                />
-                <input
-                  type="text"
-                  value={med.instructions || ""}
-                  onChange={(e) =>
-                    updateMedication(index, "instructions", e.target.value)
-                  }
-                  placeholder="Instructions (e.g., After food)"
-                  className="sm:col-span-2 px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                />
-              </div>
-            </div>
+              index={index}
+              value={med}
+              onChange={(updatedMed) => {
+                const updated = [...medications];
+                updated[index] = updatedMed;
+                setMedications(updated);
+              }}
+              onRemove={() => removeMedication(index)}
+              canRemove={medications.length > 1}
+            />
           ))}
         </div>
       </div>
@@ -268,13 +221,11 @@ export default function PrescriptionForm({
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Advice
             </label>
-            <textarea
+            <AdviceAutosuggest
               value={formData.advice}
-              onChange={(e) =>
-                setFormData({ ...formData, advice: e.target.value })
+              onChange={(value) =>
+                setFormData({ ...formData, advice: value })
               }
-              rows={3}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400 resize-none"
               placeholder="Rest, drink plenty of fluids..."
             />
           </div>

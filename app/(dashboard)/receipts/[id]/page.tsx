@@ -6,7 +6,7 @@ import { formatDateIndian } from "@/lib/utils/date";
 import { ShareReceiptButton } from "@/components/receipts/share-receipt-button";
 import { PrintButton } from "@/components/receipts/print-button";
 import Link from "next/link";
-import { ChevronLeft, Check, Clock } from "lucide-react";
+import { ChevronLeft, Check, Clock, Pill } from "lucide-react";
 
 export default async function ReceiptDetailPage({
   params,
@@ -97,6 +97,28 @@ export default async function ReceiptDetailPage({
               <p className="text-slate-600">{receipt.patientSnapshot.phone}</p>
             )}
           </div>
+
+          {/* Prescription Info - if included */}
+          {receipt.prescriptionSnapshot && (receipt.prescriptionSnapshot.diagnosis || receipt.prescriptionSnapshot.advice) && (
+            <div className="mb-6 pb-4 border-b border-slate-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Pill className="w-4 h-4 text-brand-600" />
+                <p className="text-xs sm:text-sm text-slate-500 uppercase tracking-wide">Prescription</p>
+              </div>
+              {receipt.prescriptionSnapshot.diagnosis && (
+                <div className="mb-2">
+                  <p className="text-xs text-slate-500">Diagnosis</p>
+                  <p className="text-slate-800">{receipt.prescriptionSnapshot.diagnosis}</p>
+                </div>
+              )}
+              {receipt.prescriptionSnapshot.advice && (
+                <div>
+                  <p className="text-xs text-slate-500">Advice</p>
+                  <p className="text-slate-800">{receipt.prescriptionSnapshot.advice}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Line Items */}
           <div className="mb-6">

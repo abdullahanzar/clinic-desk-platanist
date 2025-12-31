@@ -3,18 +3,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LineItem, PaymentMode } from "@/types";
-import { FileText, Plus, X, Tag, CreditCard, Loader2, Receipt } from "lucide-react";
+import { FileText, Plus, X, Tag, CreditCard, Loader2, Receipt, Pill } from "lucide-react";
+
+interface PrescriptionData {
+  diagnosis?: string;
+  advice?: string;
+}
 
 interface ReceiptFormProps {
   visitId: string;
   patientName: string;
   patientPhone?: string;
+  prescriptionData?: PrescriptionData;
 }
 
 export default function ReceiptForm({
   visitId,
   patientName,
   patientPhone,
+  prescriptionData,
 }: ReceiptFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -27,6 +34,7 @@ export default function ReceiptForm({
   const [discountReason, setDiscountReason] = useState("");
   const [paymentMode, setPaymentMode] = useState<PaymentMode | "">("");
   const [isPaid, setIsPaid] = useState(true);
+  const [includePrescription, setIncludePrescription] = useState(!!prescriptionData);
 
   const addLineItem = () => {
     setLineItems([...lineItems, { description: "", amount: 0 }]);
@@ -83,6 +91,10 @@ export default function ReceiptForm({
           discountReason: discountReason || undefined,
           paymentMode: paymentMode || undefined,
           isPaid,
+          prescriptionSnapshot: includePrescription && prescriptionData ? {
+            diagnosis: prescriptionData.diagnosis,
+            advice: prescriptionData.advice,
+          } : undefined,
         }),
       });
 
@@ -107,6 +119,41 @@ export default function ReceiptForm({
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
           {error}
+        </div>
+      )}
+
+      {/* Prescription Info - if available */}
+      {prescriptionData && (prescriptionData.diagnosis || prescriptionData.advice) && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+            <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <Pill className="w-5 h-5 text-brand-600" />
+              Prescription Details
+            </h3>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includePrescription}
+                onChange={(e) => setIncludePrescription(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm text-slate-600">Include in receipt</span>
+            </label>
+          </div>
+          <div className="space-y-3 text-sm">
+            {prescriptionData.diagnosis && (
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Diagnosis</p>
+                <p className="text-slate-800">{prescriptionData.diagnosis}</p>
+              </div>
+            )}
+            {prescriptionData.advice && (
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Advice</p>
+                <p className="text-slate-800">{prescriptionData.advice}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

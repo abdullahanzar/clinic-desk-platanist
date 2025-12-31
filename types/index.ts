@@ -177,6 +177,12 @@ export interface Receipt {
     phone?: string;
   };
 
+  // Prescription snapshot (optional)
+  prescriptionSnapshot?: {
+    diagnosis?: string;
+    advice?: string;
+  };
+
   // Line Items
   lineItems: LineItem[];
 
@@ -233,3 +239,76 @@ export interface SessionPayload {
   role: UserRole;
   exp: number;
 }
+
+// ============================================
+// CUSTOM MEDICATION TEMPLATES
+// ============================================
+export interface MedicationTemplate {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  // Medication details
+  name: string; // "Tab. Paracetamol 500mg"
+  dosage: string; // "1-0-1"
+  duration: string; // "5 days"
+  instructions?: string; // "After food"
+  
+  // Categorization
+  category?: string; // "Analgesic", "Antibiotic", etc.
+  
+  // Usage tracking
+  usageCount: number;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type MedicationTemplateInsert = Omit<MedicationTemplate, "_id">;
+
+// ============================================
+// CUSTOM ADVICE TEMPLATES
+// ============================================
+export interface AdviceTemplate {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  // Advice content
+  title: string; // Short identifier like "General Fever Care"
+  content: string; // Full advice text
+  
+  // Categorization
+  category?: string; // "Fever", "Diet", "Post-op", etc.
+  
+  // Usage tracking
+  usageCount: number;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type AdviceTemplateInsert = Omit<AdviceTemplate, "_id">;
+
+// ============================================
+// CUSTOM DIAGNOSIS TEMPLATES
+// ============================================
+export interface DiagnosisTemplate {
+  _id: ObjectId;
+  clinicId: ObjectId;
+  
+  name: string; // "Acute Upper Respiratory Infection"
+  icdCode?: string; // Optional ICD-10 code
+  
+  // Usage tracking
+  usageCount: number;
+  
+  // Metadata
+  createdBy: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type DiagnosisTemplateInsert = Omit<DiagnosisTemplate, "_id">;

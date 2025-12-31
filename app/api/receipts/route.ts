@@ -76,6 +76,7 @@ export async function POST(request: Request) {
       discountReason,
       paymentMode,
       isPaid = false,
+      prescriptionSnapshot,
     } = body;
 
     if (!patientName || !lineItems || lineItems.length === 0) {
@@ -120,6 +121,10 @@ export async function POST(request: Request) {
         name: patientName.trim(),
         phone: patientPhone?.trim(),
       },
+      prescriptionSnapshot: prescriptionSnapshot ? {
+        diagnosis: prescriptionSnapshot.diagnosis?.trim(),
+        advice: prescriptionSnapshot.advice?.trim(),
+      } : undefined,
       lineItems: lineItems.map((item: { description: string; amount: number }) => ({
         description: item.description.trim(),
         amount: item.amount,

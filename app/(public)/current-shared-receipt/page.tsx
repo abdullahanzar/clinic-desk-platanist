@@ -2,7 +2,7 @@ import { getClinicsCollection, getReceiptsCollection } from "@/lib/db/collection
 import { formatDateIndian } from "@/lib/utils/date";
 import { PrintButton } from "@/components/receipts/print-button";
 import { RefreshButton } from "@/components/receipts/refresh-button";
-import { Building2, Receipt, Download, Check, Clock } from "lucide-react";
+import { Building2, Receipt, Download, Check, Clock, Pill } from "lucide-react";
 
 // For V1, we'll use a hardcoded clinic slug since we're single-tenant
 const CLINIC_SLUG = "demo-clinic";
@@ -98,6 +98,28 @@ export default async function CurrentSharedReceiptPage() {
                 {receipt.patientSnapshot.name}
               </p>
             </div>
+
+            {/* Prescription Info - if included */}
+            {receipt.prescriptionSnapshot && (receipt.prescriptionSnapshot.diagnosis || receipt.prescriptionSnapshot.advice) && (
+              <div className="mb-6 pb-4 border-b border-slate-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Pill className="w-4 h-4 text-brand-600" />
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Prescription</p>
+                </div>
+                {receipt.prescriptionSnapshot.diagnosis && (
+                  <div className="mb-2">
+                    <p className="text-xs text-slate-500">Diagnosis</p>
+                    <p className="text-slate-800">{receipt.prescriptionSnapshot.diagnosis}</p>
+                  </div>
+                )}
+                {receipt.prescriptionSnapshot.advice && (
+                  <div>
+                    <p className="text-xs text-slate-500">Advice</p>
+                    <p className="text-slate-800">{receipt.prescriptionSnapshot.advice}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Line Items */}
             <div className="space-y-3 mb-6">

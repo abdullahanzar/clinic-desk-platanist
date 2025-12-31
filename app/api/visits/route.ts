@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getSession } from "@/lib/auth/session";
 import { getVisitsCollection } from "@/lib/db/collections";
-import { startOfDay, endOfDay } from "@/lib/utils/date";
+import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "@/lib/utils/date";
 import type { VisitInsert } from "@/types";
 
-// GET /api/visits - List today's visits (or by date)
+// GET /api/visits - List visits by date or date range
+// Query params:
+// - date: specific date (YYYY-MM-DD)
+// - startDate, endDate: date range
+// - month, year: month view (e.g., month=1&year=2026)
+// - status: filter by status
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -15,18 +20,41 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get("date");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+    const monthParam = searchParams.get("month");
+    const yearParam = searchParams.get("year");
     const statusParam = searchParams.get("status");
-
-    const date = dateParam ? new Date(dateParam) : new Date();
 
     const visits = await getVisitsCollection();
 
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-      visitDate: {
+    let dateFilter: { $gte: Date; $lte: Date };
+
+    if (monthParam && yearParam) {
+      // Month view: get all visits for a specific month
+      const monthDate = new Date(parseInt(yearParam), parseInt(monthParam) - 1, 1);
+      dateFilter = {
+        $gte: startOfMonth(monthDate),
+        $lte: endOfMonth(monthDate),
+      };
+    } else if (startDateParam && endDateParam) {
+      // Date range view
+      dateFilter = {
+        $gte: startOfDay(new Date(startDateParam)),
+        $lte: endOfDay(new Date(endDateParam)),
+      };
+    } else {
+      // Single date view (default to today)
+      const date = dateParam ? new Date(dateParam) : new Date();
+      dateFilter = {
         $gte: startOfDay(date),
         $lte: endOfDay(date),
-      },
+      };
+    }
+
+    const query: Record<string, unknown> = {
+      clinicId: new ObjectId(session.clinicId),
+      visitDate: dateFilter,
     };
 
     if (statusParam) {
@@ -35,7 +63,7 @@ export async function GET(request: Request) {
 
     const results = await visits
       .find(query)
-      .sort({ tokenNumber: 1, createdAt: 1 })
+      .sort({ visitDate: -1, tokenNumber: 1, createdAt: 1 })
       .toArray();
 
     return NextResponse.json({

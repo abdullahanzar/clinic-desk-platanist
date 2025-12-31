@@ -25,7 +25,6 @@ export function Sidebar({ role }: SidebarProps) {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/visits", label: "Visits", icon: Users },
     { href: "/receipts", label: "Receipts", icon: Receipt },
-    { href: "/billing", label: "Billing", icon: DollarSign },
   ];
 
   // Add role-specific items
@@ -35,6 +34,7 @@ export function Sidebar({ role }: SidebarProps) {
 
   // Add doctor-specific items
   if (role === "doctor") {
+    navItems.push({ href: "/billing", label: "Billing", icon: DollarSign });
     navItems.push({ href: "/templates", label: "Rx Templates", icon: Pill });
     navItems.push({ href: "/staff", label: "Staff", icon: UserCog });
   }

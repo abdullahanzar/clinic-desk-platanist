@@ -36,7 +36,19 @@ export function VisitActions({
     }
   };
 
-  if (status === "cancelled" || status === "completed") {
+  // Determine if we should show the actions panel
+  // Show for: waiting, in-consultation, and completed (for receipt generation)
+  // Hide for: cancelled
+  const showConsultationActions = status !== "cancelled" && status !== "completed";
+  const canGenerateReceipt = status === "in-consultation" || status === "completed";
+
+  // If cancelled, don't show anything
+  if (status === "cancelled") {
+    return null;
+  }
+
+  // If completed and no receipt generation capability, don't show actions
+  if (status === "completed" && !canGenerateReceipt) {
     return null;
   }
 
@@ -79,8 +91,8 @@ export function VisitActions({
           </Link>
         )}
 
-        {/* Receipt generation - both roles, during consultation OR doctor with prescription */}
-        {(status === "in-consultation" || (role === "doctor" && hasPrescription)) && (
+        {/* Receipt generation - available during consultation and after completion */}
+        {canGenerateReceipt && (
           <Link
             href={`/visits/${visitId}/receipt`}
             className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-700 hover:to-violet-800 transition-all shadow-lg shadow-violet-500/20 font-medium"

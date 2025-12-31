@@ -47,3 +47,51 @@ export async function GET(
     );
   }
 }
+
+// DELETE /api/receipts/[id] - Delete receipt (doctor only)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only doctors can delete receipts
+    if (session.role !== "doctor") {
+      return NextResponse.json(
+        { error: "Only doctors can delete receipts" },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
+    }
+
+    const receipts = await getReceiptsCollection();
+    const result = await receipts.deleteOne({
+      _id: new ObjectId(id),
+      clinicId: new ObjectId(session.clinicId),
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Receipt deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete receipt error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

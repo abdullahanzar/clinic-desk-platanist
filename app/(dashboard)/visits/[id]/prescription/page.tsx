@@ -2,9 +2,9 @@ import { getSession } from "@/lib/auth/session";
 import { getVisitsCollection, getPrescriptionsCollection } from "@/lib/db/collections";
 import { ObjectId } from "mongodb";
 import { notFound, redirect } from "next/navigation";
-import PrescriptionForm from "@/components/prescriptions/prescription-form";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import PrescriptionPageClient from "./prescription-client";
 
 export default async function PrescriptionPage({
   params,
@@ -40,7 +40,7 @@ export default async function PrescriptionPage({
   const existingPrescription = await prescriptions.findOne({ visitId: visit._id });
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Back Link */}
       <Link
         href={`/visits/${id}`}
@@ -51,17 +51,19 @@ export default async function PrescriptionPage({
       </Link>
 
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
           {existingPrescription ? "Edit Prescription" : "Write Prescription"}
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           Patient: <span className="font-medium text-slate-700">{visit.patient.name}</span>
           {visit.patient.age && ` • ${visit.patient.age} years`}
+          {visit.patient.gender && ` • ${visit.patient.gender}`}
         </p>
       </div>
 
-      <PrescriptionForm
+      {/* Client component with sidebar layout */}
+      <PrescriptionPageClient
         visitId={id}
         existingPrescription={
           existingPrescription

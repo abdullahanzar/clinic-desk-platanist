@@ -1,17 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
-import { LayoutDashboard, Users, Receipt, UserPlus, LogOut, Stethoscope, Monitor, Pill, DollarSign, UserCog } from "lucide-react";
+import { ThemeToggle } from "@/components/theme";
+import { LayoutDashboard, Users, Receipt, LogOut, Stethoscope, Monitor, Pill, DollarSign, UserCog, Settings, Building2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface SidebarProps {
   role: UserRole;
+  clinicName?: string;
+  doctorName?: string;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -27,44 +29,43 @@ export function Sidebar({ role }: SidebarProps) {
     { href: "/receipts", label: "Receipts", icon: Receipt },
   ];
 
-  // Add role-specific items
-  if (role === "frontdesk") {
-    navItems.splice(2, 0, { href: "/visits/new", label: "New Visit", icon: UserPlus });
-  }
-
   // Add doctor-specific items
   if (role === "doctor") {
     navItems.push({ href: "/billing", label: "Billing", icon: DollarSign });
     navItems.push({ href: "/templates", label: "Rx Templates", icon: Pill });
     navItems.push({ href: "/staff", label: "Staff", icon: UserCog });
+    navItems.push({ href: "/settings", label: "Settings", icon: Settings });
   }
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col fixed inset-y-0 left-0 z-30">
-        {/* Logo */}
-        <div className="p-5 border-b border-slate-200">
+      <aside className="hidden lg:flex w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col fixed inset-y-0 left-0 z-30">
+        {/* Clinic Branding */}
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
-              <Image
-                src="/platanist_clinic_desk_minimal.png"
-                alt="Clinic Desk Logo"
-                width={28}
-                height={28}
-                className="rounded-lg"
-              />
+              <Building2 className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-900">Clinic Desk</h1>
-              <p className="text-xs text-slate-500">by Platanist</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={clinicName || "Clinic Desk"}>
+                {clinicName || "Clinic Desk"}
+              </h1>
+              {doctorName && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate" title={doctorName}>
+                  {doctorName}
+                </p>
+              )}
+              {!doctorName && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">by Platanist</p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Role Badge */}
         <div className="px-5 py-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
             {role === "doctor" ? <Stethoscope className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
             <span className="capitalize">{role}</span>
           </span>
@@ -81,8 +82,8 @@ export function Sidebar({ role }: SidebarProps) {
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       isActive
-                        ? "bg-brand-50 text-brand-700 font-medium shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        ? "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-medium shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -94,11 +95,15 @@ export function Sidebar({ role }: SidebarProps) {
           </ul>
         </nav>
 
-        {/* Logout */}
-        <div className="p-3 border-t border-slate-200">
+        {/* Theme Toggle & Logout */}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-1">
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="text-sm text-slate-500 dark:text-slate-400">Theme</span>
+            <ThemeToggle variant="compact" />
+          </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all"
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
@@ -107,35 +112,34 @@ export function Sidebar({ role }: SidebarProps) {
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-md">
-              <Image
-                src="/platanist_clinic_desk_minimal.png"
-                alt="Logo"
-                width={24}
-                height={24}
-                className="rounded"
-              />
+              <Building2 className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-slate-900">Clinic Desk</h1>
-              <span className="text-xs text-brand-600 capitalize">{role}</span>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={clinicName || "Clinic Desk"}>
+                {clinicName || "Clinic Desk"}
+              </h1>
+              <span className="text-xs text-brand-600 dark:text-brand-400 capitalize">{role}</span>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Logout"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle variant="compact" />
+            <button
+              onClick={handleLogout}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-2 py-2 safe-area-pb">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 safe-area-pb">
         <ul className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -145,8 +149,8 @@ export function Sidebar({ role }: SidebarProps) {
                   href={item.href}
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
                     isActive
-                      ? "text-brand-600"
-                      : "text-slate-500"
+                      ? "text-brand-600 dark:text-brand-400"
+                      : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
                   <item.icon className="w-5 h-5" />

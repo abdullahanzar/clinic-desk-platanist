@@ -117,14 +117,14 @@ export default function ReceiptForm({
   return (
     <div className="space-y-4 sm:space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="bg-red-50 border border-red-200 dark:border-red-900 text-red-700 px-4 py-3 rounded-xl text-sm">
           {error}
         </div>
       )}
 
       {/* Prescription Info - if available */}
       {prescriptionData && (prescriptionData.diagnosis || prescriptionData.advice) && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <Pill className="w-5 h-5 text-brand-600" />
@@ -137,7 +137,7 @@ export default function ReceiptForm({
                 onChange={(e) => setIncludePrescription(e.target.checked)}
                 className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-slate-600">Include in receipt</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">Include in receipt</span>
             </label>
           </div>
           <div className="space-y-3 text-sm">
@@ -158,7 +158,7 @@ export default function ReceiptForm({
       )}
 
       {/* Line Items */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-brand-600" />
@@ -167,7 +167,7 @@ export default function ReceiptForm({
           <button
             type="button"
             onClick={addLineItem}
-            className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium"
+            className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 text-sm font-medium"
           >
             <Plus className="w-4 h-4" /> Add Item
           </button>
@@ -183,7 +183,7 @@ export default function ReceiptForm({
                   updateLineItem(index, "description", e.target.value)
                 }
                 placeholder="Description"
-                className="flex-1 px-3 sm:px-4 py-2.5 border border-slate-300 rounded-xl text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                className="flex-1 px-3 sm:px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               />
               <div className="relative flex-shrink-0">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
@@ -196,7 +196,7 @@ export default function ReceiptForm({
                     updateLineItem(index, "amount", e.target.value)
                   }
                   placeholder="0"
-                  className="w-24 sm:w-28 pl-7 pr-2 py-2.5 border border-slate-300 rounded-xl text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  className="w-24 sm:w-28 pl-7 pr-2 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                 />
               </div>
               {lineItems.length > 1 && (
@@ -214,7 +214,7 @@ export default function ReceiptForm({
       </div>
 
       {/* Discount */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <Tag className="w-5 h-5 text-brand-600" />
           Discount
@@ -223,14 +223,14 @@ export default function ReceiptForm({
           <div>
             <label className="block text-sm text-slate-600 mb-1.5">Amount</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400">
                 ₹
               </span>
               <input
                 type="number"
                 value={discountAmount || ""}
                 onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
-                className="w-full pl-8 pr-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                className="w-full pl-8 pr-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               />
             </div>
           </div>
@@ -243,14 +243,14 @@ export default function ReceiptForm({
               value={discountReason}
               onChange={(e) => setDiscountReason(e.target.value)}
               placeholder="e.g., Senior citizen"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+              className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
         </div>
       </div>
 
       {/* Payment */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <CreditCard className="w-5 h-5 text-brand-600" />
           Payment
@@ -261,7 +261,7 @@ export default function ReceiptForm({
             <select
               value={paymentMode}
               onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 appearance-none bg-white"
+              className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 appearance-none bg-white"
             >
               <option value="">Select</option>
               <option value="cash">Cash</option>
@@ -271,7 +271,7 @@ export default function ReceiptForm({
             </select>
           </div>
           <div className="flex items-center">
-            <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-slate-50 transition-colors">
+            <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
               <input
                 type="checkbox"
                 checked={isPaid}
@@ -287,7 +287,7 @@ export default function ReceiptForm({
       {/* Summary */}
       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-5 sm:p-6">
         <div className="space-y-2">
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-slate-600 dark:text-slate-400">
             <span>Subtotal</span>
             <span className="font-medium">₹{subtotal}</span>
           </div>
@@ -297,7 +297,7 @@ export default function ReceiptForm({
               <span className="font-medium">-₹{discountAmount}</span>
             </div>
           )}
-          <div className="flex justify-between text-xl sm:text-2xl font-bold text-slate-900 pt-3 border-t border-slate-300">
+          <div className="flex justify-between text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 pt-3 border-t border-slate-300">
             <span>Total</span>
             <span>₹{total}</span>
           </div>

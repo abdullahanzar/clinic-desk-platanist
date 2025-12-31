@@ -176,8 +176,8 @@ export default async function BillingDashboardPage() {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Billing & Finance</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Billing & Finance</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {now.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
         </p>
       </div>
@@ -185,56 +185,56 @@ export default async function BillingDashboardPage() {
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
         {/* Today's Collection */}
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl border border-emerald-200 p-4 sm:p-5">
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-6 h-6 text-emerald-600" />
-            <span className="text-xs text-emerald-600 font-medium">Today</span>
+            <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Today</span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-emerald-700">₹{todayRevenue.toLocaleString()}</p>
-          <p className="text-xs sm:text-sm text-emerald-600 mt-1">{todayReceipts} receipts</p>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-300">₹{todayRevenue.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 mt-1">{todayReceipts} receipts</p>
         </div>
 
         {/* This Month */}
-        <div className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl border border-brand-200 p-4 sm:p-5">
+        <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 rounded-2xl border border-teal-200 dark:border-teal-800 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <Calendar className="w-6 h-6 text-brand-600" />
-            <span className={`text-xs font-medium flex items-center gap-1 ${monthGrowth >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            <Calendar className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+            <span className={`text-xs font-medium flex items-center gap-1 ${monthGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
               {monthGrowth >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {monthGrowth}%
             </span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-brand-700">₹{thisMonthRevenue.toLocaleString()}</p>
-          <p className="text-xs sm:text-sm text-brand-600 mt-1">This month</p>
+          <p className="text-2xl sm:text-3xl font-bold text-teal-700 dark:text-teal-300">₹{thisMonthRevenue.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-teal-600 dark:text-teal-400 mt-1">This month</p>
         </div>
 
         {/* Outstanding */}
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 p-4 sm:p-5">
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <Clock className="w-6 h-6 text-amber-600" />
-            <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+            <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-medium">
               {unpaidCount} pending
             </span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-amber-700">₹{thisMonthPending.toLocaleString()}</p>
-          <p className="text-xs sm:text-sm text-amber-600 mt-1">Outstanding</p>
+          <p className="text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300">₹{thisMonthPending.toLocaleString()}</p>
+          <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400 mt-1">Outstanding</p>
         </div>
 
         {/* Net Profit */}
         <div className={`bg-gradient-to-br rounded-2xl border p-4 sm:p-5 ${
           netProfit >= 0 
-            ? "from-violet-50 to-violet-100 border-violet-200" 
-            : "from-red-50 to-red-100 border-red-200"
+            ? "from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 border-violet-200 dark:border-violet-800" 
+            : "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800"
         }`}>
           <div className="flex items-center justify-between mb-2">
-            <Wallet className={`w-6 h-6 ${netProfit >= 0 ? "text-violet-600" : "text-red-600"}`} />
-            <span className={`text-xs font-medium ${netProfit >= 0 ? "text-violet-600" : "text-red-600"}`}>
+            <Wallet className={`w-6 h-6 ${netProfit >= 0 ? "text-violet-600 dark:text-violet-400" : "text-red-600 dark:text-red-400"}`} />
+            <span className={`text-xs font-medium ${netProfit >= 0 ? "text-violet-600 dark:text-violet-400" : "text-red-600 dark:text-red-400"}`}>
               This month
             </span>
           </div>
-          <p className={`text-2xl sm:text-3xl font-bold ${netProfit >= 0 ? "text-violet-700" : "text-red-700"}`}>
+          <p className={`text-2xl sm:text-3xl font-bold ${netProfit >= 0 ? "text-violet-700 dark:text-violet-300" : "text-red-700 dark:text-red-300"}`}>
             ₹{Math.abs(netProfit).toLocaleString()}
           </p>
-          <p className={`text-xs sm:text-sm mt-1 ${netProfit >= 0 ? "text-violet-600" : "text-red-600"}`}>
+          <p className={`text-xs sm:text-sm mt-1 ${netProfit >= 0 ? "text-violet-600 dark:text-violet-400" : "text-red-600 dark:text-red-400"}`}>
             {netProfit >= 0 ? "Net Profit" : "Net Loss"}
           </p>
         </div>
@@ -242,24 +242,24 @@ export default async function BillingDashboardPage() {
 
       {/* Budget Progress (if set) */}
       {budgetTarget > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-brand-600" />
-              <h3 className="font-semibold text-slate-900">Monthly Target Progress</h3>
+              <Target className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Target Progress</h3>
             </div>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-500 dark:text-slate-400">
               ₹{thisMonthRevenue.toLocaleString()} of ₹{budgetTarget.toLocaleString()}
             </span>
           </div>
           <div className="relative">
-            <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   budgetProgress >= 100 
                     ? "bg-gradient-to-r from-emerald-500 to-emerald-600" 
                     : budgetProgress >= 75 
-                    ? "bg-gradient-to-r from-brand-500 to-brand-600"
+                    ? "bg-gradient-to-r from-teal-500 to-teal-600"
                     : budgetProgress >= 50
                     ? "bg-gradient-to-r from-amber-500 to-amber-600"
                     : "bg-gradient-to-r from-red-500 to-red-600"
@@ -269,11 +269,11 @@ export default async function BillingDashboardPage() {
             </div>
             <div className="flex justify-between mt-2 text-sm">
               <span className={`font-semibold ${
-                budgetProgress >= 100 ? "text-emerald-600" : "text-slate-700"
+                budgetProgress >= 100 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"
               }`}>
                 {budgetProgress}% achieved
               </span>
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 {budgetTarget - thisMonthRevenue > 0 
                   ? `₹${(budgetTarget - thisMonthRevenue).toLocaleString()} to go`
                   : "Target exceeded! 🎉"
@@ -286,110 +286,110 @@ export default async function BillingDashboardPage() {
 
       {/* Quick Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide">All Time Revenue</p>
-          <p className="text-xl font-bold text-slate-900 mt-1">₹{allTimeRevenue.toLocaleString()}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">All Time Revenue</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹{allTimeRevenue.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Total Receipts</p>
-          <p className="text-xl font-bold text-slate-900 mt-1">{allTimeReceipts.toLocaleString()}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Receipts</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">{allTimeReceipts.toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Avg. Receipt</p>
-          <p className="text-xl font-bold text-slate-900 mt-1">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Avg. Receipt</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
             ₹{allTimeReceipts > 0 ? Math.round(allTimeRevenue / allTimeReceipts).toLocaleString() : 0}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Discounts Given</p>
-          <p className="text-xl font-bold text-slate-900 mt-1">₹{thisMonthDiscount.toLocaleString()}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Discounts Given</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">₹{thisMonthDiscount.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-          <h3 className="font-semibold text-slate-900 mb-4">Quick Actions</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <Link
               href="/billing/analytics"
-              className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
+              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-brand-600" />
+                <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-900">View Analytics</p>
-                  <p className="text-sm text-slate-500">Charts & trends</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">View Analytics</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Charts & trends</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
             </Link>
 
             <Link
               href="/billing/outstanding"
-              className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
+              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-900">Outstanding Payments</p>
-                  <p className="text-sm text-slate-500">{unpaidCount} pending receipts</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">Outstanding Payments</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{unpaidCount} pending receipts</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
             </Link>
 
             <Link
               href="/billing/reports"
-              className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
+              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-violet-600" />
+                <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-900">Generate Reports</p>
-                  <p className="text-sm text-slate-500">Monthly & yearly</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">Generate Reports</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Monthly & yearly</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
             </Link>
 
             <Link
               href="/billing/expenses"
-              className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
+              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-red-600" />
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-900">Track Expenses</p>
-                  <p className="text-sm text-slate-500">₹{monthlyExpenses.toLocaleString()} this month</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">Track Expenses</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">₹{monthlyExpenses.toLocaleString()} this month</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
             </Link>
           </div>
         </div>
 
         {/* Recent Receipts */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-900">Recent Receipts</h3>
-            <Link href="/receipts" className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Recent Receipts</h3>
+            <Link href="/receipts" className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
               View all
             </Link>
           </div>
           {recentReceipts.length === 0 ? (
             <div className="text-center py-8">
-              <Receipt className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500">No receipts yet</p>
+              <Receipt className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-500 dark:text-slate-400">No receipts yet</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -397,22 +397,22 @@ export default async function BillingDashboardPage() {
                 <Link
                   key={receipt._id.toString()}
                   href={`/receipts/${receipt._id.toString()}`}
-                  className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors"
+                  className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                       receipt.isPaid ? "bg-emerald-500" : "bg-amber-500"
                     }`} />
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-900 truncate">
+                      <p className="font-medium text-slate-900 dark:text-slate-100 truncate">
                         {receipt.patientSnapshot.name}
                       </p>
-                      <p className="text-xs text-slate-500">{receipt.receiptNumber}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{receipt.receiptNumber}</p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-slate-900">₹{receipt.totalAmount}</p>
-                    <p className={`text-xs ${receipt.isPaid ? "text-emerald-600" : "text-amber-600"}`}>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">₹{receipt.totalAmount}</p>
+                    <p className={`text-xs ${receipt.isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                       {receipt.isPaid ? "Paid" : "Pending"}
                     </p>
                   </div>

@@ -124,13 +124,13 @@ export default function PrescriptionForm({
   return (
     <div className="space-y-4 sm:space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="bg-red-50 border border-red-200 dark:border-red-900 text-red-700 px-4 py-3 rounded-xl text-sm">
           {error}
         </div>
       )}
 
       {/* Chief Complaints & Diagnosis */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <Stethoscope className="w-5 h-5 text-brand-600" />
           Assessment
@@ -138,7 +138,7 @@ export default function PrescriptionForm({
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Chief Complaints
             </label>
             <textarea
@@ -147,13 +147,13 @@ export default function PrescriptionForm({
                 setFormData({ ...formData, chiefComplaints: e.target.value })
               }
               rows={2}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400 resize-none"
+              className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400 resize-none"
               placeholder="Patient's main complaints..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Diagnosis
             </label>
             <DiagnosisAutosuggest
@@ -168,7 +168,7 @@ export default function PrescriptionForm({
       </div>
 
       {/* Medications */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             <Pill className="w-5 h-5 text-brand-600" />
@@ -184,7 +184,7 @@ export default function PrescriptionForm({
             <button
               type="button"
               onClick={addMedication}
-              className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium"
+              className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 text-sm font-medium"
             >
               <Plus className="w-4 h-4" /> Add Medication
             </button>
@@ -210,7 +210,7 @@ export default function PrescriptionForm({
       </div>
 
       {/* Advice & Follow-up */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
         <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <ClipboardList className="w-5 h-5 text-brand-600" />
           Advice & Follow-up
@@ -218,7 +218,7 @@ export default function PrescriptionForm({
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Advice
             </label>
             <AdviceAutosuggest
@@ -231,7 +231,7 @@ export default function PrescriptionForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Follow-up Date
             </label>
             <input
@@ -240,7 +240,7 @@ export default function PrescriptionForm({
               onChange={(e) =>
                 setFormData({ ...formData, followUpDate: e.target.value })
               }
-              className="w-full sm:w-auto px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900"
+              className="w-full sm:w-auto px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 dark:text-slate-100"
             />
           </div>
         </div>

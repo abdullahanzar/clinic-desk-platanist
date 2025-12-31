@@ -89,7 +89,7 @@ export default function BillingAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function BillingAnalyticsPage() {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-500">Failed to load analytics</p>
+        <p className="text-slate-500 dark:text-slate-400">Failed to load analytics</p>
       </div>
     );
   }
@@ -113,85 +113,85 @@ export default function BillingAnalyticsPage() {
       <div className="mb-6 sm:mb-8">
         <Link
           href="/billing"
-          className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 text-sm mb-4"
+          className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Billing
         </Link>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Revenue Analytics</h1>
-        <p className="text-sm text-slate-500 mt-1">Track your clinic&apos;s financial performance</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Revenue Analytics</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track your clinic&apos;s financial performance</p>
       </div>
 
       {/* Month Selector */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-6 shadow-sm">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigateMonth(-1)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-brand-600" />
-            <span className="font-semibold text-slate-900">
+            <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
               {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
             </span>
           </div>
           <button
             onClick={() => navigateMonth(1)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             disabled={selectedYear === new Date().getFullYear() && selectedMonth === new Date().getMonth() + 1}
           >
-            <ChevronRight className="w-5 h-5 text-slate-600" />
+            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
       </div>
 
       {/* Month over Month Growth */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             {data.monthOverMonthGrowth >= 0 ? (
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <TrendingDown className="w-5 h-5 text-red-600" />
+              <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
             )}
-            <span className="text-sm text-slate-500">Month-over-Month</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">Month-over-Month</span>
           </div>
-          <p className={`text-3xl font-bold ${data.monthOverMonthGrowth >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <p className={`text-3xl font-bold ${data.monthOverMonthGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
             {data.monthOverMonthGrowth >= 0 ? "+" : ""}{data.monthOverMonthGrowth}%
           </p>
-          <p className="text-xs text-slate-500 mt-1">compared to last month</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">compared to last month</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-5 h-5 text-brand-600" />
-            <span className="text-sm text-slate-500">This Month&apos;s Revenue</span>
+            <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <span className="text-sm text-slate-500 dark:text-slate-400">This Month&apos;s Revenue</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">
+          <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
             ₹{(data.monthlyRevenue[data.monthlyRevenue.length - 1]?.totalRevenue || 0).toLocaleString()}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {data.monthlyRevenue[data.monthlyRevenue.length - 1]?.totalReceipts || 0} receipts
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <PieChart className="w-5 h-5 text-violet-600" />
-            <span className="text-sm text-slate-500">Avg Receipt Value</span>
+            <PieChart className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            <span className="text-sm text-slate-500 dark:text-slate-400">Avg Receipt Value</span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">
+          <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
             ₹{(data.monthlyRevenue[data.monthlyRevenue.length - 1]?.avgReceiptValue || 0).toLocaleString()}
           </p>
-          <p className="text-xs text-slate-500 mt-1">this month</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">this month</p>
         </div>
       </div>
 
       {/* Monthly Revenue Chart */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6 shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-6">Monthly Revenue Trend</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 mb-6 shadow-sm">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-6">Monthly Revenue Trend</h3>
         <div className="h-64 flex items-end gap-2">
           {data.monthlyRevenue.map((month, index) => {
             const height = (month.totalRevenue / maxMonthlyRevenue) * 100;
@@ -202,19 +202,19 @@ export default function BillingAnalyticsPage() {
                 className="flex-1 flex flex-col items-center gap-2"
               >
                 <div className="w-full flex flex-col items-center">
-                  <span className="text-xs text-slate-500 mb-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 mb-1">
                     ₹{(month.totalRevenue / 1000).toFixed(0)}k
                   </span>
                   <div
                     className={`w-full rounded-t-lg transition-all ${
                       isCurrentMonth 
-                        ? "bg-gradient-to-t from-brand-600 to-brand-500" 
-                        : "bg-gradient-to-t from-slate-300 to-slate-200"
+                        ? "bg-gradient-to-t from-teal-600 to-teal-500 dark:from-teal-500 dark:to-teal-400" 
+                        : "bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500"
                     }`}
                     style={{ height: `${Math.max(height, 4)}%` }}
                   />
                 </div>
-                <span className={`text-xs ${isCurrentMonth ? "text-brand-600 font-medium" : "text-slate-500"}`}>
+                <span className={`text-xs ${isCurrentMonth ? "text-teal-600 dark:text-teal-400 font-medium" : "text-slate-500 dark:text-slate-400"}`}>
                   {MONTH_NAMES[month.month - 1].slice(0, 3)}
                 </span>
               </div>
@@ -226,8 +226,8 @@ export default function BillingAnalyticsPage() {
       {/* Daily Revenue & Payment Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Daily Revenue */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-          <h3 className="font-semibold text-slate-900 mb-4">Daily Collection - {MONTH_NAMES[selectedMonth - 1]}</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Daily Collection - {MONTH_NAMES[selectedMonth - 1]}</h3>
           <div className="h-48 flex items-end gap-px overflow-x-auto">
             {data.dailyRevenue.map((day) => {
               const height = (day.revenue / maxDailyRevenue) * 100;
@@ -238,15 +238,15 @@ export default function BillingAnalyticsPage() {
                   className="flex-shrink-0 w-4 flex flex-col items-center group relative"
                 >
                   <div
-                    className="w-full bg-brand-500 rounded-t transition-all hover:bg-brand-600"
+                    className="w-full bg-teal-500 dark:bg-teal-400 rounded-t transition-all hover:bg-teal-600 dark:hover:bg-teal-300"
                     style={{ height: `${Math.max(height, 2)}%` }}
                   />
                   {dayNum % 5 === 1 && (
-                    <span className="text-[10px] text-slate-500 mt-1">{dayNum}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{dayNum}</span>
                   )}
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 hidden group-hover:block z-10">
-                    <div className="bg-slate-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                    <div className="bg-slate-900 dark:bg-slate-700 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
                       {dayNum}/{selectedMonth}: ₹{day.revenue.toLocaleString()}
                     </div>
                   </div>
@@ -257,20 +257,20 @@ export default function BillingAnalyticsPage() {
         </div>
 
         {/* Payment Mode Breakdown */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-          <h3 className="font-semibold text-slate-900 mb-4">Payment Mode Breakdown</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Payment Mode Breakdown</h3>
           <div className="space-y-4">
             {data.paymentModeBreakdown.map((mode) => (
               <div key={mode.mode}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {PAYMENT_MODE_LABELS[mode.mode] || mode.mode}
                   </span>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
                     ₹{mode.amount.toLocaleString()} ({mode.percentage}%)
                   </span>
                 </div>
-                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${PAYMENT_MODE_COLORS[mode.mode] || "bg-slate-400"}`}
                     style={{ width: `${mode.percentage}%` }}
@@ -279,15 +279,15 @@ export default function BillingAnalyticsPage() {
               </div>
             ))}
             {data.paymentModeBreakdown.length === 0 && (
-              <p className="text-slate-500 text-center py-8">No payment data for this month</p>
+              <p className="text-slate-500 dark:text-slate-400 text-center py-8">No payment data for this month</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Top Revenue Days */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-4">Top Revenue Days</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Top Revenue Days</h3>
         {data.topRevenueDays.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             {data.topRevenueDays.map((day, index) => {
@@ -297,17 +297,17 @@ export default function BillingAnalyticsPage() {
                   key={day.date}
                   className={`p-4 rounded-xl ${
                     index === 0 
-                      ? "bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-200" 
-                      : "bg-slate-50"
+                      ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-2 border-amber-200 dark:border-amber-800" 
+                      : "bg-slate-50 dark:bg-slate-700"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-sm font-bold ${index === 0 ? "text-amber-600" : "text-slate-400"}`}>
+                    <span className={`text-sm font-bold ${index === 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-400"}`}>
                       #{index + 1}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">₹{day.revenue.toLocaleString()}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-lg font-bold text-slate-900 dark:text-slate-100">₹{day.revenue.toLocaleString()}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                   </p>
                   <p className="text-xs text-slate-400">{day.receipts} receipts</p>
@@ -316,7 +316,7 @@ export default function BillingAnalyticsPage() {
             })}
           </div>
         ) : (
-          <p className="text-slate-500 text-center py-8">No revenue data for this month</p>
+          <p className="text-slate-500 dark:text-slate-400 text-center py-8">No revenue data for this month</p>
         )}
       </div>
     </div>

@@ -210,7 +210,7 @@ export default function ExpensesPage() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
       </div>
     );
   }
@@ -221,15 +221,15 @@ export default function ExpensesPage() {
       <div className="mb-6 sm:mb-8">
         <Link
           href="/billing"
-          className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 text-sm mb-4"
+          className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Billing
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Expense Tracking</h1>
-            <p className="text-sm text-slate-500 mt-1">Track your clinic&apos;s expenses</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Expense Tracking</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track your clinic&apos;s expenses</p>
           </div>
           <button
             onClick={openAddModal}
@@ -242,55 +242,55 @@ export default function ExpensesPage() {
       </div>
 
       {/* Month Selector */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-6 shadow-sm">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigateMonth(-1)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-red-600" />
-            <span className="font-semibold text-slate-900">
+            <Calendar className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
               {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
             </span>
           </div>
           <button
             onClick={() => navigateMonth(1)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <ChevronRight className="w-5 h-5 text-slate-600" />
+            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl border border-red-200 p-4 sm:p-5">
+        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 rounded-2xl border border-red-200 dark:border-red-800 p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-5 h-5 text-red-600" />
-            <span className="text-xs text-red-600">Total Expenses</span>
+            <Wallet className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <span className="text-xs text-red-600 dark:text-red-400">Total Expenses</span>
           </div>
-          <p className="text-2xl font-bold text-red-700">₹{(data?.summary.total || 0).toLocaleString()}</p>
-          <p className="text-xs text-red-600 mt-1">{data?.summary.count || 0} transactions</p>
+          <p className="text-2xl font-bold text-red-700 dark:text-red-300">₹{(data?.summary.total || 0).toLocaleString()}</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{data?.summary.count || 0} transactions</p>
         </div>
 
         {data?.summary.byCategory.slice(0, 3).map((cat) => (
-          <div key={cat.category} className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
+          <div key={cat.category} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-3 h-3 rounded-full ${getCategoryColor(cat.category)}`} />
-              <span className="text-xs text-slate-600">{getCategoryLabel(cat.category)}</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400">{getCategoryLabel(cat.category)}</span>
             </div>
-            <p className="text-xl font-bold text-slate-700">₹{cat.total.toLocaleString()}</p>
+            <p className="text-xl font-bold text-slate-700 dark:text-slate-200">₹{cat.total.toLocaleString()}</p>
           </div>
         ))}
       </div>
 
       {/* Category Breakdown */}
       {data?.summary.byCategory && data.summary.byCategory.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6 shadow-sm">
-          <h3 className="font-semibold text-slate-900 mb-4">Expense by Category</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 mb-6 shadow-sm">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Expense by Category</h3>
           <div className="space-y-3">
             {data.summary.byCategory.map((cat) => {
               const percentage = data.summary.total > 0
@@ -299,14 +299,14 @@ export default function ExpensesPage() {
               return (
                 <div key={cat.category}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       {getCategoryLabel(cat.category)}
                     </span>
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">
                       ₹{cat.total.toLocaleString()} ({percentage}%)
                     </span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${getCategoryColor(cat.category)}`}
                       style={{ width: `${percentage}%` }}
@@ -321,54 +321,54 @@ export default function ExpensesPage() {
 
       {/* Expenses List */}
       {!data || data.expenses.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <Wallet className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Expenses Yet</h3>
-          <p className="text-slate-500 mb-4">Start tracking your clinic expenses</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center">
+          <Wallet className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">No Expenses Yet</h3>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">Start tracking your clinic expenses</p>
           <button
             onClick={openAddModal}
-            className="text-brand-600 hover:text-brand-700 font-medium"
+            className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
           >
             Add your first expense →
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.expenses.map((expense) => (
-                  <tr key={expense._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-4 text-sm text-slate-600">
+                  <tr key={expense._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
                       {new Date(expense.expenseDate).toLocaleDateString("en-IN")}
                     </td>
                     <td className="px-4 py-4">
                       <div>
-                        <p className="font-medium text-slate-900">{expense.description}</p>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</p>
                         {expense.vendor && (
-                          <p className="text-xs text-slate-500">{expense.vendor}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{expense.vendor}</p>
                         )}
                         {expense.isRecurring && (
-                          <span className="inline-flex items-center gap-1 text-xs text-amber-600 mt-1">
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">
                             <RefreshCcw className="w-3 h-3" />
                             {expense.recurringFrequency}
                           </span>
@@ -380,14 +380,14 @@ export default function ExpensesPage() {
                         {getCategoryLabel(expense.category)}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right font-semibold text-slate-900">
+                    <td className="px-4 py-4 text-right font-semibold text-slate-900 dark:text-slate-100">
                       ₹{expense.amount.toLocaleString()}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => openEditModal(expense)}
-                          className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>

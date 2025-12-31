@@ -26,7 +26,7 @@ export default async function VisitsPage() {
     patient: v.patient,
     visitReason: v.visitReason,
     visitDate: v.visitDate.toISOString(),
-    tokenNumber: v.tokenNumber,
+    tokenNumber: v.tokenNumber ?? 0,
     status: v.status,
     createdAt: v.createdAt.toISOString(),
   }));

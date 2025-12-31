@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { formatDateIndian } from "@/lib/utils/date";
 import { ShareReceiptButton } from "@/components/receipts/share-receipt-button";
 import { PrintButton } from "@/components/receipts/print-button";
+import { DeleteReceiptButton } from "@/components/receipts/delete-receipt-button";
 import Link from "next/link";
 import { ChevronLeft, Check, Clock, Pill } from "lucide-react";
 
@@ -44,14 +45,14 @@ export default async function ReceiptDetailPage({
       {/* Back Link */}
       <Link
         href="/receipts"
-        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4 no-print"
       >
         <ChevronLeft className="w-4 h-4" />
         Back to Receipts
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6 no-print">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
             Receipt {receipt.receiptNumber}
@@ -74,18 +75,32 @@ export default async function ReceiptDetailPage({
       </div>
 
       {/* Receipt Content */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-6">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-6 printable-receipt">
         {/* Clinic Header */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center">
+        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center print:bg-teal-700 print:from-teal-700 print:to-teal-700">
           <h2 className="text-lg sm:text-xl font-bold">{clinic?.name}</h2>
-          {clinic?.address && (
-            <p className="text-brand-100 text-sm mt-1">
-              {clinic.address.line1}, {clinic.address.city}
+          {clinic?.headerText && (
+            <p className="text-brand-100 text-xs mt-0.5">{clinic.headerText}</p>
+          )}
+          {clinic?.publicProfile?.doctorName && (
+            <p className="text-brand-50 text-sm mt-1 font-medium">
+              {clinic.publicProfile.doctorName}
+              {clinic.publicProfile.qualifications && (
+                <span className="font-normal text-brand-100"> ({clinic.publicProfile.qualifications})</span>
+              )}
             </p>
           )}
-          {clinic?.phone && (
-            <p className="text-brand-100 text-sm">Ph: {clinic.phone}</p>
+          {clinic?.address && (
+            <p className="text-brand-100 text-sm mt-1">
+              {clinic.address.line1}
+              {clinic.address.line2 && `, ${clinic.address.line2}`}
+              , {clinic.address.city} - {clinic.address.pincode}
+            </p>
           )}
+          <div className="flex items-center justify-center gap-3 text-brand-100 text-sm mt-1">
+            {clinic?.phone && <span>Ph: {clinic.phone}</span>}
+            {clinic?.email && <span>• {clinic.email}</span>}
+          </div>
         </div>
 
         <div className="p-5 sm:p-6">
@@ -177,6 +192,16 @@ export default async function ReceiptDetailPage({
             </div>
           )}
 
+          {/* Tax Information */}
+          {clinic?.taxInfo?.showTaxOnReceipt && (clinic?.taxInfo?.gstin || clinic?.taxInfo?.registrationNumber || clinic?.taxInfo?.pan) && (
+            <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-0.5">
+              {clinic.taxInfo.gstin && <p>GSTIN: {clinic.taxInfo.gstin}</p>}
+              {clinic.taxInfo.pan && <p>PAN: {clinic.taxInfo.pan}</p>}
+              {clinic.taxInfo.registrationNumber && <p>Reg. No: {clinic.taxInfo.registrationNumber}</p>}
+              {clinic.taxInfo.sacCode && <p>SAC Code: {clinic.taxInfo.sacCode}</p>}
+            </div>
+          )}
+
           {/* Footer */}
           {clinic?.footerText && (
             <div className="mt-6 pt-4 border-t border-slate-200 text-center">
@@ -192,7 +217,10 @@ export default async function ReceiptDetailPage({
           receiptId={id}
           isCurrentlyShared={isCurrentlyShared}
         />
-        <PrintButton />
+        <PrintButton receiptId={id} />
+        {session.role === "doctor" && (
+          <DeleteReceiptButton receiptId={id} />
+        )}
       </div>
     </div>
   );

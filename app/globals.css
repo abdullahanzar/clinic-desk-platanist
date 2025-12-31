@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
-:root {
+/* Enable dark mode via class */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light Theme (default) */
+:root,
+.light {
   --background: #f8fafb;
   --foreground: #1a2e35;
   
@@ -35,6 +40,86 @@
   --slate-700: #334155;
   --slate-800: #1e293b;
   --slate-900: #0f172a;
+
+  /* Semantic surface colors */
+  --surface: #ffffff;
+  --surface-secondary: #f8fafc;
+  --surface-elevated: #ffffff;
+  --border: #e2e8f0;
+  --border-muted: #f1f5f9;
+  
+  /* State colors */
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #047857;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --warning-text: #b45309;
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #dc2626;
+  --info-bg: #eff6ff;
+  --info-border: #bfdbfe;
+  --info-text: #1d4ed8;
+}
+
+/* Dark Theme */
+.dark {
+  --background: #0c1317;
+  --foreground: #e2e8f0;
+  
+  /* Brand Colors - Adjusted for dark mode */
+  --brand-50: #042f2e;
+  --brand-100: #134e4a;
+  --brand-200: #115e59;
+  --brand-300: #0f766e;
+  --brand-400: #14b8a6;
+  --brand-500: #2dd4bf;
+  --brand-600: #5eead4;
+  --brand-700: #99f6e4;
+  --brand-800: #ccfbf1;
+  --brand-900: #f0fdfa;
+  
+  /* Accent - Warm Orange for CTAs (adjusted for dark) */
+  --accent-50: #431407;
+  --accent-100: #7c2d12;
+  --accent-200: #c2410c;
+  --accent-400: #fb923c;
+  --accent-500: #fdba74;
+  --accent-600: #fed7aa;
+  
+  /* Neutral tones - Inverted for dark mode */
+  --slate-50: #0f172a;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+
+  /* Semantic surface colors */
+  --surface: #151f28;
+  --surface-secondary: #0c1317;
+  --surface-elevated: #1a2530;
+  --border: #2d3b47;
+  --border-muted: #1e293b;
+  
+  /* State colors - Dark mode adjusted */
+  --success-bg: #052e16;
+  --success-border: #166534;
+  --success-text: #86efac;
+  --warning-bg: #451a03;
+  --warning-border: #92400e;
+  --warning-text: #fde68a;
+  --error-bg: #450a0a;
+  --error-border: #991b1b;
+  --error-text: #fca5a5;
+  --info-bg: #1e3a5f;
+  --info-border: #1e40af;
+  --info-text: #93c5fd;
 }
 
 @theme inline {
@@ -61,12 +146,20 @@
   --color-accent-400: var(--accent-400);
   --color-accent-500: var(--accent-500);
   --color-accent-600: var(--accent-600);
+
+  /* Surface colors */
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-border-muted: var(--border-muted);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Focus styles */
@@ -94,13 +187,92 @@ body {
   background: var(--slate-400);
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: var(--slate-100);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Print styles */
 @media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the printable receipt and its children */
+  .printable-receipt,
+  .printable-receipt * {
+    visibility: visible;
+  }
+  
+  /* Position the receipt at top of page */
+  .printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  /* Hide elements with no-print class */
   .no-print {
     display: none !important;
   }
   
+  /* Reset colors for print */
   body {
-    background: white;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Clinic header styling for print */
+  .printable-receipt > div:first-child {
+    background: #0d9488 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure text is readable */
+  .printable-receipt p,
+  .printable-receipt span,
+  .printable-receipt td,
+  .printable-receipt th {
+    color: #1a1a1a !important;
+  }
+  
+  /* Keep header text white */
+  .printable-receipt > div:first-child * {
+    color: white !important;
+  }
+  
+  /* Ensure proper page sizing */
+  @page {
+    size: A4;
+    margin: 15mm;
   }
 }

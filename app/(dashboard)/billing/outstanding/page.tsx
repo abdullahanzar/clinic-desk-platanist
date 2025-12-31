@@ -118,7 +118,7 @@ export default function OutstandingPaymentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
       </div>
     );
   }
@@ -126,7 +126,7 @@ export default function OutstandingPaymentsPage() {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-500">Failed to load outstanding payments</p>
+        <p className="text-slate-500 dark:text-slate-400">Failed to load outstanding payments</p>
       </div>
     );
   }
@@ -137,63 +137,63 @@ export default function OutstandingPaymentsPage() {
       <div className="mb-6 sm:mb-8">
         <Link
           href="/billing"
-          className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700 text-sm mb-4"
+          className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Billing
         </Link>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Outstanding Payments</h1>
-        <p className="text-sm text-slate-500 mt-1">Track and collect pending payments</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Outstanding Payments</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track and collect pending payments</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 p-4 sm:p-5">
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-amber-600" />
-            <span className="text-xs text-amber-600">Total Pending</span>
+            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs text-amber-600 dark:text-amber-400">Total Pending</span>
           </div>
-          <p className="text-2xl font-bold text-amber-700">₹{data.summary.totalPending.toLocaleString()}</p>
-          <p className="text-xs text-amber-600 mt-1">{data.summary.totalCount} receipts</p>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">₹{data.summary.totalPending.toLocaleString()}</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{data.summary.totalCount} receipts</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
-          <p className="text-xs text-slate-500 mb-1">Today</p>
-          <p className="text-2xl font-bold text-slate-700">{data.summary.ageGroups.today}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Today</p>
+          <p className="text-2xl font-bold text-slate-700 dark:text-slate-200">{data.summary.ageGroups.today}</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
-          <p className="text-xs text-slate-500 mb-1">This Week</p>
-          <p className="text-2xl font-bold text-amber-600">{data.summary.ageGroups.thisWeek}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">This Week</p>
+          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{data.summary.ageGroups.thisWeek}</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
-          <p className="text-xs text-slate-500 mb-1">Older (30+ days)</p>
-          <p className="text-2xl font-bold text-red-600">{data.summary.ageGroups.older}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Older (30+ days)</p>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{data.summary.ageGroups.older}</p>
         </div>
       </div>
 
       {/* Bulk Actions */}
       {data.receipts.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={selectAll}
-                className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-800"
+                className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               >
                 <CheckSquare className="w-4 h-4" />
                 Select All
               </button>
               <button
                 onClick={deselectAll}
-                className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-800"
+                className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               >
                 <XSquare className="w-4 h-4" />
                 Deselect
               </button>
               {selectedIds.length > 0 && (
-                <span className="text-sm text-brand-600 font-medium">
+                <span className="text-sm text-teal-600 dark:text-teal-400 font-medium">
                   {selectedIds.length} selected
                 </span>
               )}
@@ -205,7 +205,7 @@ export default function OutstandingPaymentsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500"
+                  className="text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="date">Sort by Date</option>
                   <option value="amount">Sort by Amount</option>
@@ -218,7 +218,7 @@ export default function OutstandingPaymentsPage() {
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-                    className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500"
+                    className="text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="cash">Cash</option>
                     <option value="upi">UPI</option>
@@ -246,12 +246,12 @@ export default function OutstandingPaymentsPage() {
 
       {/* Receipts List */}
       {data.receipts.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-emerald-600" />
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">All Caught Up!</h3>
-          <p className="text-slate-500">No outstanding payments at the moment.</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">All Caught Up!</h3>
+          <p className="text-slate-500 dark:text-slate-400">No outstanding payments at the moment.</p>
         </div>
       ) : (
         <>
@@ -260,10 +260,10 @@ export default function OutstandingPaymentsPage() {
             {data.receipts.map((receipt) => (
               <div
                 key={receipt._id}
-                className={`bg-white rounded-xl border p-4 transition-all ${
+                className={`bg-white dark:bg-slate-800 rounded-xl border p-4 transition-all ${
                   selectedIds.includes(receipt._id)
-                    ? "border-brand-500 ring-2 ring-brand-100"
-                    : "border-slate-200"
+                    ? "border-teal-500 ring-2 ring-teal-100 dark:ring-teal-900/30"
+                    : "border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -271,18 +271,18 @@ export default function OutstandingPaymentsPage() {
                     type="checkbox"
                     checked={selectedIds.includes(receipt._id)}
                     onChange={() => toggleSelect(receipt._id)}
-                    className="mt-1 w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    className="mt-1 w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium text-slate-900">{receipt.patientSnapshot.name}</p>
-                        <p className="text-sm text-slate-500 font-mono">{receipt.receiptNumber}</p>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{receipt.patientSnapshot.name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-mono">{receipt.receiptNumber}</p>
                       </div>
-                      <p className="font-bold text-lg text-slate-900">₹{receipt.totalAmount}</p>
+                      <p className="font-bold text-lg text-slate-900 dark:text-slate-100">₹{receipt.totalAmount}</p>
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {formatDateIndian(new Date(receipt.receiptDate))}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${getOverdueColor(receipt.daysOverdue)}`}>
@@ -292,7 +292,7 @@ export default function OutstandingPaymentsPage() {
                   </div>
                   <Link
                     href={`/receipts/${receipt._id}`}
-                    className="p-2 text-slate-400 hover:text-brand-600"
+                    className="p-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </Link>
@@ -302,9 +302,9 @@ export default function OutstandingPaymentsPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="px-4 py-4 text-left">
                     <input
@@ -313,35 +313,35 @@ export default function OutstandingPaymentsPage() {
                       onChange={() =>
                         selectedIds.length === data.receipts.length ? deselectAll() : selectAll()
                       }
-                      className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
                     />
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Receipt
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Patient
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Age
                   </th>
-                  <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.receipts.map((receipt) => (
                   <tr
                     key={receipt._id}
-                    className={`hover:bg-slate-50 transition-colors ${
-                      selectedIds.includes(receipt._id) ? "bg-brand-50" : ""
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                      selectedIds.includes(receipt._id) ? "bg-teal-50 dark:bg-teal-900/20" : ""
                     }`}
                   >
                     <td className="px-4 py-4">
@@ -349,33 +349,32 @@ export default function OutstandingPaymentsPage() {
                         type="checkbox"
                         checked={selectedIds.includes(receipt._id)}
                         onChange={() => toggleSelect(receipt._id)}
-                        className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
                       />
                     </td>
-                    <td className="px-4 py-4 font-mono text-sm text-slate-900">
+                    <td className="px-4 py-4 font-mono text-sm text-slate-900 dark:text-slate-100">
                       {receipt.receiptNumber}
                     </td>
                     <td className="px-4 py-4">
-                      <p className="font-medium text-slate-900">{receipt.patientSnapshot.name}</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{receipt.patientSnapshot.name}</p>
                       {receipt.patientSnapshot.phone && (
-                        <p className="text-sm text-slate-500">{receipt.patientSnapshot.phone}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{receipt.patientSnapshot.phone}</p>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDateIndian(new Date(receipt.receiptDate))}
+                    <td className="px-4 py-4 text-slate-600 dark:text-slate-400">
                     </td>
                     <td className="px-4 py-4">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${getOverdueColor(receipt.daysOverdue)}`}>
                         {receipt.daysOverdue === 0 ? "Today" : `${receipt.daysOverdue} days`}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right font-bold text-slate-900">
+                    <td className="px-4 py-4 text-right font-bold text-slate-900 dark:text-slate-100">
                       ₹{receipt.totalAmount.toLocaleString()}
                     </td>
                     <td className="px-4 py-4">
                       <Link
                         href={`/receipts/${receipt._id}`}
-                        className="text-brand-600 hover:text-brand-700 font-medium text-sm flex items-center gap-1"
+                        className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium text-sm flex items-center gap-1"
                       >
                         View <ChevronRight className="w-4 h-4" />
                       </Link>

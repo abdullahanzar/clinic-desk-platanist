@@ -1,6 +1,6 @@
 import { getClinicsCollection, getReceiptsCollection } from "@/lib/db/collections";
 import { formatDateIndian } from "@/lib/utils/date";
-import { PrintButton } from "@/components/receipts/print-button";
+import { PublicPrintButton } from "@/components/receipts/public-print-button";
 import { RefreshButton } from "@/components/receipts/refresh-button";
 import { Building2, Receipt, Download, Check, Clock, Pill } from "lucide-react";
 
@@ -73,14 +73,28 @@ export default async function CurrentSharedReceiptPage() {
           {/* Header */}
           <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center">
             <h1 className="text-lg sm:text-xl font-bold">{clinic.name}</h1>
-            {clinic.address && (
-              <p className="text-brand-100 text-sm mt-1">
-                {clinic.address.line1}, {clinic.address.city}
+            {clinic.headerText && (
+              <p className="text-brand-100 text-xs mt-0.5">{clinic.headerText}</p>
+            )}
+            {clinic.publicProfile?.doctorName && (
+              <p className="text-brand-50 text-sm mt-1 font-medium">
+                {clinic.publicProfile.doctorName}
+                {clinic.publicProfile.qualifications && (
+                  <span className="font-normal text-brand-100"> ({clinic.publicProfile.qualifications})</span>
+                )}
               </p>
             )}
-            {clinic.phone && (
-              <p className="text-brand-100 text-sm">Ph: {clinic.phone}</p>
+            {clinic.address && (
+              <p className="text-brand-100 text-sm mt-1">
+                {clinic.address.line1}
+                {clinic.address.line2 && `, ${clinic.address.line2}`}
+                , {clinic.address.city} - {clinic.address.pincode}
+              </p>
             )}
+            <div className="flex items-center justify-center gap-3 text-brand-100 text-sm mt-1">
+              {clinic.phone && <span>Ph: {clinic.phone}</span>}
+              {clinic.email && <span>• {clinic.email}</span>}
+            </div>
           </div>
 
           {/* Receipt Content */}
@@ -168,6 +182,15 @@ export default async function CurrentSharedReceiptPage() {
               </span>
             </div>
 
+            {/* Tax Information */}
+            {clinic.taxInfo?.showTaxOnReceipt && (clinic.taxInfo?.gstin || clinic.taxInfo?.registrationNumber || clinic.taxInfo?.pan) && (
+              <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-0.5 text-center">
+                {clinic.taxInfo.gstin && <p>GSTIN: {clinic.taxInfo.gstin}</p>}
+                {clinic.taxInfo.pan && <p>PAN: {clinic.taxInfo.pan}</p>}
+                {clinic.taxInfo.registrationNumber && <p>Reg. No: {clinic.taxInfo.registrationNumber}</p>}
+              </div>
+            )}
+
             {/* Footer */}
             {clinic.footerText && (
               <div className="mt-6 pt-4 border-t border-slate-200 text-center">
@@ -181,12 +204,17 @@ export default async function CurrentSharedReceiptPage() {
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
           <a
             href={`/api/public/receipt/${receipt._id.toString()}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white text-center font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 shadow-lg shadow-brand-500/20 transition-all"
           >
             <Download className="w-5 h-5" />
             Download PDF
           </a>
-          <PrintButton className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors" />
+          <PublicPrintButton 
+            receiptId={receipt._id.toString()} 
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50" 
+          />
         </div>
 
         {/* Expiry Notice */}

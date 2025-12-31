@@ -20,6 +20,15 @@ export interface PublicProfile {
   aboutText?: string;
 }
 
+// Tax Information for Receipts
+export interface TaxInfo {
+  gstin?: string; // GST Identification Number
+  pan?: string; // PAN Number
+  registrationNumber?: string; // Clinic Registration Number
+  sacCode?: string; // SAC Code for services
+  showTaxOnReceipt: boolean;
+}
+
 export interface Clinic {
   _id: ObjectId;
   name: string;
@@ -27,6 +36,7 @@ export interface Clinic {
   address: Address;
   phone: string;
   email?: string;
+  website?: string;
 
   // QR Receipt System
   currentSharedReceiptId: ObjectId | null;
@@ -37,6 +47,9 @@ export interface Clinic {
   logoUrl?: string;
   headerText?: string;
   footerText?: string;
+
+  // Tax Information
+  taxInfo?: TaxInfo;
 
   // Doctor Website (public profile)
   publicProfile: PublicProfile;

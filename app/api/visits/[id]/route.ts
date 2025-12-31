@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection } from "@/lib/db/collections";
+import { getVisitsCollection, getPrescriptionsCollection, getReceiptsCollection } from "@/lib/db/collections";
 
 // GET /api/visits/[id] - Get single visit
 export async function GET(
@@ -122,6 +122,66 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Update visit error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/visits/[id] - Delete visit and related data (doctor only)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only doctors can delete visits
+    if (session.role !== "doctor") {
+      return NextResponse.json(
+        { error: "Only doctors can delete visits" },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await params;
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid visit ID" }, { status: 400 });
+    }
+
+    const visitId = new ObjectId(id);
+    const clinicId = new ObjectId(session.clinicId);
+
+    const visits = await getVisitsCollection();
+    const prescriptions = await getPrescriptionsCollection();
+    const receipts = await getReceiptsCollection();
+
+    // Check if visit exists
+    const visit = await visits.findOne({ _id: visitId, clinicId });
+    if (!visit) {
+      return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+    }
+
+    // Delete related prescriptions
+    await prescriptions.deleteMany({ visitId, clinicId });
+
+    // Delete related receipts
+    await receipts.deleteMany({ visitId, clinicId });
+
+    // Delete the visit
+    await visits.deleteOne({ _id: visitId, clinicId });
+
+    return NextResponse.json({
+      success: true,
+      message: "Visit and related data deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete visit error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

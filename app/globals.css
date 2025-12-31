@@ -210,6 +210,13 @@ body {
   display: none;
 }
 
+/* Safe area support for mobile devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Print styles */
 @media print {
   /* Hide everything by default */

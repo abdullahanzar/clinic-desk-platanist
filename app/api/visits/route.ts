@@ -11,6 +11,9 @@ import type { VisitInsert } from "@/types";
 // - startDate, endDate: date range
 // - month, year: month view (e.g., month=1&year=2026)
 // - status: filter by status
+// - search: search by patient name or phone
+// - page: page number (1-indexed)
+// - limit: items per page (default 20)
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -25,10 +28,13 @@ export async function GET(request: Request) {
     const monthParam = searchParams.get("month");
     const yearParam = searchParams.get("year");
     const statusParam = searchParams.get("status");
+    const searchQuery = searchParams.get("search");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
 
     const visits = await getVisitsCollection();
 
-    let dateFilter: { $gte: Date; $lte: Date };
+    let dateFilter: { $gte: Date; $lte: Date } | undefined;
 
     if (monthParam && yearParam) {
       // Month view: get all visits for a specific month
@@ -43,9 +49,18 @@ export async function GET(request: Request) {
         $gte: startOfDay(new Date(startDateParam)),
         $lte: endOfDay(new Date(endDateParam)),
       };
-    } else {
-      // Single date view (default to today)
-      const date = dateParam ? new Date(dateParam) : new Date();
+    } else if (dateParam) {
+      // Single date view
+      const date = new Date(dateParam);
+      dateFilter = {
+        $gte: startOfDay(date),
+        $lte: endOfDay(date),
+      };
+    }
+    // If no date params provided and no search, default to today
+    // If search is provided without date, search across all visits
+    if (!dateFilter && !searchQuery) {
+      const date = new Date();
       dateFilter = {
         $gte: startOfDay(date),
         $lte: endOfDay(date),
@@ -54,16 +69,36 @@ export async function GET(request: Request) {
 
     const query: Record<string, unknown> = {
       clinicId: new ObjectId(session.clinicId),
-      visitDate: dateFilter,
     };
+
+    if (dateFilter) {
+      query.visitDate = dateFilter;
+    }
 
     if (statusParam) {
       query.status = statusParam;
     }
 
+    // Add search filter for patient name or phone
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = { $regex: searchQuery.trim(), $options: "i" };
+      query.$or = [
+        { "patient.name": searchRegex },
+        { "patient.phone": searchRegex },
+      ];
+    }
+
+    // Get total count for pagination
+    const totalCount = await visits.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limit);
+    const skip = (page - 1) * limit;
+
+    // Sort by most recent first (createdAt descending), then by token number
     const results = await visits
       .find(query)
-      .sort({ visitDate: -1, tokenNumber: 1, createdAt: 1 })
+      .sort({ createdAt: -1, tokenNumber: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
 
     return NextResponse.json({
@@ -74,6 +109,14 @@ export async function GET(request: Request) {
         createdBy: v.createdBy.toString(),
         consultedBy: v.consultedBy?.toString(),
       })),
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error) {
     console.error("Get visits error:", error);

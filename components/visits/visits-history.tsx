@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +15,9 @@ import {
   User,
   ClipboardList,
   Plus,
+  Search,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 type ViewMode = "day" | "month";
@@ -34,9 +37,19 @@ interface Visit {
   createdAt: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 interface VisitsHistoryProps {
   role: string;
   initialVisits: Visit[];
+  initialPagination: Pagination;
 }
 
 const statusConfig = {
@@ -89,12 +102,15 @@ function formatDateISO(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
-export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProps) {
+export default function VisitsHistory({ role, initialVisits, initialPagination }: VisitsHistoryProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [visits, setVisits] = useState<Visit[]>(initialVisits);
+  const [pagination, setPagination] = useState<Pagination>(initialPagination);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   
   // New visit form state
   const [showNewVisitForm, setShowNewVisitForm] = useState(false);
@@ -114,37 +130,58 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
     selectedDate.getMonth() === today.getMonth() &&
     selectedDate.getFullYear() === today.getFullYear();
 
-  // Fetch visits when date or view mode changes
+  // Debounce search input
   useEffect(() => {
-    // Skip initial fetch on today (we have initialVisits)
-    if (isToday && viewMode === "day" && visits === initialVisits) {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch visits function
+  const fetchVisits = useCallback(async (page: number = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", page.toString());
+      params.set("limit", pagination.limit.toString());
+      
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+        // When searching, don't filter by date
+      } else if (viewMode === "month") {
+        params.set("month", (selectedDate.getMonth() + 1).toString());
+        params.set("year", selectedDate.getFullYear().toString());
+      } else {
+        params.set("date", formatDateISO(selectedDate));
+      }
+
+      const res = await fetch(`/api/visits?${params.toString()}`);
+      const data = await res.json();
+      if (data.visits) {
+        setVisits(data.visits);
+        setPagination(data.pagination);
+      }
+    } catch (error) {
+      console.error("Failed to fetch visits:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDate, viewMode, debouncedSearch, pagination.limit]);
+
+  // Fetch visits when date, view mode, or search changes
+  useEffect(() => {
+    // Skip initial fetch on today with no search (we have initialVisits)
+    if (isToday && viewMode === "day" && !debouncedSearch && visits === initialVisits) {
       return;
     }
 
-    const fetchVisits = async () => {
-      setLoading(true);
-      try {
-        let url = "/api/visits?";
-        if (viewMode === "month") {
-          url += `month=${selectedDate.getMonth() + 1}&year=${selectedDate.getFullYear()}`;
-        } else {
-          url += `date=${formatDateISO(selectedDate)}`;
-        }
+    fetchVisits(1);
+  }, [selectedDate, viewMode, debouncedSearch]);
 
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.visits) {
-          setVisits(data.visits);
-        }
-      } catch (error) {
-        console.error("Failed to fetch visits:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVisits();
-  }, [selectedDate, viewMode]);
+  const handlePageChange = (newPage: number) => {
+    fetchVisits(newPage);
+  };
 
   const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(selectedDate);
@@ -180,16 +217,9 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
       }
 
       // Add the new visit to the list if we're viewing today
-      if (isToday && viewMode === "day") {
-        setVisits((prev) => [...prev, {
-          _id: data.visit._id,
-          patient: data.visit.patient,
-          visitReason: data.visit.visitReason,
-          visitDate: data.visit.visitDate,
-          tokenNumber: data.visit.tokenNumber,
-          status: data.visit.status,
-          createdAt: data.visit.createdAt,
-        }].sort((a, b) => a.tokenNumber - b.tokenNumber));
+      if (isToday && viewMode === "day" && !debouncedSearch) {
+        // Refresh the list to get the new visit at the top
+        fetchVisits(1);
       }
 
       // Reset form and close
@@ -249,19 +279,23 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {isToday && viewMode === "day"
+              {debouncedSearch
+                ? "Search Results"
+                : isToday && viewMode === "day"
                 ? "Today's Queue"
                 : viewMode === "day"
                 ? "Visit History"
                 : "Monthly Overview"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              {stats.total} patient{stats.total !== 1 ? "s" : ""}
-              {viewMode === "day" && !isToday && ` on ${formatDate(selectedDate)}`}
-              {viewMode === "month" && ` in ${formatMonthYear(selectedDate)}`}
+              {debouncedSearch
+                ? `${pagination.totalCount} result${pagination.totalCount !== 1 ? "s" : ""} for "${debouncedSearch}"`
+                : `${pagination.totalCount} patient${pagination.totalCount !== 1 ? "s" : ""}${
+                    viewMode === "day" && !isToday ? ` on ${formatDate(selectedDate)}` : ""
+                  }${viewMode === "month" ? ` in ${formatMonthYear(selectedDate)}` : ""}`}
             </p>
           </div>
-          {isToday && viewMode === "day" && (
+          {isToday && viewMode === "day" && !debouncedSearch && (
             <button
               onClick={() => setShowNewVisitForm(true)}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all shadow-lg shadow-brand-500/20 font-medium"
@@ -272,8 +306,29 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
           )}
         </div>
 
-        {/* View Mode & Date Navigation */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by patient name or phone..."
+            className="w-full pl-12 pr-10 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* View Mode & Date Navigation - Hide when searching */}
+        {!debouncedSearch && (
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3">
           {/* View Mode Toggle */}
           <div className="flex items-center gap-2">
             <button
@@ -355,9 +410,10 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
             </button>
           </div>
         </div>
+        )}
 
         {/* Stats Summary */}
-        {visits.length > 0 && (
+        {visits.length > 0 && !debouncedSearch && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-emerald-50 dark:bg-emerald-950 rounded-xl p-3 border border-emerald-100 dark:border-emerald-800">
               <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{stats.completed}</p>
@@ -393,13 +449,24 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
             <Users className="w-8 h-8 text-slate-400 dark:text-slate-500" />
           </div>
           <p className="text-slate-600 font-medium">
-            {viewMode === "day"
+            {debouncedSearch
+              ? `No patients found matching "${debouncedSearch}"`
+              : viewMode === "day"
               ? isToday
                 ? "No visits today yet"
                 : `No visits on ${formatDate(selectedDate)}`
               : `No visits in ${formatMonthYear(selectedDate)}`}
           </p>
-          {isToday && viewMode === "day" && (
+          {debouncedSearch && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="inline-flex items-center gap-2 mt-4 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
+            >
+              <X className="w-4 h-4" />
+              Clear search
+            </button>
+          )}
+          {!debouncedSearch && isToday && viewMode === "day" && (
             <button
               onClick={() => setShowNewVisitForm(true)}
               className="inline-flex items-center gap-2 mt-4 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
@@ -411,8 +478,8 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
         </div>
       )}
 
-      {/* Day View */}
-      {!loading && visits.length > 0 && viewMode === "day" && (
+      {/* Day View or Search Results */}
+      {!loading && visits.length > 0 && (viewMode === "day" || debouncedSearch) && (
         <>
           {/* Mobile Cards View */}
           <div className="lg:hidden space-y-3">
@@ -450,6 +517,7 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
                       {visit.visitReason}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
+                      {debouncedSearch && `${formatDateShort(new Date(visit.visitDate))} • `}
                       {formatTime(visit.createdAt)}
                     </p>
                   </div>
@@ -473,6 +541,11 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Reason
                     </th>
+                    {debouncedSearch && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Date
+                      </th>
+                    )}
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Time
                     </th>
@@ -507,6 +580,11 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
                       <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
                         {visit.visitReason}
                       </td>
+                      {debouncedSearch && (
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {formatDateShort(new Date(visit.visitDate))}
+                        </td>
+                      )}
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                         {formatTime(visit.createdAt)}
                       </td>
@@ -535,11 +613,57 @@ export default function VisitsHistory({ role, initialVisits }: VisitsHistoryProp
               </table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of {pagination.totalCount} visits
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={!pagination.hasPrevPage}
+                  className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={!pagination.hasPrevPage}
+                  className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={!pagination.hasNextPage}
+                  className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.totalPages)}
+                  disabled={!pagination.hasNextPage}
+                  className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
       {/* Month View */}
-      {!loading && visits.length > 0 && viewMode === "month" && (
+      {!loading && visits.length > 0 && viewMode === "month" && !debouncedSearch && (
         <div className="space-y-4">
           {Object.entries(groupedVisits)
             .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())

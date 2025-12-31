@@ -139,26 +139,42 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 safe-area-pb">
-        <ul className="flex items-center justify-around">
-          {navItems.map((item) => {
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
+        <ul className="flex items-center justify-around px-1 py-1.5 overflow-x-auto scrollbar-hide">
+          {navItems.slice(0, 5).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
-              <li key={item.href}>
+              <li key={item.href} className="flex-shrink-0">
                 <Link
                   href={item.href}
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
+                  className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
                     isActive
-                      ? "text-brand-600 dark:text-brand-400"
-                      : "text-slate-500 dark:text-slate-400"
+                      ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                      : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                   }`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
+                  <span className="text-[10px] font-medium leading-tight truncate max-w-[56px]">{item.label}</span>
                 </Link>
               </li>
             );
           })}
+          {/* More menu for additional items on mobile */}
+          {navItems.length > 5 && (
+            <li className="flex-shrink-0">
+              <Link
+                href={navItems[5].href}
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
+                  navItems.slice(5).some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
+                    ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                    : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-[10px] font-medium leading-tight">More</span>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
     </>

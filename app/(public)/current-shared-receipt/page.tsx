@@ -221,11 +221,6 @@ export default async function CurrentSharedReceiptPage() {
         <p className="mt-6 text-center text-sm text-slate-400">
           This receipt will expire shortly. Please download or print if needed.
         </p>
-
-        {/* Branding */}
-        <p className="mt-4 text-center text-xs text-slate-400">
-          Powered by Clinic Desk
-        </p>
       </div>
     </div>
   );
@@ -245,11 +240,6 @@ function NoReceiptView({ clinicName }: { clinicName: string }) {
           Please contact the front desk for assistance.
         </p>
         <RefreshButton />
-        
-        {/* Branding */}
-        <p className="mt-8 text-xs text-slate-400">
-          Powered by Clinic Desk
-        </p>
       </div>
     </div>
   );

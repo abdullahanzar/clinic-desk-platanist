@@ -1,3 +1,19 @@
+Clinic Desk by Platanist  
+Copyright (C) 2025 Anzar
+
+This program is free software: you can redistribute it and/or modify  
+it under the terms of the GNU Affero General Public License as published  
+by the Free Software Foundation, either version 3 of the License, or  
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,  
+but WITHOUT ANY WARRANTY; without even the implied warranty of  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the  
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License  
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -34,3 +50,42 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## License
+
+Clinic Desk by Platanist is licensed under the
+GNU Affero General Public License v3.0 (AGPL-3.0).
+
+If you modify this software and deploy it for others
+(including as a hosted service), you must make your source code
+and modifications available under the same license.
+
+See the LICENSE file for full details.
+
+## Disclaimer
+
+This project is a clinic workflow and billing assistance tool only.
+It is not a medical device or EHR system.
+
+See DISCLAIMER.md for full details.
+
+## Feedback & Improvements
+
+Clinic Desk by Platanist is intentionally scoped to remain simple,
+reliable, and clinic-realistic.
+
+If you are a doctor, clinic staff member, or developer using this
+project and have feedback or improvement ideas, please use:
+
+- GitHub Issues for bugs or discussions
+- Pull Requests for proposed improvements
+
+When suggesting changes, please keep the scope in mind:
+- No patient accounts
+- No email or SMS delivery
+- No automated messaging
+- No expansion into EHR or hospital-scale systems
+
+The goal is to improve clinic desk workflows without increasing
+operational, legal, or compliance complexity.
+

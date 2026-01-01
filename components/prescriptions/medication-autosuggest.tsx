@@ -35,7 +35,7 @@ interface MedicationAutosuggestProps {
 }
 
 const HOMEOPATHIC_DISCLAIMER =
-  "Homeopathic remedies may be included to reflect practitioner preference or patient choice. Evidence standards and clinical acceptance vary across systems of medicine and jurisdictions. This information is provided for documentation purposes only and does not constitute medical advice. For serious, acute, or potentially life-threatening conditions, patients should seek appropriate emergency or conventional medical care.";
+  "This information is provided for documentation purposes only and does not constitute medical advice. For serious, acute, or potentially life-threatening conditions, patients should seek appropriate emergency or conventional medical care.";
 
 const SourceBadge = ({ source }: { source: string }) => {
   switch (source) {

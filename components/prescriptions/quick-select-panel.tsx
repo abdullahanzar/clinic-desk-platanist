@@ -390,7 +390,7 @@ function MedicationPanel() {
         <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-700 leading-relaxed">
-            Homeopathic remedies are included for patient preference. Always seek conventional care for serious conditions.
+            This information is provided for documentation purposes only and does not constitute medical advice. For serious, acute, or potentially life-threatening conditions, patients should seek appropriate emergency or conventional medical care.
           </p>
         </div>
       )}

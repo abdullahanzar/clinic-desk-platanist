@@ -100,7 +100,7 @@ export default function LoginPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl shadow-lg flex items-center justify-center">
                   <Image
-                    src="/platanist_clinic_desk.png"
+                    src="/platanist_clinic_desk_minimal.png"
                     alt="Clinic Desk"
                     width={40}
                     height={40}
@@ -173,14 +173,14 @@ export default function LoginPage() {
           </div>
 
           {/* Right Panel - Login Form */}
-          <div className="w-full max-w-md mx-auto lg:mx-0">
+          <div className="w-full max-w-md mx-auto lg:mx-20">
             {/* Card */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
               {/* Header with gradient */}
               <div className="bg-gradient-to-r from-brand-600 to-brand-700 px-8 py-8 text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
                   <Image
-                    src="/platanist_clinic_desk.png"
+                    src="/platanist_clinic_desk_minimal.png"
                     alt="Clinic Desk by Platanist"
                     width={56}
                     height={56}

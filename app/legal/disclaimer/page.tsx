@@ -87,7 +87,7 @@ export default function DisclaimerPage() {
           </p>
 
           <a
-            href="https://github.com/AaronSiddiqui/opd-platanist/blob/main/DISCLAIMER.md"
+            href="https://github.com/abdullahanzar/clinic-desk-platanist/blob/main/DISCLAIMER.md"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium transition-colors"

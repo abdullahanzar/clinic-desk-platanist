@@ -41,7 +41,8 @@ interface MedicationStats {
   custom: number;
 }
 
-const HOMEOPATHIC_DISCLAIMER = "Homeopathic remedies are included for patient preference and historical use. They are not supported by robust clinical evidence for most conditions. For serious, acute, or potentially life-threatening problems, always seek conventional medical care. This list is informational — dosing patterns shown are typical retail potencies and not individualized medical advice.";
+const HOMEOPATHIC_DISCLAIMER =
+  "Homeopathic remedies may be included to reflect practitioner preference or patient choice. Evidence standards and clinical acceptance vary across systems of medicine and jurisdictions. This information is provided for documentation purposes only and does not constitute medical advice. For serious, acute, or potentially life-threatening conditions, patients should seek appropriate emergency or conventional medical care.";
 
 const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean }) => {
   const badge = (() => {

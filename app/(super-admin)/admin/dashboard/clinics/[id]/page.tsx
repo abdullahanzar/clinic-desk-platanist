@@ -89,7 +89,7 @@ export default function ClinicDetailPage({
       const res = await fetch(`/api/super-admin/clinics/${id}`);
       if (!res.ok) {
         if (res.status === 401) {
-          router.push("/sudo");
+          router.push("/admin");
           return;
         }
         throw new Error("Failed to fetch clinic");
@@ -141,7 +141,7 @@ export default function ClinicDetailPage({
         throw new Error("Failed to delete clinic");
       }
 
-      router.push("/sudo/dashboard");
+      router.push("/admin/dashboard");
     } catch (err) {
       setError((err as Error).message);
     }
@@ -179,7 +179,7 @@ export default function ClinicDetailPage({
         <div className="text-center">
           <p className="text-slate-400 mb-4">Clinic not found</p>
           <button
-            onClick={() => router.push("/sudo/dashboard")}
+            onClick={() => router.push("/admin/dashboard")}
             className="text-red-400 hover:text-red-300"
           >
             Go back
@@ -196,7 +196,7 @@ export default function ClinicDetailPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 h-16">
             <button
-              onClick={() => router.push("/sudo/dashboard")}
+              onClick={() => router.push("/admin/dashboard")}
               className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />

@@ -35,7 +35,7 @@ export default function SuperAdminLoginPage() {
       }
 
       // Redirect to super admin dashboard
-      router.push("/sudo/dashboard");
+      router.push("/admin/dashboard");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

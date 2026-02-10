@@ -13,7 +13,7 @@ export default async function SuperAdminDashboardLayout({
 
   const session = await getSuperAdminSession();
   if (!session) {
-    redirect("/sudo");
+    redirect("/admin");
   }
 
   return <>{children}</>;

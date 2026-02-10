@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: clinic_desk_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=clinic_desk
+    networks:
+      - clinic_desk_network
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinic_desk_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/clinic_desk
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SUPER_ADMIN_USERNAME=${SUPER_ADMIN_USERNAME:-admin}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-change-this-password}
+      - NODE_ENV=production
+    depends_on:
+      - mongodb
+    networks:
+      - clinic_desk_network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  clinic_desk_network:
+    driver: bridge

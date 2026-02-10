@@ -64,7 +64,7 @@ export default function SuperAdminDashboard() {
 
       if (!clinicsRes.ok || !usersRes.ok) {
         if (clinicsRes.status === 401 || usersRes.status === 401) {
-          router.push("/sudo");
+          router.push("/admin");
           return;
         }
         throw new Error("Failed to fetch data");
@@ -89,7 +89,7 @@ export default function SuperAdminDashboard() {
 
   const handleLogout = async () => {
     await fetch("/api/super-admin/auth/logout", { method: "POST" });
-    router.push("/sudo");
+    router.push("/admin");
   };
 
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
@@ -303,7 +303,7 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
-                          onClick={() => router.push(`/sudo/dashboard/clinics/${clinic._id}`)}
+                          onClick={() => router.push(`/admin/dashboard/clinics/${clinic._id}`)}
                           className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -408,7 +408,7 @@ export default function SuperAdminDashboard() {
                           </button>
                           <button
                             onClick={() =>
-                              router.push(`/sudo/dashboard/users/${user._id}`)
+                              router.push(`/admin/dashboard/users/${user._id}`)
                             }
                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                           >

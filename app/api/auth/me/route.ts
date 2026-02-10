@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getSession } from "@/lib/auth/session";
 import { getUsersCollection, getClinicsCollection } from "@/lib/db/collections";
-import { seedDatabase } from "@/lib/db/seed";
 
 export async function GET() {
   try {

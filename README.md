@@ -18,6 +18,29 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Option 1: Run with Docker (Recommended for Quick Setup)
+
+The easiest way to get started is with Docker. This will set up both the application and MongoDB database automatically.
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd opd-platanist
+
+# 2. Create and configure environment file
+cp .env.example .env
+# Edit .env with your configuration (see DOCKER_SETUP.md)
+
+# 3. Start with Docker Compose
+docker-compose up -d
+
+# 4. Access the application at http://localhost:3000
+```
+
+For detailed Docker setup instructions, security best practices, and troubleshooting, see **[DOCKER_SETUP.md](DOCKER_SETUP.md)**.
+
+### Option 2: Run Locally (Development)
+
 First, run the development server:
 
 ```bash
@@ -36,6 +59,17 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment Variables
+
+Required environment variables:
+
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT authentication (generate with `openssl rand -base64 32`)
+- `SUPER_ADMIN_USERNAME` - Super admin username
+- `SUPER_ADMIN_PASSWORD` - Super admin password
+
+See `.env.example` for a complete configuration template.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -50,6 +84,16 @@ You can check out [the Next.js GitHub repository](https://github.com/abdullahanz
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deploy with Docker
+
+For Docker-based deployment, see **[DOCKER_SETUP.md](DOCKER_SETUP.md)** for comprehensive instructions including:
+
+- Quick start with Docker Compose
+- Production deployment guidelines
+- Security best practices
+- Backup and restore procedures
+- Troubleshooting guide
 
 ## License
 

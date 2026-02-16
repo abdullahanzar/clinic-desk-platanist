@@ -79,6 +79,38 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/abdullahanzar/clinic-desk-platanist) - your feedback and contributions are welcome!
 
+
+## Desktop App (Electron)
+
+You can package Clinic Desk as a desktop app for Windows, macOS, and Linux using Electron.
+
+### Development mode
+
+```bash
+pnpm install
+pnpm electron:dev
+```
+
+This starts the Next.js dev server and opens Electron pointed at a local loopback URL.
+
+### Build desktop packages
+
+```bash
+# Build unpacked binaries
+pnpm electron:pack
+
+# Build distributable installers/packages
+pnpm electron:dist
+```
+
+Generated artifacts are written to `electron-dist/` and include targets for:
+
+- Windows: NSIS installer and portable executable
+- macOS: DMG and ZIP
+- Linux: AppImage and DEB
+
+> Note: This app still requires runtime environment variables (for example `MONGODB_URI`, `JWT_SECRET`, and super admin credentials).
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

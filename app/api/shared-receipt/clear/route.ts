@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics } from "@/lib/db/schema";
 
 // POST /api/shared-receipt/clear - Clear shared receipt
 export async function POST() {
@@ -11,18 +12,16 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const clinics = await getClinicsCollection();
+    const db = getDb();
 
-    await clinics.updateOne(
-      { _id: new ObjectId(session.clinicId) },
-      {
-        $set: {
-          currentSharedReceiptId: null,
-          currentSharedReceiptExpiresAt: null,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    db.update(clinics)
+      .set({
+        currentSharedReceiptId: null,
+        currentSharedReceiptExpiresAt: null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(clinics.id, session.clinicId))
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

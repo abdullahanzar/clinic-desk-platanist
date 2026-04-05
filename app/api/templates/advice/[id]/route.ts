@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getAdviceTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { adviceTemplates } from "@/lib/db/schema";
 
 // GET - Get a specific advice template
 export async function GET(
@@ -15,16 +16,18 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getAdviceTemplatesCollection();
-    const template = await templates.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const template = db
+      .select()
+      .from(adviceTemplates)
+      .where(
+        and(
+          eq(adviceTemplates.id, id),
+          eq(adviceTemplates.clinicId, session.clinicId)
+        )
+      )
+      .get();
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -32,7 +35,7 @@ export async function GET(
 
     return NextResponse.json({
       template: {
-        _id: template._id.toString(),
+        id: template.id,
         title: template.title,
         content: template.content,
         category: template.category,
@@ -69,10 +72,6 @@ export async function PATCH(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
     const body = await request.json();
     const { title, content, category } = body;
 
@@ -83,14 +82,20 @@ export async function PATCH(
       );
     }
 
-    const templates = await getAdviceTemplatesCollection();
+    const db = getDb();
 
     // Check for duplicate (excluding current template)
-    const existing = await templates.findOne({
-      clinicId: new ObjectId(session.clinicId),
-      title: { $regex: `^${title.trim()}$`, $options: "i" },
-      _id: { $ne: new ObjectId(id) },
-    });
+    const existing = db
+      .select()
+      .from(adviceTemplates)
+      .where(
+        and(
+          eq(adviceTemplates.clinicId, session.clinicId),
+          sql`lower(${adviceTemplates.title}) = lower(${title.trim()})`,
+          sql`${adviceTemplates.id} != ${id}`
+        )
+      )
+      .get();
 
     if (existing) {
       return NextResponse.json(
@@ -99,22 +104,23 @@ export async function PATCH(
       );
     }
 
-    const result = await templates.updateOne(
-      {
-        _id: new ObjectId(id),
-        clinicId: new ObjectId(session.clinicId),
-      },
-      {
-        $set: {
-          title: title.trim(),
-          content: content.trim(),
-          category: category?.trim() || null,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    const result = db
+      .update(adviceTemplates)
+      .set({
+        title: title.trim(),
+        content: content.trim(),
+        category: category?.trim() || null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(adviceTemplates.id, id),
+          eq(adviceTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
-    if (result.matchedCount === 0) {
+    if (result.changes === 0) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
@@ -147,18 +153,19 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getAdviceTemplatesCollection();
-    
     // Check if it's a default advice
-    const template = await templates.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const template = db
+      .select()
+      .from(adviceTemplates)
+      .where(
+        and(
+          eq(adviceTemplates.id, id),
+          eq(adviceTemplates.clinicId, session.clinicId)
+        )
+      )
+      .get();
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -171,14 +178,14 @@ export async function DELETE(
       );
     }
 
-    const result = await templates.deleteOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    }
+    db.delete(adviceTemplates)
+      .where(
+        and(
+          eq(adviceTemplates.id, id),
+          eq(adviceTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -202,21 +209,17 @@ export async function POST(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getAdviceTemplatesCollection();
-    await templates.updateOne(
-      {
-        _id: new ObjectId(id),
-        clinicId: new ObjectId(session.clinicId),
-      },
-      {
-        $inc: { usageCount: 1 },
-      }
-    );
+    db.update(adviceTemplates)
+      .set({ usageCount: sql`${adviceTemplates.usageCount} + 1` })
+      .where(
+        and(
+          eq(adviceTemplates.id, id),
+          eq(adviceTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

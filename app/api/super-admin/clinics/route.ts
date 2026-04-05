@@ -1,45 +1,52 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireSuperAdminSession } from "@/lib/auth/super-admin";
-import { getClinicsCollection, getUsersCollection, ensureIndexes } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics, users, generateId } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
-import type { ClinicInsert, UserInsert } from "@/types";
 
 // GET /api/super-admin/clinics - List all clinics
 export async function GET() {
   try {
     await requireSuperAdminSession();
 
-    const clinics = await getClinicsCollection();
-    const users = await getUsersCollection();
+    const db = getDb();
 
-    const clinicList = await clinics.find({}).sort({ createdAt: -1 }).toArray();
+    const clinicList = db
+      .select()
+      .from(clinics)
+      .orderBy(desc(clinics.createdAt))
+      .all();
 
     // Get user counts for each clinic
-    const clinicsWithStats = await Promise.all(
-      clinicList.map(async (clinic) => {
-        const userCount = await users.countDocuments({ clinicId: clinic._id });
-        const activeUserCount = await users.countDocuments({
-          clinicId: clinic._id,
-          isActive: true,
-        });
+    const clinicsWithStats = clinicList.map((clinic) => {
+      const userCount = db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(eq(users.clinicId, clinic.id))
+        .get()!.count;
 
-        return {
-          _id: clinic._id.toString(),
-          name: clinic.name,
-          slug: clinic.slug,
-          phone: clinic.phone,
-          email: clinic.email,
-          address: clinic.address,
-          publicProfile: clinic.publicProfile,
-          taxInfo: clinic.taxInfo,
-          userCount,
-          activeUserCount,
-          createdAt: clinic.createdAt,
-          updatedAt: clinic.updatedAt,
-        };
-      })
-    );
+      const activeUserCount = db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`${users.clinicId} = ${clinic.id} AND ${users.isActive} = 1`)
+        .get()!.count;
+
+      return {
+        id: clinic.id,
+        name: clinic.name,
+        slug: clinic.slug,
+        phone: clinic.phone,
+        email: clinic.email,
+        address: clinic.address,
+        publicProfile: clinic.publicProfile,
+        taxInfo: clinic.taxInfo,
+        userCount,
+        activeUserCount,
+        createdAt: clinic.createdAt,
+        updatedAt: clinic.updatedAt,
+      };
+    });
 
     return NextResponse.json({ clinics: clinicsWithStats });
   } catch (error) {
@@ -125,14 +132,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Ensure indexes exist
-    await ensureIndexes();
-
-    const clinics = await getClinicsCollection();
-    const users = await getUsersCollection();
+    const db = getDb();
 
     // Check if slug already exists
-    const existingClinic = await clinics.findOne({ slug: clinicSlug });
+    const existingClinic = db
+      .select()
+      .from(clinics)
+      .where(eq(clinics.slug, clinicSlug))
+      .get();
     if (existingClinic) {
       return NextResponse.json(
         { error: "Clinic slug already exists" },
@@ -141,7 +148,11 @@ export async function POST(request: Request) {
     }
 
     // Check if email already exists
-    const existingUser = await users.findOne({ email: doctorEmail.toLowerCase() });
+    const existingUser = db
+      .select()
+      .from(users)
+      .where(eq(users.email, doctorEmail.toLowerCase()))
+      .get();
     if (existingUser) {
       return NextResponse.json(
         { error: "Email already registered" },
@@ -149,56 +160,62 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create clinic
-    const clinic: ClinicInsert = {
-      name: clinicName,
-      slug: clinicSlug,
-      address: {
-        line1: address.line1,
-        line2: address.line2 || undefined,
-        city: address.city,
-        state: address.state,
-        pincode: address.pincode,
-      },
-      phone,
-      email: email || undefined,
-      website: website || undefined,
-      currentSharedReceiptId: null,
-      currentSharedReceiptExpiresAt: null,
-      receiptShareDurationMinutes,
-      logoUrl: logoUrl || undefined,
-      headerText: headerText || undefined,
-      footerText: footerText || undefined,
-      taxInfo: taxInfo || undefined,
-      publicProfile: publicProfile || {
-        enabled: false,
-        doctorName,
-        qualifications: "",
-        specialization: "",
-        timings: "",
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const now = new Date().toISOString();
+    const clinicId = generateId();
 
-    const clinicResult = await clinics.insertOne(clinic as never);
-    const clinicId = clinicResult.insertedId;
+    // Create clinic
+    db.insert(clinics)
+      .values({
+        id: clinicId,
+        name: clinicName,
+        slug: clinicSlug,
+        address: {
+          line1: address.line1,
+          line2: address.line2 || undefined,
+          city: address.city,
+          state: address.state,
+          pincode: address.pincode,
+        },
+        phone,
+        email: email || undefined,
+        website: website || undefined,
+        currentSharedReceiptId: null,
+        currentSharedReceiptExpiresAt: null,
+        receiptShareDurationMinutes,
+        logoUrl: logoUrl || undefined,
+        headerText: headerText || undefined,
+        footerText: footerText || undefined,
+        taxInfo: taxInfo || undefined,
+        publicProfile: publicProfile || {
+          enabled: false,
+          doctorName,
+          qualifications: "",
+          specialization: "",
+          timings: "",
+        },
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     // Create doctor user
     const passwordHash = await hashPassword(doctorPassword);
-    const doctor: UserInsert = {
-      clinicId,
-      name: doctorName,
-      email: doctorEmail.toLowerCase(),
-      passwordHash,
-      role: "doctor",
-      isActive: true,
-      loginHistory: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const doctorId = generateId();
 
-    const userResult = await users.insertOne(doctor as never);
+    db.insert(users)
+      .values({
+        id: doctorId,
+        clinicId,
+        name: doctorName,
+        email: doctorEmail.toLowerCase(),
+        passwordHash,
+        role: "doctor",
+        isActive: true,
+        loginHistory: [],
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     console.log(
       `[SUPER_ADMIN] Created clinic "${clinicName}" (${clinicSlug}) with doctor ${doctorEmail}`
@@ -207,12 +224,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       clinic: {
-        _id: clinicId.toString(),
+        id: clinicId,
         name: clinicName,
         slug: clinicSlug,
       },
       doctor: {
-        _id: userResult.insertedId.toString(),
+        id: doctorId,
         name: doctorName,
         email: doctorEmail.toLowerCase(),
       },

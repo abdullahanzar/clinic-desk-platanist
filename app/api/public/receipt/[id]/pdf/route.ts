@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, clinics } from "@/lib/db/schema";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReceiptPDF } from "@/lib/pdf/receipt-pdf";
 
@@ -12,33 +13,26 @@ export async function GET(
   try {
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const receipts = await getReceiptsCollection();
-    const clinics = await getClinicsCollection();
-
-    const receipt = await receipts.findOne({
-      _id: new ObjectId(id),
-    });
+    const receipt = db.select().from(receipts).where(eq(receipts.id, id)).get();
 
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
 
     // Get the clinic and verify this receipt is currently being shared
-    const clinic = await clinics.findOne({ _id: receipt.clinicId });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, receipt.clinicId)).get();
 
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
     // Verify the receipt is currently shared
-    const isCurrentlyShared = 
-      clinic.currentSharedReceiptId?.toString() === receipt._id.toString() &&
+    const isCurrentlyShared =
+      clinic.currentSharedReceiptId === receipt.id &&
       clinic.currentSharedReceiptExpiresAt &&
-      clinic.currentSharedReceiptExpiresAt > new Date();
+      new Date(clinic.currentSharedReceiptExpiresAt) > new Date();
 
     if (!isCurrentlyShared) {
       return NextResponse.json(
@@ -54,7 +48,7 @@ export async function GET(
           receiptNumber: receipt.receiptNumber,
           receiptDate: receipt.receiptDate,
           patientSnapshot: receipt.patientSnapshot,
-          prescriptionSnapshot: receipt.prescriptionSnapshot,
+          prescriptionSnapshot: receipt.prescriptionSnapshot ?? undefined,
           lineItems: receipt.lineItems,
           subtotal: receipt.subtotal,
           discountAmount: receipt.discountAmount,

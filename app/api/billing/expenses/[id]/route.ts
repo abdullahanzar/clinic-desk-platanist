@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getExpensesCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { expenses } from "@/lib/db/schema";
 
 // GET /api/billing/expenses/[id] - Get single expense
 export async function GET(
@@ -15,31 +16,20 @@ export async function GET(
     }
 
     const { id } = await params;
-    
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid expense ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const expenses = await getExpensesCollection();
-    const clinicId = new ObjectId(session.clinicId);
-
-    const expense = await expenses.findOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
+    const expense = db.select()
+      .from(expenses)
+      .where(and(
+        eq(expenses.id, id),
+        eq(expenses.clinicId, session.clinicId),
+      )).get();
 
     if (!expense) {
       return NextResponse.json({ error: "Expense not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      expense: {
-        ...expense,
-        _id: expense._id.toString(),
-        clinicId: expense.clinicId.toString(),
-        createdBy: expense.createdBy.toString(),
-      },
-    });
+    return NextResponse.json({ expense });
   } catch (error) {
     console.error("Get expense error:", error);
     return NextResponse.json(
@@ -61,11 +51,6 @@ export async function PUT(
     }
 
     const { id } = await params;
-    
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid expense ID" }, { status: 400 });
-    }
-
     const body = await request.json();
     const {
       description,
@@ -79,41 +64,49 @@ export async function PUT(
       notes,
     } = body;
 
-    const expenses = await getExpensesCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
+
+    // Check existence
+    const existing = db.select({ id: expenses.id })
+      .from(expenses)
+      .where(and(
+        eq(expenses.id, id),
+        eq(expenses.clinicId, session.clinicId),
+      )).get();
+
+    if (!existing) {
+      return NextResponse.json({ error: "Expense not found" }, { status: 404 });
+    }
 
     const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (description !== undefined) updateData.description = description.trim();
     if (amount !== undefined) updateData.amount = Number(amount);
     if (category !== undefined) updateData.category = category;
-    if (expenseDate !== undefined) updateData.expenseDate = new Date(expenseDate);
+    if (expenseDate !== undefined) updateData.expenseDate = new Date(expenseDate).toISOString();
     if (isRecurring !== undefined) updateData.isRecurring = isRecurring;
     if (recurringFrequency !== undefined) updateData.recurringFrequency = recurringFrequency;
     if (vendor !== undefined) updateData.vendor = vendor?.trim();
     if (invoiceNumber !== undefined) updateData.invoiceNumber = invoiceNumber?.trim();
     if (notes !== undefined) updateData.notes = notes?.trim();
 
-    const result = await expenses.findOneAndUpdate(
-      { _id: new ObjectId(id), clinicId },
-      { $set: updateData },
-      { returnDocument: "after" }
-    );
+    db.update(expenses)
+      .set(updateData)
+      .where(and(
+        eq(expenses.id, id),
+        eq(expenses.clinicId, session.clinicId),
+      )).run();
 
-    if (!result) {
-      return NextResponse.json({ error: "Expense not found" }, { status: 404 });
-    }
+    const updated = db.select()
+      .from(expenses)
+      .where(eq(expenses.id, id))
+      .get();
 
     return NextResponse.json({
       success: true,
-      expense: {
-        ...result,
-        _id: result._id.toString(),
-        clinicId: result.clinicId.toString(),
-        createdBy: result.createdBy.toString(),
-      },
+      expense: updated,
     });
   } catch (error) {
     console.error("Update expense error:", error);
@@ -136,22 +129,24 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid expense ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const expenses = await getExpensesCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const existing = db.select({ id: expenses.id })
+      .from(expenses)
+      .where(and(
+        eq(expenses.id, id),
+        eq(expenses.clinicId, session.clinicId),
+      )).get();
 
-    const result = await expenses.deleteOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
-
-    if (result.deletedCount === 0) {
+    if (!existing) {
       return NextResponse.json({ error: "Expense not found" }, { status: 404 });
     }
+
+    db.delete(expenses)
+      .where(and(
+        eq(expenses.id, id),
+        eq(expenses.clinicId, session.clinicId),
+      )).run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

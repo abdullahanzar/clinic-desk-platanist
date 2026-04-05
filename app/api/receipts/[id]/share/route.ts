@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, clinics } from "@/lib/db/schema";
 
 // POST /api/receipts/[id]/share - Share receipt to desk QR
 export async function POST(
@@ -15,48 +16,39 @@ export async function POST(
     }
 
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
-    }
-
-    const receipts = await getReceiptsCollection();
-    const clinics = await getClinicsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
     // Verify receipt belongs to clinic
-    const receipt = await receipts.findOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
+    const receipt = db.select().from(receipts)
+      .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+      .get();
 
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
 
     // Get clinic to get share duration
-    const clinic = await clinics.findOne({ _id: clinicId });
-    const shareDuration = clinic?.receiptShareDurationMinutes || 10;
+    const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
+    const shareDuration = clinic?.receiptShareDurationMinutes || 10;
     const expiresAt = new Date(Date.now() + shareDuration * 60 * 1000);
+    const now = new Date().toISOString();
 
     // Update clinic with shared receipt
-    await clinics.updateOne(
-      { _id: clinicId },
-      {
-        $set: {
-          currentSharedReceiptId: receipt._id,
-          currentSharedReceiptExpiresAt: expiresAt,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    db.update(clinics)
+      .set({
+        currentSharedReceiptId: receipt.id,
+        currentSharedReceiptExpiresAt: expiresAt.toISOString(),
+        updatedAt: now,
+      })
+      .where(eq(clinics.id, session.clinicId))
+      .run();
 
     // Update receipt's lastSharedAt
-    await receipts.updateOne(
-      { _id: receipt._id },
-      { $set: { lastSharedAt: new Date() } }
-    );
+    db.update(receipts)
+      .set({ lastSharedAt: now })
+      .where(eq(receipts.id, receipt.id))
+      .run();
 
     return NextResponse.json({
       success: true,

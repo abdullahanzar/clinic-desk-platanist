@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { getUsersCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { users } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { requireRole } from "@/lib/auth/session";
 
 // GET /api/staff/[id] - Get single staff member details
@@ -10,18 +11,26 @@ export async function GET(
 ) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
-
-    const users = await getUsersCollection();
-    const user = await users.findOne(
-      { _id: new ObjectId(id), clinicId },
-      { projection: { passwordHash: 0 } }
-    );
+    const user = await db
+      .select({
+        id: users.id,
+        clinicId: users.clinicId,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLoginAt: users.lastLoginAt,
+        loginHistory: users.loginHistory,
+        createdByUserId: users.createdByUserId,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.clinicId, session.clinicId)))
+      .get();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -30,31 +39,38 @@ export async function GET(
     // Get creator name if exists
     let creatorName = null;
     if (user.createdByUserId) {
-      const creator = await users.findOne(
-        { _id: user.createdByUserId },
-        { projection: { name: 1 } }
-      );
+      const creator = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, user.createdByUserId))
+        .get();
       creatorName = creator?.name || null;
     }
 
+    const loginHistory = (user.loginHistory || []) as Array<{
+      loginAt: string;
+      ipAddress?: string;
+      userAgent?: string;
+    }>;
+
     return NextResponse.json({
       user: {
-        id: user._id.toString(),
-        clinicId: user.clinicId.toString(),
+        id: user.id,
+        clinicId: user.clinicId,
         name: user.name,
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        lastLoginAt: user.lastLoginAt?.toISOString() || null,
-        loginHistory: (user.loginHistory || []).map((entry) => ({
-          loginAt: entry.loginAt.toISOString(),
+        lastLoginAt: user.lastLoginAt || null,
+        loginHistory: loginHistory.map((entry) => ({
+          loginAt: entry.loginAt,
           ipAddress: entry.ipAddress || null,
           userAgent: entry.userAgent || null,
         })),
-        createdByUserId: user.createdByUserId?.toString() || null,
+        createdByUserId: user.createdByUserId || null,
         createdByName: creatorName,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
     });
   } catch (error) {
@@ -79,23 +95,18 @@ export async function PUT(
 ) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
     const body = await request.json();
     const { name, email, isActive } = body;
 
-    const users = await getUsersCollection();
-
     // Check user exists and belongs to clinic
-    const existingUser = await users.findOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
+    const existingUser = await db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.clinicId, session.clinicId)))
+      .get();
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -111,7 +122,7 @@ export async function PUT(
 
     // Build update object
     const updateFields: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (name !== undefined) {
@@ -122,7 +133,11 @@ export async function PUT(
       const normalizedEmail = email.toLowerCase().trim();
       // Check email uniqueness if changing
       if (normalizedEmail !== existingUser.email) {
-        const emailExists = await users.findOne({ email: normalizedEmail });
+        const emailExists = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.email, normalizedEmail))
+          .get();
         if (emailExists) {
           return NextResponse.json(
             { error: "Email already in use" },
@@ -137,7 +152,11 @@ export async function PUT(
       updateFields.isActive = Boolean(isActive);
     }
 
-    await users.updateOne({ _id: new ObjectId(id) }, { $set: updateFields });
+    await db
+      .update(users)
+      .set(updateFields)
+      .where(eq(users.id, id))
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -162,12 +181,8 @@ export async function DELETE(
 ) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
     // Prevent deleting yourself
     if (id === session.userId) {
@@ -177,13 +192,12 @@ export async function DELETE(
       );
     }
 
-    const users = await getUsersCollection();
-
     // Check user exists and belongs to clinic
-    const existingUser = await users.findOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
+    const existingUser = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.clinicId, session.clinicId)))
+      .get();
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -197,7 +211,7 @@ export async function DELETE(
       );
     }
 
-    await users.deleteOne({ _id: new ObjectId(id) });
+    await db.delete(users).where(eq(users.id, id)).run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

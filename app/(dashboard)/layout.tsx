@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { getClinicsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, clinics } from "@/lib/db/collections";
+import { eq } from "drizzle-orm";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Footer } from "@/components/layout/footer";
 
@@ -17,8 +17,8 @@ export default async function DashboardLayout({
   }
 
   // Fetch clinic data for sidebar branding
-  const clinics = await getClinicsCollection();
-  const clinic = await clinics.findOne({ _id: new ObjectId(session.clinicId) });
+  const db = getDb();
+  const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">

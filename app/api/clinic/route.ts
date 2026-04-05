@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { getClinicsCollection } from "@/lib/db/collections";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics } from "@/lib/db/schema";
 import { requireRole, getSession } from "@/lib/auth/session";
 import type { Address, PublicProfile, TaxInfo } from "@/types";
 
@@ -12,39 +13,36 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const clinicId = new ObjectId(session.clinicId);
-    const clinics = await getClinicsCollection();
-
-    const clinic = await clinics.findOne({ _id: clinicId });
+    const db = getDb();
+    const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
-    // Return clinic details
+    const address = clinic.address ?? {};
+    const taxInfo = clinic.taxInfo ?? {
+      gstin: "", pan: "", registrationNumber: "", sacCode: "", showTaxOnReceipt: false,
+    };
+    const publicProfile = clinic.publicProfile ?? null;
+
     return NextResponse.json({
       clinic: {
-        id: clinic._id.toString(),
+        id: clinic.id,
         name: clinic.name,
         slug: clinic.slug,
-        address: clinic.address,
+        address,
         phone: clinic.phone,
         email: clinic.email || "",
         website: clinic.website || "",
         logoUrl: clinic.logoUrl || "",
         headerText: clinic.headerText || "",
         footerText: clinic.footerText || "",
-        taxInfo: clinic.taxInfo || {
-          gstin: "",
-          pan: "",
-          registrationNumber: "",
-          sacCode: "",
-          showTaxOnReceipt: false,
-        },
-        publicProfile: clinic.publicProfile,
+        taxInfo,
+        publicProfile,
         receiptShareDurationMinutes: clinic.receiptShareDurationMinutes,
-        createdAt: clinic.createdAt.toISOString(),
-        updatedAt: clinic.updatedAt.toISOString(),
+        createdAt: clinic.createdAt,
+        updatedAt: clinic.updatedAt,
       },
     });
   } catch (error) {
@@ -60,7 +58,6 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
 
     const body = await request.json();
     const {
@@ -93,57 +90,46 @@ export async function PUT(request: Request) {
     }
 
     // Build update object
-    const updateData: {
-      name: string;
-      phone: string;
-      email?: string;
-      website?: string;
-      logoUrl?: string;
-      headerText?: string;
-      footerText?: string;
-      address?: Address;
-      taxInfo?: TaxInfo;
-      publicProfile?: PublicProfile;
-      receiptShareDurationMinutes?: number;
-      updatedAt: Date;
-    } = {
+    const updateData: Record<string, unknown> = {
       name: name.trim(),
       phone: phone.trim(),
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     // Optional fields
-    if (email !== undefined) updateData.email = email.trim() || undefined;
-    if (website !== undefined) updateData.website = website.trim() || undefined;
-    if (logoUrl !== undefined) updateData.logoUrl = logoUrl.trim() || undefined;
-    if (headerText !== undefined) updateData.headerText = headerText.trim() || undefined;
-    if (footerText !== undefined) updateData.footerText = footerText.trim() || undefined;
+    if (email !== undefined) updateData.email = email.trim() || null;
+    if (website !== undefined) updateData.website = website.trim() || null;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl.trim() || null;
+    if (headerText !== undefined) updateData.headerText = headerText.trim() || null;
+    if (footerText !== undefined) updateData.footerText = footerText.trim() || null;
 
-    // Address
+    // Address (stored as JSON)
     if (address) {
-      updateData.address = {
+      const addr: Address = {
         line1: address.line1?.trim() || "",
         line2: address.line2?.trim() || undefined,
         city: address.city?.trim() || "",
         state: address.state?.trim() || "",
         pincode: address.pincode?.trim() || "",
       };
+      updateData.address = addr;
     }
 
-    // Tax Info
+    // Tax Info (stored as JSON)
     if (taxInfo) {
-      updateData.taxInfo = {
+      const ti: TaxInfo = {
         gstin: taxInfo.gstin?.trim() || undefined,
         pan: taxInfo.pan?.trim() || undefined,
         registrationNumber: taxInfo.registrationNumber?.trim() || undefined,
         sacCode: taxInfo.sacCode?.trim() || undefined,
         showTaxOnReceipt: taxInfo.showTaxOnReceipt || false,
       };
+      updateData.taxInfo = ti;
     }
 
-    // Public Profile
+    // Public Profile (stored as JSON)
     if (publicProfile) {
-      updateData.publicProfile = {
+      const pp: PublicProfile = {
         enabled: publicProfile.enabled || false,
         doctorName: publicProfile.doctorName?.trim() || "",
         qualifications: publicProfile.qualifications?.trim() || "",
@@ -151,6 +137,7 @@ export async function PUT(request: Request) {
         timings: publicProfile.timings?.trim() || "",
         aboutText: publicProfile.aboutText?.trim() || undefined,
       };
+      updateData.publicProfile = pp;
     }
 
     // Receipt share duration
@@ -158,40 +145,42 @@ export async function PUT(request: Request) {
       updateData.receiptShareDurationMinutes = Math.max(1, Math.min(60, Number(receiptShareDurationMinutes) || 10));
     }
 
-    const clinics = await getClinicsCollection();
-    const result = await clinics.findOneAndUpdate(
-      { _id: clinicId },
-      { $set: updateData },
-      { returnDocument: "after" }
-    );
+    const db = getDb();
+    db.update(clinics)
+      .set(updateData)
+      .where(eq(clinics.id, session.clinicId))
+      .run();
+
+    // Fetch updated clinic
+    const result = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
     if (!result) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
+    const resAddress = result.address ?? {};
+    const resTaxInfo = result.taxInfo ?? {
+      gstin: "", pan: "", registrationNumber: "", sacCode: "", showTaxOnReceipt: false,
+    };
+    const resPP = result.publicProfile ?? null;
+
     return NextResponse.json({
       success: true,
       clinic: {
-        id: result._id.toString(),
+        id: result.id,
         name: result.name,
         slug: result.slug,
-        address: result.address,
+        address: resAddress,
         phone: result.phone,
         email: result.email || "",
         website: result.website || "",
         logoUrl: result.logoUrl || "",
         headerText: result.headerText || "",
         footerText: result.footerText || "",
-        taxInfo: result.taxInfo || {
-          gstin: "",
-          pan: "",
-          registrationNumber: "",
-          sacCode: "",
-          showTaxOnReceipt: false,
-        },
-        publicProfile: result.publicProfile,
+        taxInfo: resTaxInfo,
+        publicProfile: resPP,
         receiptShareDurationMinutes: result.receiptShareDurationMinutes,
-        updatedAt: result.updatedAt.toISOString(),
+        updatedAt: result.updatedAt,
       },
     });
   } catch (error) {

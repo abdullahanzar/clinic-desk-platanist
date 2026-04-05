@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, clinics } from "@/lib/db/schema";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReceiptPDF } from "@/lib/pdf/receipt-pdf";
 
@@ -16,28 +17,25 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
-    }
-
-    const receipts = await getReceiptsCollection();
-    const clinics = await getClinicsCollection();
-
-    const receipt = await receipts.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const receipt = db.select().from(receipts)
+      .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+      .get();
 
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
 
-    const clinic = await clinics.findOne({ _id: new ObjectId(session.clinicId) });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
+
+    const clinicAddress = clinic.address ?? undefined;
+    const clinicPublicProfile = clinic.publicProfile ?? undefined;
+    const clinicTaxInfo = clinic.taxInfo ?? undefined;
 
     // Generate PDF
     const pdfBuffer = await renderToBuffer(
@@ -61,14 +59,13 @@ export async function GET(
           footerText: clinic.footerText,
           phone: clinic.phone,
           email: clinic.email,
-          address: clinic.address,
-          publicProfile: clinic.publicProfile,
-          taxInfo: clinic.taxInfo,
+          address: clinicAddress,
+          publicProfile: clinicPublicProfile,
+          taxInfo: clinicTaxInfo,
         },
       })
     );
 
-    // Return PDF as response
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {

@@ -1,6 +1,7 @@
-import { ObjectId } from "mongodb";
-import { getMedicationTemplatesCollection } from "./collections";
-import { MedicationSource } from "@/types";
+import { getDb } from "@/lib/db/sqlite";
+import { medicationTemplates, generateId } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
+import type { MedicationSource } from "@/types";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -62,10 +63,8 @@ export async function seedDefaultMedications(
   clinicId: string,
   createdBy: string
 ): Promise<{ allopathic: number; homeopathic: number; skipped: number }> {
-  const templates = await getMedicationTemplatesCollection();
-  const clinicObjectId = new ObjectId(clinicId);
-  const createdByObjectId = new ObjectId(createdBy);
-  const now = new Date();
+  const db = getDb();
+  const now = new Date().toISOString();
 
   let allopathicCount = 0;
   let homeopathicCount = 0;
@@ -74,10 +73,10 @@ export async function seedDefaultMedications(
   // Read CSV files from public folder
   const publicDir = path.join(process.cwd(), "public");
 
-  const seedMedications = async (
+  const seedMedications = (
     filename: string,
     source: MedicationSource
-  ) => {
+  ): number => {
     const filePath = path.join(publicDir, filename);
 
     if (!fs.existsSync(filePath)) {
@@ -92,33 +91,42 @@ export async function seedDefaultMedications(
 
     for (const med of medications) {
       // Check if this default medication already exists for this clinic
-      const existing = await templates.findOne({
-        clinicId: clinicObjectId,
-        name: med.name,
-        isDefault: true,
-        source: source,
-      });
+      const existing = db
+        .select({ id: medicationTemplates.id })
+        .from(medicationTemplates)
+        .where(
+          and(
+            eq(medicationTemplates.clinicId, clinicId),
+            eq(medicationTemplates.name, med.name),
+            eq(medicationTemplates.isDefault, true),
+            eq(medicationTemplates.source, source)
+          )
+        )
+        .get();
 
       if (existing) {
         skippedCount++;
         continue;
       }
 
-      await templates.insertOne({
-        clinicId: clinicObjectId,
-        name: med.name,
-        dosage: med.dosage,
-        duration: med.duration,
-        instructions: med.instructions || undefined,
-        category: med.category || undefined,
-        description: med.description || undefined,
-        source: source,
-        isDefault: true,
-        usageCount: 0,
-        createdBy: createdByObjectId,
-        createdAt: now,
-        updatedAt: now,
-      } as never);
+      db.insert(medicationTemplates)
+        .values({
+          id: generateId(),
+          clinicId,
+          name: med.name,
+          dosage: med.dosage,
+          duration: med.duration,
+          instructions: med.instructions || null,
+          category: med.category || null,
+          description: med.description || null,
+          source,
+          isDefault: true,
+          usageCount: 0,
+          createdBy,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run();
 
       count++;
     }
@@ -127,13 +135,13 @@ export async function seedDefaultMedications(
   };
 
   // Seed allopathic medications
-  allopathicCount = await seedMedications(
+  allopathicCount = seedMedications(
     "default_allopathic_medications.csv",
     "allopathic"
   );
 
   // Seed homeopathic medications
-  homeopathicCount = await seedMedications(
+  homeopathicCount = seedMedications(
     "default_homeopathic_medications.csv",
     "homeopathic"
   );
@@ -145,39 +153,66 @@ export async function seedDefaultMedications(
   };
 }
 
-export async function hasDefaultMedications(clinicId: string): Promise<boolean> {
-  const templates = await getMedicationTemplatesCollection();
-  const count = await templates.countDocuments({
-    clinicId: new ObjectId(clinicId),
-    isDefault: true,
-  });
-  return count > 0;
+export function hasDefaultMedications(clinicId: string): boolean {
+  const db = getDb();
+  const row = db
+    .select({ count: sql<number>`count(*)` })
+    .from(medicationTemplates)
+    .where(
+      and(
+        eq(medicationTemplates.clinicId, clinicId),
+        eq(medicationTemplates.isDefault, true)
+      )
+    )
+    .get();
+  return (row?.count ?? 0) > 0;
 }
 
-export async function getDefaultMedicationStats(clinicId: string): Promise<{
+export function getDefaultMedicationStats(clinicId: string): {
   allopathic: number;
   homeopathic: number;
   custom: number;
-}> {
-  const templates = await getMedicationTemplatesCollection();
-  const clinicObjectId = new ObjectId(clinicId);
+} {
+  const db = getDb();
 
-  const [allopathic, homeopathic, custom] = await Promise.all([
-    templates.countDocuments({
-      clinicId: clinicObjectId,
-      source: "allopathic",
-      isDefault: true,
-    }),
-    templates.countDocuments({
-      clinicId: clinicObjectId,
-      source: "homeopathic",
-      isDefault: true,
-    }),
-    templates.countDocuments({
-      clinicId: clinicObjectId,
-      $or: [{ isDefault: { $ne: true } }, { source: "custom" }],
-    }),
-  ]);
+  const allopathic = db
+    .select({ count: sql<number>`count(*)` })
+    .from(medicationTemplates)
+    .where(
+      and(
+        eq(medicationTemplates.clinicId, clinicId),
+        eq(medicationTemplates.source, "allopathic"),
+        eq(medicationTemplates.isDefault, true)
+      )
+    )
+    .get();
 
-  return { allopathic, homeopathic, custom };
+  const homeopathic = db
+    .select({ count: sql<number>`count(*)` })
+    .from(medicationTemplates)
+    .where(
+      and(
+        eq(medicationTemplates.clinicId, clinicId),
+        eq(medicationTemplates.source, "homeopathic"),
+        eq(medicationTemplates.isDefault, true)
+      )
+    )
+    .get();
+
+  const custom = db
+    .select({ count: sql<number>`count(*)` })
+    .from(medicationTemplates)
+    .where(
+      and(
+        eq(medicationTemplates.clinicId, clinicId),
+        eq(medicationTemplates.isDefault, false)
+      )
+    )
+    .get();
+
+  return {
+    allopathic: allopathic?.count ?? 0,
+    homeopathic: homeopathic?.count ?? 0,
+    custom: custom?.count ?? 0,
+  };
 }

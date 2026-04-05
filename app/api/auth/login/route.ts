@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getUsersCollection } from "@/lib/db/collections";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db/sqlite";
+import { users } from "@/lib/db/schema";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import type { LoginHistoryEntry } from "@/types";
@@ -18,8 +20,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const users = await getUsersCollection();
-    const user = await users.findOne({ email: email.toLowerCase() });
+    const db = getDb();
+    const user = db.select().from(users).where(eq(users.email, email.toLowerCase())).get();
 
     if (!user) {
       return NextResponse.json(
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
                       "unknown";
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    const now = new Date();
+    const now = new Date().toISOString();
     const loginEntry: LoginHistoryEntry = {
       loginAt: now,
       ipAddress,
@@ -58,33 +60,32 @@ export async function POST(request: Request) {
     };
 
     // Get existing login history (or empty array)
-    const existingHistory = user.loginHistory || [];
+    const existingHistory: LoginHistoryEntry[] = user.loginHistory ?? [];
     
     // Add new entry and keep only last MAX_LOGIN_HISTORY entries
     const updatedHistory = [loginEntry, ...existingHistory].slice(0, MAX_LOGIN_HISTORY);
 
     // Update last login and login history
-    await users.updateOne(
-      { _id: user._id },
-      { 
-        $set: { 
-          lastLoginAt: now,
-          loginHistory: updatedHistory,
-        } 
-      }
-    );
+    db.update(users)
+      .set({
+        lastLoginAt: now,
+        loginHistory: updatedHistory,
+        updatedAt: now,
+      })
+      .where(eq(users.id, user.id))
+      .run();
 
     // Create session
     await createSession(
-      user._id.toString(),
-      user.clinicId.toString(),
-      user.role
+      user.id,
+      user.clinicId,
+      user.role as "doctor" | "frontdesk",
     );
 
     return NextResponse.json({
       success: true,
       user: {
-        id: user._id.toString(),
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,

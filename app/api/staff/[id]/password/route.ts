@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { getUsersCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { users } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { requireRole } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/password";
 
@@ -11,12 +12,8 @@ export async function PUT(
 ) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
     const body = await request.json();
     const { password } = body;
@@ -36,13 +33,12 @@ export async function PUT(
       );
     }
 
-    const users = await getUsersCollection();
-
     // Check user exists and belongs to clinic
-    const existingUser = await users.findOne({
-      _id: new ObjectId(id),
-      clinicId,
-    });
+    const existingUser = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.clinicId, session.clinicId)))
+      .get();
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -57,17 +53,16 @@ export async function PUT(
     }
 
     // Hash new password and update
-    const passwordHash = await hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
-    await users.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          passwordHash,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    await db
+      .update(users)
+      .set({
+        passwordHash: hashedPassword,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(users.id, id))
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

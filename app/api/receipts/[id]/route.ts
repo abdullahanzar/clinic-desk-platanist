@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts } from "@/lib/db/schema";
 
 // GET /api/receipts/[id] - Get single receipt
 export async function GET(
@@ -15,30 +16,17 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
-    }
-
-    const receipts = await getReceiptsCollection();
-    const receipt = await receipts.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const receipt = db.select().from(receipts)
+      .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+      .get();
 
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      receipt: {
-        ...receipt,
-        _id: receipt._id.toString(),
-        clinicId: receipt.clinicId.toString(),
-        visitId: receipt.visitId?.toString(),
-        createdBy: receipt.createdBy.toString(),
-      },
-    });
+    return NextResponse.json({ receipt });
   } catch (error) {
     console.error("Get receipt error:", error);
     return NextResponse.json(
@@ -59,7 +47,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only doctors can delete receipts
     if (session.role !== "doctor") {
       return NextResponse.json(
         { error: "Only doctors can delete receipts" },
@@ -68,20 +55,19 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid receipt ID" }, { status: 400 });
-    }
+    const existing = db.select({ id: receipts.id }).from(receipts)
+      .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+      .get();
 
-    const receipts = await getReceiptsCollection();
-    const result = await receipts.deleteOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
-
-    if (result.deletedCount === 0) {
+    if (!existing) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
+
+    db.delete(receipts)
+      .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+      .run();
 
     return NextResponse.json({
       success: true,

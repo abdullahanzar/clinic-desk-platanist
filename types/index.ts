@@ -1,5 +1,3 @@
-import { ObjectId } from "mongodb";
-
 // ============================================
 // CLINIC
 // ============================================
@@ -30,7 +28,7 @@ export interface TaxInfo {
 }
 
 export interface Clinic {
-  _id: ObjectId;
+  id: string;
   name: string;
   slug: string; // unique, for public URL
   address: Address;
@@ -39,8 +37,8 @@ export interface Clinic {
   website?: string;
 
   // QR Receipt System
-  currentSharedReceiptId: ObjectId | null;
-  currentSharedReceiptExpiresAt: Date | null;
+  currentSharedReceiptId: string | null;
+  currentSharedReceiptExpiresAt: string | null;
   receiptShareDurationMinutes: number; // Default: 10
 
   // Branding
@@ -54,11 +52,11 @@ export interface Clinic {
   // Doctor Website (public profile)
   publicProfile: PublicProfile;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type ClinicInsert = Omit<Clinic, "_id">;
+export type ClinicInsert = Omit<Clinic, "id">;
 
 // ============================================
 // USER
@@ -66,27 +64,27 @@ export type ClinicInsert = Omit<Clinic, "_id">;
 export type UserRole = "doctor" | "frontdesk";
 
 export interface LoginHistoryEntry {
-  loginAt: Date;
+  loginAt: string;
   ipAddress?: string;
   userAgent?: string;
 }
 
 export interface User {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   name: string;
   email: string; // Login identifier
   passwordHash: string;
   role: UserRole;
   isActive: boolean;
-  lastLoginAt?: Date;
+  lastLoginAt?: string;
   loginHistory: LoginHistoryEntry[]; // Last 50 login entries
-  createdByUserId?: ObjectId; // Who created this user (for staff created by doctor)
-  createdAt: Date;
-  updatedAt: Date;
+  createdByUserId?: string; // Who created this user (for staff created by doctor)
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type UserInsert = Omit<User, "_id">;
+export type UserInsert = Omit<User, "id">;
 
 // Safe user object without password
 export type SafeUser = Omit<User, "passwordHash">;
@@ -104,28 +102,28 @@ export interface PatientInfo {
 export type VisitStatus = "waiting" | "in-consultation" | "completed" | "cancelled";
 
 export interface Visit {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
 
-  // Patient Info (denormalized per visit)
+  // Patient Info (flattened in DB, presented as object in API)
   patient: PatientInfo;
 
   visitReason: string;
-  visitDate: Date; // Date of visit (for filtering "today")
+  visitDate: string; // ISO date string
   tokenNumber?: number;
 
   status: VisitStatus;
 
   // Metadata
-  createdBy: ObjectId; // User who created (front desk)
-  consultedBy?: ObjectId; // Doctor who consulted
+  createdBy: string; // User who created (front desk)
+  consultedBy?: string; // Doctor who consulted
 
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
 }
 
-export type VisitInsert = Omit<Visit, "_id">;
+export type VisitInsert = Omit<Visit, "id">;
 
 // ============================================
 // PRESCRIPTION
@@ -140,9 +138,9 @@ export interface Medication {
 export type PrescriptionStatus = "draft" | "finalized";
 
 export interface Prescription {
-  _id: ObjectId;
-  clinicId: ObjectId;
-  visitId: ObjectId;
+  id: string;
+  clinicId: string;
+  visitId: string;
 
   // Snapshot of patient (for PDF)
   patientSnapshot: {
@@ -158,21 +156,21 @@ export interface Prescription {
   medications: Medication[];
 
   advice?: string;
-  followUpDate?: Date;
+  followUpDate?: string;
 
   // State
   status: PrescriptionStatus;
-  finalizedAt?: Date;
+  finalizedAt?: string;
 
   // PDF
-  pdfGeneratedAt?: Date;
+  pdfGeneratedAt?: string;
 
-  createdBy: ObjectId; // Doctor
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string; // Doctor
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type PrescriptionInsert = Omit<Prescription, "_id">;
+export type PrescriptionInsert = Omit<Prescription, "id">;
 
 // ============================================
 // RECEIPT
@@ -185,9 +183,9 @@ export interface LineItem {
 export type PaymentMode = "cash" | "upi" | "card" | "other";
 
 export interface Receipt {
-  _id: ObjectId;
-  clinicId: ObjectId;
-  visitId?: ObjectId;
+  id: string;
+  clinicId: string;
+  visitId?: string;
 
   // Receipt Number (clinic-specific sequential)
   receiptNumber: string; // "RCP-2025-0001"
@@ -217,15 +215,15 @@ export interface Receipt {
   isPaid: boolean;
 
   // Timestamps
-  receiptDate: Date;
-  createdBy: ObjectId;
-  createdAt: Date;
+  receiptDate: string;
+  createdBy: string;
+  createdAt: string;
 
   // Sharing tracking
-  lastSharedAt?: Date;
+  lastSharedAt?: string;
 }
 
-export type ReceiptInsert = Omit<Receipt, "_id">;
+export type ReceiptInsert = Omit<Receipt, "id">;
 
 // ============================================
 // CALLBACK REQUEST
@@ -233,8 +231,8 @@ export type ReceiptInsert = Omit<Receipt, "_id">;
 export type CallbackStatus = "pending" | "contacted" | "converted" | "dismissed";
 
 export interface CallbackRequest {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
 
   name: string;
   phone: string;
@@ -243,13 +241,13 @@ export interface CallbackRequest {
   status: CallbackStatus;
   notes?: string;
 
-  handledBy?: ObjectId;
-  handledAt?: Date;
+  handledBy?: string;
+  handledAt?: string;
 
-  createdAt: Date;
+  createdAt: string;
 }
 
-export type CallbackRequestInsert = Omit<CallbackRequest, "_id">;
+export type CallbackRequestInsert = Omit<CallbackRequest, "id">;
 
 // ============================================
 // SESSION / AUTH
@@ -267,89 +265,89 @@ export interface SessionPayload {
 export type MedicationSource = "allopathic" | "homeopathic" | "custom";
 
 export interface MedicationTemplate {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
   // Medication details
-  name: string; // "Tab. Paracetamol 500mg"
-  dosage: string; // "1-0-1"
-  duration: string; // "5 days"
-  instructions?: string; // "After food"
+  name: string;
+  dosage: string;
+  duration: string;
+  instructions?: string;
   
   // Categorization
-  category?: string; // "Analgesic", "Antibiotic", etc.
-  description?: string; // Detailed description of the medication
+  category?: string;
+  description?: string;
   
   // Source tracking
-  source: MedicationSource; // "allopathic", "homeopathic", or "custom"
-  isDefault: boolean; // true = system default, cannot be deleted
+  source: MedicationSource;
+  isDefault: boolean;
   
   // Usage tracking
   usageCount: number;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type MedicationTemplateInsert = Omit<MedicationTemplate, "_id">;
+export type MedicationTemplateInsert = Omit<MedicationTemplate, "id">;
 
 // ============================================
 // CUSTOM ADVICE TEMPLATES
 // ============================================
 export interface AdviceTemplate {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
   // Advice content
-  title: string; // Short identifier like "General Fever Care"
-  content: string; // Full advice text
+  title: string;
+  content: string;
   
   // Categorization
-  category?: string; // "Fever", "Diet", "Post-op", etc.
+  category?: string;
   
   // Source tracking
-  isDefault: boolean; // true = system default, cannot be deleted
+  isDefault: boolean;
   
   // Usage tracking
   usageCount: number;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type AdviceTemplateInsert = Omit<AdviceTemplate, "_id">;
+export type AdviceTemplateInsert = Omit<AdviceTemplate, "id">;
 
 // ============================================
 // CUSTOM DIAGNOSIS TEMPLATES
 // ============================================
 export interface DiagnosisTemplate {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
-  name: string; // "Acute Upper Respiratory Infection"
-  icdCode?: string; // Optional ICD-10 code
+  name: string;
+  icdCode?: string;
   
   // Categorization
-  category?: string; // "Respiratory", "Cardiovascular", etc.
-  description?: string; // Brief description of the diagnosis
+  category?: string;
+  description?: string;
   
   // Source tracking
-  isDefault: boolean; // true = system default, cannot be deleted
+  isDefault: boolean;
   
   // Usage tracking
   usageCount: number;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type DiagnosisTemplateInsert = Omit<DiagnosisTemplate, "_id">;
+export type DiagnosisTemplateInsert = Omit<DiagnosisTemplate, "id">;
 
 // ============================================
 // BILLING - EXPENSE TRACKING
@@ -369,14 +367,14 @@ export type ExpenseCategory =
 export type RecurringFrequency = "monthly" | "quarterly" | "yearly";
 
 export interface Expense {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
   description: string;
   amount: number;
   category: ExpenseCategory;
   
-  expenseDate: Date;
+  expenseDate: string;
   
   // Recurring expense tracking
   isRecurring: boolean;
@@ -388,19 +386,19 @@ export interface Expense {
   notes?: string;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type ExpenseInsert = Omit<Expense, "_id">;
+export type ExpenseInsert = Omit<Expense, "id">;
 
 // ============================================
 // BILLING - BUDGET TARGETS
 // ============================================
 export interface BudgetTarget {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
   month: number; // 1-12
   year: number;
@@ -411,21 +409,21 @@ export interface BudgetTarget {
   notes?: string;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type BudgetTargetInsert = Omit<BudgetTarget, "_id">;
+export type BudgetTargetInsert = Omit<BudgetTarget, "id">;
 
 // ============================================
 // BILLING - SERVICE CATEGORIES
 // ============================================
 export interface ServiceCategory {
-  _id: ObjectId;
-  clinicId: ObjectId;
+  id: string;
+  clinicId: string;
   
-  name: string; // "Consultation", "Lab Test", "Procedure", etc.
+  name: string;
   defaultAmount?: number;
   description?: string;
   
@@ -433,12 +431,12 @@ export interface ServiceCategory {
   sortOrder: number;
   
   // Metadata
-  createdBy: ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type ServiceCategoryInsert = Omit<ServiceCategory, "_id">;
+export type ServiceCategoryInsert = Omit<ServiceCategory, "id">;
 
 // ============================================
 // BILLING - ANALYTICS TYPES (for API responses)

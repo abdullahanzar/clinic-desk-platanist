@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { requireSuperAdminSession } from "@/lib/auth/super-admin";
-import { getUsersCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics, users, generateId } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
-import type { UserInsert } from "@/types";
 
 // GET /api/super-admin/users - List all users across all clinics
 export async function GET(request: Request) {
@@ -14,37 +14,53 @@ export async function GET(request: Request) {
     const clinicId = searchParams.get("clinicId");
     const isActive = searchParams.get("isActive");
 
-    const users = await getUsersCollection();
-    const clinics = await getClinicsCollection();
+    const db = getDb();
 
-    // Build query
-    const query: Record<string, unknown> = {};
-    if (clinicId && ObjectId.isValid(clinicId)) {
-      query.clinicId = new ObjectId(clinicId);
+    // Build conditions
+    const conditions = [];
+    if (clinicId) {
+      conditions.push(eq(users.clinicId, clinicId));
     }
     if (isActive !== null && isActive !== undefined) {
-      query.isActive = isActive === "true";
+      conditions.push(eq(users.isActive, isActive === "true"));
     }
 
-    const userList = await users
-      .find(query, { projection: { passwordHash: 0 } })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const userList = db
+      .select({
+        id: users.id,
+        clinicId: users.clinicId,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(whereClause)
+      .orderBy(desc(users.createdAt))
+      .all();
 
     // Get clinic names
-    const clinicIds = [...new Set(userList.map((u) => u.clinicId.toString()))];
-    const clinicList = await clinics
-      .find({ _id: { $in: clinicIds.map((id) => new ObjectId(id)) } })
-      .toArray();
-
-    const clinicMap = new Map(
-      clinicList.map((c) => [c._id.toString(), c.name])
-    );
+    const clinicIds = [...new Set(userList.map((u) => u.clinicId))];
+    const clinicMap = new Map<string, string>();
+    for (const cId of clinicIds) {
+      const clinic = db
+        .select({ name: clinics.name })
+        .from(clinics)
+        .where(eq(clinics.id, cId))
+        .get();
+      if (clinic) {
+        clinicMap.set(cId, clinic.name);
+      }
+    }
 
     const formattedUsers = userList.map((user) => ({
-      _id: user._id.toString(),
-      clinicId: user.clinicId.toString(),
-      clinicName: clinicMap.get(user.clinicId.toString()) || "Unknown",
+      id: user.id,
+      clinicId: user.clinicId,
+      clinicName: clinicMap.get(user.clinicId) || "Unknown",
       name: user.name,
       email: user.email,
       role: user.role,
@@ -82,11 +98,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate clinic ID
-    if (!ObjectId.isValid(clinicId)) {
-      return NextResponse.json({ error: "Invalid clinic ID" }, { status: 400 });
-    }
-
     // Validate role
     if (!["doctor", "frontdesk"].includes(role)) {
       return NextResponse.json(
@@ -112,17 +123,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const clinics = await getClinicsCollection();
-    const users = await getUsersCollection();
+    const db = getDb();
 
     // Check if clinic exists
-    const clinic = await clinics.findOne({ _id: new ObjectId(clinicId) });
+    const clinic = db
+      .select()
+      .from(clinics)
+      .where(eq(clinics.id, clinicId))
+      .get();
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
     // Check if email already exists
-    const existingUser = await users.findOne({ email: email.toLowerCase() });
+    const existingUser = db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .get();
     if (existingUser) {
       return NextResponse.json(
         { error: "Email already registered" },
@@ -132,19 +150,23 @@ export async function POST(request: Request) {
 
     // Create user
     const passwordHash = await hashPassword(password);
-    const user: UserInsert = {
-      clinicId: new ObjectId(clinicId),
-      name,
-      email: email.toLowerCase(),
-      passwordHash,
-      role,
-      isActive: true,
-      loginHistory: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const now = new Date().toISOString();
+    const userId = generateId();
 
-    const result = await users.insertOne(user as never);
+    db.insert(users)
+      .values({
+        id: userId,
+        clinicId,
+        name,
+        email: email.toLowerCase(),
+        passwordHash,
+        role,
+        isActive: true,
+        loginHistory: [],
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     console.log(
       `[SUPER_ADMIN] Created user: ${email} (${role}) for clinic ${clinic.name}`
@@ -153,7 +175,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       user: {
-        _id: result.insertedId.toString(),
+        id: userId,
         name,
         email: email.toLowerCase(),
         role,

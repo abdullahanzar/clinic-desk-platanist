@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, clinics, receipts } from "@/lib/db/collections";
+import { eq, desc } from "drizzle-orm";
 import { formatDateIndian } from "@/lib/utils/date";
 import Link from "next/link";
 import { Receipt, ChevronRight, Check, Clock } from "lucide-react";
@@ -9,20 +9,18 @@ export default async function ReceiptsPage() {
   const session = await getSession();
   if (!session) return null;
 
-  const receipts = await getReceiptsCollection();
-  const clinics = await getClinicsCollection();
-  const clinicId = new ObjectId(session.clinicId);
+  const db = getDb();
+  const clinicId = session.clinicId;
 
-  const [recentReceipts, clinic] = await Promise.all([
-    receipts
-      .find({ clinicId })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .toArray(),
-    clinics.findOne({ _id: clinicId }),
-  ]);
+  const recentReceipts = db.select().from(receipts)
+    .where(eq(receipts.clinicId, clinicId))
+    .orderBy(desc(receipts.createdAt))
+    .limit(50)
+    .all();
 
-  const currentSharedReceiptId = clinic?.currentSharedReceiptId?.toString();
+  const clinic = db.select().from(clinics).where(eq(clinics.id, clinicId)).get();
+
+  const currentSharedReceiptId = clinic?.currentSharedReceiptId ?? undefined;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -48,11 +46,11 @@ export default async function ReceiptsPage() {
           <div className="lg:hidden space-y-3">
             {recentReceipts.map((receipt) => {
               const isShared =
-                currentSharedReceiptId === receipt._id.toString();
+                currentSharedReceiptId === receipt.id;
               return (
                 <Link
-                  key={receipt._id.toString()}
-                  href={`/receipts/${receipt._id.toString()}`}
+                  key={receipt.id}
+                  href={`/receipts/${receipt.id}`}
                   className="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
@@ -125,9 +123,9 @@ export default async function ReceiptsPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {recentReceipts.map((receipt) => {
                     const isShared =
-                      currentSharedReceiptId === receipt._id.toString();
+                      currentSharedReceiptId === receipt.id;
                     return (
-                      <tr key={receipt._id.toString()} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                      <tr key={receipt.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-medium text-slate-900 dark:text-slate-100">
@@ -174,7 +172,7 @@ export default async function ReceiptsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <Link
-                            href={`/receipts/${receipt._id.toString()}`}
+                            href={`/receipts/${receipt.id}`}
                             className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium text-sm"
                           >
                             View

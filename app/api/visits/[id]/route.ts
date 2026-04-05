@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection, getPrescriptionsCollection, getReceiptsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { visits, prescriptions, receipts } from "@/lib/db/schema";
 
 // GET /api/visits/[id] - Get single visit
 export async function GET(
@@ -15,16 +16,11 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid visit ID" }, { status: 400 });
-    }
-
-    const visits = await getVisitsCollection();
-    const visit = await visits.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const visit = db.select().from(visits)
+      .where(and(eq(visits.id, id), eq(visits.clinicId, session.clinicId)))
+      .get();
 
     if (!visit) {
       return NextResponse.json({ error: "Visit not found" }, { status: 404 });
@@ -32,11 +28,23 @@ export async function GET(
 
     return NextResponse.json({
       visit: {
-        ...visit,
-        _id: visit._id.toString(),
-        clinicId: visit.clinicId.toString(),
-        createdBy: visit.createdBy.toString(),
-        consultedBy: visit.consultedBy?.toString(),
+        id: visit.id,
+        clinicId: visit.clinicId,
+        patient: {
+          name: visit.patientName,
+          phone: visit.patientPhone,
+          age: visit.patientAge ?? undefined,
+          gender: visit.patientGender ?? undefined,
+        },
+        visitReason: visit.visitReason,
+        visitDate: visit.visitDate,
+        tokenNumber: visit.tokenNumber,
+        status: visit.status,
+        createdBy: visit.createdBy,
+        consultedBy: visit.consultedBy ?? undefined,
+        createdAt: visit.createdAt,
+        updatedAt: visit.updatedAt,
+        completedAt: visit.completedAt ?? undefined,
       },
     });
   } catch (error) {
@@ -60,51 +68,40 @@ export async function PATCH(
     }
 
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid visit ID" }, { status: 400 });
-    }
-
     const body = await request.json();
     const { status, patientName, phone, age, gender, visitReason } = body;
 
-    const visits = await getVisitsCollection();
+    const db = getDb();
+    const now = new Date().toISOString();
 
     const updateFields: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: now,
     };
 
     if (status) {
       updateFields.status = status;
       if (status === "in-consultation") {
-        updateFields.consultedBy = new ObjectId(session.userId);
+        updateFields.consultedBy = session.userId;
       }
       if (status === "completed") {
-        updateFields.completedAt = new Date();
+        updateFields.completedAt = now;
       }
     }
 
-    if (patientName || phone || age !== undefined || gender) {
-      const patientUpdate: Record<string, unknown> = {};
-      if (patientName) patientUpdate["patient.name"] = patientName.trim();
-      if (phone) patientUpdate["patient.phone"] = phone.trim();
-      if (age !== undefined) patientUpdate["patient.age"] = age ? parseInt(age, 10) : null;
-      if (gender) patientUpdate["patient.gender"] = gender;
-      Object.assign(updateFields, patientUpdate);
-    }
+    if (patientName) updateFields.patientName = patientName.trim();
+    if (phone) updateFields.patientPhone = phone.trim();
+    if (age !== undefined) updateFields.patientAge = age ? parseInt(age, 10) : null;
+    if (gender) updateFields.patientGender = gender;
+    if (visitReason) updateFields.visitReason = visitReason.trim();
 
-    if (visitReason) {
-      updateFields.visitReason = visitReason.trim();
-    }
+    db.update(visits)
+      .set(updateFields)
+      .where(and(eq(visits.id, id), eq(visits.clinicId, session.clinicId)))
+      .run();
 
-    const result = await visits.findOneAndUpdate(
-      {
-        _id: new ObjectId(id),
-        clinicId: new ObjectId(session.clinicId),
-      },
-      { $set: updateFields },
-      { returnDocument: "after" }
-    );
+    const result = db.select().from(visits)
+      .where(and(eq(visits.id, id), eq(visits.clinicId, session.clinicId)))
+      .get();
 
     if (!result) {
       return NextResponse.json({ error: "Visit not found" }, { status: 404 });
@@ -113,11 +110,23 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       visit: {
-        ...result,
-        _id: result._id.toString(),
-        clinicId: result.clinicId.toString(),
-        createdBy: result.createdBy.toString(),
-        consultedBy: result.consultedBy?.toString(),
+        id: result.id,
+        clinicId: result.clinicId,
+        patient: {
+          name: result.patientName,
+          phone: result.patientPhone,
+          age: result.patientAge ?? undefined,
+          gender: result.patientGender ?? undefined,
+        },
+        visitReason: result.visitReason,
+        visitDate: result.visitDate,
+        tokenNumber: result.tokenNumber,
+        status: result.status,
+        createdBy: result.createdBy,
+        consultedBy: result.consultedBy ?? undefined,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        completedAt: result.completedAt ?? undefined,
       },
     });
   } catch (error) {
@@ -140,7 +149,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only doctors can delete visits
     if (session.role !== "doctor") {
       return NextResponse.json(
         { error: "Only doctors can delete visits" },
@@ -149,32 +157,26 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid visit ID" }, { status: 400 });
-    }
+    const visit = db.select().from(visits)
+      .where(and(eq(visits.id, id), eq(visits.clinicId, session.clinicId)))
+      .get();
 
-    const visitId = new ObjectId(id);
-    const clinicId = new ObjectId(session.clinicId);
-
-    const visits = await getVisitsCollection();
-    const prescriptions = await getPrescriptionsCollection();
-    const receipts = await getReceiptsCollection();
-
-    // Check if visit exists
-    const visit = await visits.findOne({ _id: visitId, clinicId });
     if (!visit) {
       return NextResponse.json({ error: "Visit not found" }, { status: 404 });
     }
 
-    // Delete related prescriptions
-    await prescriptions.deleteMany({ visitId, clinicId });
-
-    // Delete related receipts
-    await receipts.deleteMany({ visitId, clinicId });
-
-    // Delete the visit
-    await visits.deleteOne({ _id: visitId, clinicId });
+    // Delete related prescriptions and receipts, then the visit
+    db.delete(prescriptions)
+      .where(and(eq(prescriptions.visitId, id), eq(prescriptions.clinicId, session.clinicId)))
+      .run();
+    db.delete(receipts)
+      .where(and(eq(receipts.visitId, id), eq(receipts.clinicId, session.clinicId)))
+      .run();
+    db.delete(visits)
+      .where(and(eq(visits.id, id), eq(visits.clinicId, session.clinicId)))
+      .run();
 
     return NextResponse.json({
       success: true,

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getPrescriptionsCollection, getVisitsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { prescriptions, visits } from "@/lib/db/schema";
 
 // POST /api/prescriptions/[id]/finalize - Finalize prescription
 export async function POST(
@@ -19,18 +20,11 @@ export async function POST(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid prescription ID" }, { status: 400 });
-    }
-
-    const prescriptions = await getPrescriptionsCollection();
-    const visits = await getVisitsCollection();
-
-    const prescription = await prescriptions.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const prescription = db.select().from(prescriptions)
+      .where(and(eq(prescriptions.id, id), eq(prescriptions.clinicId, session.clinicId)))
+      .get();
 
     if (!prescription) {
       return NextResponse.json({ error: "Prescription not found" }, { status: 404 });
@@ -40,29 +34,19 @@ export async function POST(
       return NextResponse.json({ error: "Already finalized" }, { status: 400 });
     }
 
+    const now = new Date().toISOString();
+
     // Finalize prescription
-    await prescriptions.updateOne(
-      { _id: prescription._id },
-      {
-        $set: {
-          status: "finalized",
-          finalizedAt: new Date(),
-          updatedAt: new Date(),
-        },
-      }
-    );
+    db.update(prescriptions)
+      .set({ status: "finalized", finalizedAt: now, updatedAt: now })
+      .where(eq(prescriptions.id, id))
+      .run();
 
     // Mark visit as completed
-    await visits.updateOne(
-      { _id: prescription.visitId },
-      {
-        $set: {
-          status: "completed",
-          completedAt: new Date(),
-          updatedAt: new Date(),
-        },
-      }
-    );
+    db.update(visits)
+      .set({ status: "completed", completedAt: now, updatedAt: now })
+      .where(eq(visits.id, prescription.visitId))
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

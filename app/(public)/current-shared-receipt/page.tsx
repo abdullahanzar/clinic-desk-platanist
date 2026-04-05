@@ -1,4 +1,5 @@
-import { getClinicsCollection, getReceiptsCollection } from "@/lib/db/collections";
+import { getDb, clinics as clinicsTable, receipts } from "@/lib/db/collections";
+import { eq } from "drizzle-orm";
 import { formatDateIndian } from "@/lib/utils/date";
 import { PublicPrintButton } from "@/components/receipts/public-print-button";
 import { RefreshButton } from "@/components/receipts/refresh-button";
@@ -11,11 +12,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function CurrentSharedReceiptPage() {
-  const clinics = await getClinicsCollection();
-  const receipts = await getReceiptsCollection();
+  const db = getDb();
 
   // Get clinic
-  const clinic = await clinics.findOne({ slug: CLINIC_SLUG });
+  const clinic = db.select().from(clinicsTable).where(eq(clinicsTable.slug, CLINIC_SLUG)).get();
 
   if (!clinic) {
     return (
@@ -43,23 +43,18 @@ export default async function CurrentSharedReceiptPage() {
   // Check expiration
   if (
     clinic.currentSharedReceiptExpiresAt &&
-    clinic.currentSharedReceiptExpiresAt < new Date()
+    clinic.currentSharedReceiptExpiresAt < new Date().toISOString()
   ) {
     // Clear expired receipt
-    await clinics.updateOne(
-      { _id: clinic._id },
-      {
-        $set: {
-          currentSharedReceiptId: null,
-          currentSharedReceiptExpiresAt: null,
-        },
-      }
-    );
+    db.update(clinicsTable).set({
+      currentSharedReceiptId: null,
+      currentSharedReceiptExpiresAt: null,
+    }).where(eq(clinicsTable.id, clinic.id)).run();
     return <NoReceiptView clinicName={clinic.name} />;
   }
 
   // Get receipt
-  const receipt = await receipts.findOne({ _id: clinic.currentSharedReceiptId });
+  const receipt = db.select().from(receipts).where(eq(receipts.id, clinic.currentSharedReceiptId!)).get();
 
   if (!receipt) {
     return <NoReceiptView clinicName={clinic.name} />;
@@ -203,7 +198,7 @@ export default async function CurrentSharedReceiptPage() {
         {/* Actions */}
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
           <a
-            href={`/api/public/receipt/${receipt._id.toString()}/pdf`}
+            href={`/api/public/receipt/${receipt.id}/pdf`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white text-center font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 shadow-lg shadow-brand-500/20 transition-all"
@@ -212,7 +207,7 @@ export default async function CurrentSharedReceiptPage() {
             Download PDF
           </a>
           <PublicPrintButton 
-            receiptId={receipt._id.toString()} 
+            receiptId={receipt.id} 
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50" 
           />
         </div>

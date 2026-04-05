@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Plus, X, Loader2, AlertTriangle, Pill, Leaf, User } from "lucide-react";
 
 export interface MedicationSuggestion {
-  _id: string;
+  id: string;
   name: string;
   dosage: string;
   duration: string;
@@ -166,7 +166,7 @@ export default function MedicationAutosuggest({
 
     // Increment usage count
     try {
-      await fetch(`/api/templates/medications/${suggestion._id}`, {
+      await fetch(`/api/templates/medications/${suggestion.id}`, {
         method: "POST",
       });
     } catch (error) {
@@ -265,7 +265,7 @@ export default function MedicationAutosuggest({
               )}
               {suggestions.map((suggestion, idx) => (
                 <button
-                  key={suggestion._id}
+                  key={suggestion.id}
                   type="button"
                   onClick={() => selectSuggestion(suggestion)}
                   className={`w-full px-3 py-2.5 text-left text-sm hover:bg-brand-50 border-b border-slate-100 last:border-b-0 ${

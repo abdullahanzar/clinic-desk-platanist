@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts } from "@/lib/db/schema";
 
 // GET /api/billing/outstanding - Get all outstanding (unpaid) receipts
 export async function GET(request: Request) {
@@ -15,31 +16,30 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "100", 10);
     const sortBy = searchParams.get("sortBy") || "date"; // date, amount, patient
 
-    const receipts = await getReceiptsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
-    // Build sort option
-    let sortOption: Record<string, 1 | -1> = { receiptDate: -1 };
-    if (sortBy === "amount") {
-      sortOption = { totalAmount: -1 };
-    } else if (sortBy === "patient") {
-      sortOption = { "patientSnapshot.name": 1 };
-    }
+    // Build sort expression
+    const orderBy = sortBy === "amount"
+      ? desc(receipts.totalAmount)
+      : sortBy === "patient"
+      ? asc(sql`json_extract(${receipts.patientSnapshot}, '$.name')`)
+      : desc(receipts.receiptDate);
 
     // Find all unpaid receipts
-    const unpaidReceipts = await receipts
-      .find({
-        clinicId,
-        isPaid: false,
-      })
-      .sort(sortOption)
+    const unpaidReceipts = db.select()
+      .from(receipts)
+      .where(and(
+        eq(receipts.clinicId, session.clinicId),
+        eq(receipts.isPaid, false),
+      ))
+      .orderBy(orderBy)
       .limit(limit)
-      .toArray();
+      .all();
 
     // Calculate summary stats
     const totalPending = unpaidReceipts.reduce((sum, r) => sum + r.totalAmount, 0);
     const oldestPending = unpaidReceipts.length > 0
-      ? unpaidReceipts.reduce((oldest, r) => 
+      ? unpaidReceipts.reduce((oldest, r) =>
           r.receiptDate < oldest.receiptDate ? r : oldest
         )
       : null;
@@ -52,10 +52,6 @@ export async function GET(request: Request) {
       );
       return {
         ...receipt,
-        _id: receipt._id.toString(),
-        clinicId: receipt.clinicId.toString(),
-        visitId: receipt.visitId?.toString(),
-        createdBy: receipt.createdBy.toString(),
         daysOverdue: daysDiff,
       };
     });
@@ -104,27 +100,30 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const receipts = await getReceiptsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
+    let modifiedCount = 0;
 
-    // Update all specified receipts
-    const result = await receipts.updateMany(
-      {
-        _id: { $in: receiptIds.map((id: string) => new ObjectId(id)) },
-        clinicId,
-        isPaid: false,
-      },
-      {
-        $set: {
+    // Update each receipt individually (SQLite has no bulk updateMany with $in)
+    for (const id of receiptIds as string[]) {
+      const result = db.update(receipts)
+        .set({
           isPaid: true,
           paymentMode: paymentMode || undefined,
-        },
+        })
+        .where(and(
+          eq(receipts.id, id),
+          eq(receipts.clinicId, session.clinicId),
+          eq(receipts.isPaid, false),
+        )).run();
+
+      if (result.changes > 0) {
+        modifiedCount++;
       }
-    );
+    }
 
     return NextResponse.json({
       success: true,
-      modifiedCount: result.modifiedCount,
+      modifiedCount,
     });
   } catch (error) {
     console.error("Mark receipts paid error:", error);

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { eq, desc, asc } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/sqlite";
 import {
-  getDiagnosisTemplatesCollection,
-  getMedicationTemplatesCollection,
-  getAdviceTemplatesCollection,
-} from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+  diagnosisTemplates,
+  medicationTemplates,
+  adviceTemplates,
+} from "@/lib/db/schema";
 
 // GET - Fetch all templates for pre-caching (diagnoses, medications, advice)
 export async function GET() {
@@ -15,63 +16,49 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
-    // Fetch all templates in parallel
-    const [diagnosisTemplates, medicationTemplates, adviceTemplates] =
-      await Promise.all([
-        getDiagnosisTemplatesCollection().then((col) =>
-          col
-            .find({ clinicId })
-            .sort({ usageCount: -1, name: 1 })
-            .limit(200)
-            .toArray()
-        ),
-        getMedicationTemplatesCollection().then((col) =>
-          col
-            .find({ clinicId })
-            .sort({ usageCount: -1, name: 1 })
-            .limit(500)
-            .toArray()
-        ),
-        getAdviceTemplatesCollection().then((col) =>
-          col
-            .find({ clinicId })
-            .sort({ usageCount: -1, title: 1 })
-            .limit(100)
-            .toArray()
-        ),
-      ]);
+    const diagResults = db
+      .select()
+      .from(diagnosisTemplates)
+      .where(eq(diagnosisTemplates.clinicId, session.clinicId))
+      .orderBy(desc(diagnosisTemplates.usageCount), asc(diagnosisTemplates.name))
+      .limit(200)
+      .all();
+
+    const medResults = db
+      .select()
+      .from(medicationTemplates)
+      .where(eq(medicationTemplates.clinicId, session.clinicId))
+      .orderBy(desc(medicationTemplates.usageCount), asc(medicationTemplates.name))
+      .limit(500)
+      .all();
+
+    const advResults = db
+      .select()
+      .from(adviceTemplates)
+      .where(eq(adviceTemplates.clinicId, session.clinicId))
+      .orderBy(desc(adviceTemplates.usageCount), asc(adviceTemplates.title))
+      .limit(100)
+      .all();
 
     // Get unique categories
     const diagnosisCategories = [
-      ...new Set(
-        diagnosisTemplates
-          .map((t) => t.category)
-          .filter(Boolean)
-      ),
+      ...new Set(diagResults.map((t) => t.category).filter(Boolean)),
     ].sort();
 
     const medicationCategories = [
-      ...new Set(
-        medicationTemplates
-          .map((t) => t.category)
-          .filter(Boolean)
-      ),
+      ...new Set(medResults.map((t) => t.category).filter(Boolean)),
     ].sort();
 
     const adviceCategories = [
-      ...new Set(
-        adviceTemplates
-          .map((t) => t.category)
-          .filter(Boolean)
-      ),
+      ...new Set(advResults.map((t) => t.category).filter(Boolean)),
     ].sort();
 
     return NextResponse.json({
       diagnoses: {
-        templates: diagnosisTemplates.map((t) => ({
-          _id: t._id.toString(),
+        templates: diagResults.map((t) => ({
+          id: t.id,
           name: t.name,
           icdCode: t.icdCode,
           category: t.category,
@@ -82,8 +69,8 @@ export async function GET() {
         categories: diagnosisCategories,
       },
       medications: {
-        templates: medicationTemplates.map((t) => ({
-          _id: t._id.toString(),
+        templates: medResults.map((t) => ({
+          id: t.id,
           name: t.name,
           dosage: t.dosage,
           duration: t.duration,
@@ -97,8 +84,8 @@ export async function GET() {
         categories: medicationCategories,
       },
       advice: {
-        templates: adviceTemplates.map((t) => ({
-          _id: t._id.toString(),
+        templates: advResults.map((t) => ({
+          id: t.id,
           title: t.title,
           content: t.content,
           category: t.category,

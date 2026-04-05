@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, desc, like, or, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { visits, generateId } from "@/lib/db/schema";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "@/lib/utils/date";
-import type { VisitInsert } from "@/types";
 
 // GET /api/visits - List visits by date or date range
-// Query params:
-// - date: specific date (YYYY-MM-DD)
-// - startDate, endDate: date range
-// - month, year: month view (e.g., month=1&year=2026)
-// - status: filter by status
-// - search: search by patient name or phone
-// - page: page number (1-indexed)
-// - limit: items per page (default 20)
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -32,82 +24,86 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
 
-    const visits = await getVisitsCollection();
+    const db = getDb();
 
-    let dateFilter: { $gte: Date; $lte: Date } | undefined;
+    // Build date range as ISO strings
+    let dateStart: string | undefined;
+    let dateEnd: string | undefined;
 
     if (monthParam && yearParam) {
-      // Month view: get all visits for a specific month
       const monthDate = new Date(parseInt(yearParam), parseInt(monthParam) - 1, 1);
-      dateFilter = {
-        $gte: startOfMonth(monthDate),
-        $lte: endOfMonth(monthDate),
-      };
+      dateStart = startOfMonth(monthDate).toISOString();
+      dateEnd = endOfMonth(monthDate).toISOString();
     } else if (startDateParam && endDateParam) {
-      // Date range view
-      dateFilter = {
-        $gte: startOfDay(new Date(startDateParam)),
-        $lte: endOfDay(new Date(endDateParam)),
-      };
+      dateStart = startOfDay(new Date(startDateParam)).toISOString();
+      dateEnd = endOfDay(new Date(endDateParam)).toISOString();
     } else if (dateParam) {
-      // Single date view
       const date = new Date(dateParam);
-      dateFilter = {
-        $gte: startOfDay(date),
-        $lte: endOfDay(date),
-      };
+      dateStart = startOfDay(date).toISOString();
+      dateEnd = endOfDay(date).toISOString();
     }
-    // If no date params provided and no search, default to today
-    // If search is provided without date, search across all visits
-    if (!dateFilter && !searchQuery) {
+    if (!dateStart && !searchQuery) {
       const date = new Date();
-      dateFilter = {
-        $gte: startOfDay(date),
-        $lte: endOfDay(date),
-      };
+      dateStart = startOfDay(date).toISOString();
+      dateEnd = endOfDay(date).toISOString();
     }
 
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-    };
+    // Build WHERE conditions
+    const conditions = [eq(visits.clinicId, session.clinicId)];
 
-    if (dateFilter) {
-      query.visitDate = dateFilter;
+    if (dateStart && dateEnd) {
+      conditions.push(gte(visits.visitDate, dateStart));
+      conditions.push(lte(visits.visitDate, dateEnd));
     }
 
     if (statusParam) {
-      query.status = statusParam;
+      conditions.push(eq(visits.status, statusParam as "waiting" | "in-consultation" | "completed" | "cancelled"));
     }
 
-    // Add search filter for patient name or phone
     if (searchQuery && searchQuery.trim()) {
-      const searchRegex = { $regex: searchQuery.trim(), $options: "i" };
-      query.$or = [
-        { "patient.name": searchRegex },
-        { "patient.phone": searchRegex },
-      ];
+      const pattern = `%${searchQuery.trim()}%`;
+      conditions.push(
+        or(
+          like(visits.patientName, pattern),
+          like(visits.patientPhone, pattern),
+        )!
+      );
     }
 
-    // Get total count for pagination
-    const totalCount = await visits.countDocuments(query);
-    const totalPages = Math.ceil(totalCount / limit);
-    const skip = (page - 1) * limit;
+    const where = and(...conditions);
 
-    // Sort by most recent first (createdAt descending), then by token number
-    const results = await visits
-      .find(query)
-      .sort({ createdAt: -1, tokenNumber: -1 })
-      .skip(skip)
+    // Count total
+    const countResult = db.select({ count: sql<number>`count(*)` }).from(visits).where(where).get();
+    const totalCount = countResult?.count ?? 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    const offset = (page - 1) * limit;
+
+    const results = db.select().from(visits)
+      .where(where)
+      .orderBy(desc(visits.createdAt), desc(visits.tokenNumber))
       .limit(limit)
-      .toArray();
+      .offset(offset)
+      .all();
 
     return NextResponse.json({
       visits: results.map((v) => ({
-        ...v,
-        _id: v._id.toString(),
-        clinicId: v.clinicId.toString(),
-        createdBy: v.createdBy.toString(),
-        consultedBy: v.consultedBy?.toString(),
+        id: v.id,
+        clinicId: v.clinicId,
+        patient: {
+          name: v.patientName,
+          phone: v.patientPhone,
+          age: v.patientAge ?? undefined,
+          gender: v.patientGender ?? undefined,
+        },
+        visitReason: v.visitReason,
+        visitDate: v.visitDate,
+        tokenNumber: v.tokenNumber,
+        status: v.status,
+        createdBy: v.createdBy,
+        consultedBy: v.consultedBy ?? undefined,
+        createdAt: v.createdAt,
+        updatedAt: v.updatedAt,
+        completedAt: v.completedAt ?? undefined,
       })),
       pagination: {
         page,
@@ -145,50 +141,61 @@ export async function POST(request: Request) {
       );
     }
 
-    const visits = await getVisitsCollection();
-    const clinicId = new ObjectId(session.clinicId);
-    const today = new Date();
+    const db = getDb();
+    const now = new Date();
+    const todayStart = startOfDay(now).toISOString();
+    const todayEnd = endOfDay(now).toISOString();
 
-    // Generate token number for today
-    const todayStart = startOfDay(today);
-    const todayEnd = endOfDay(today);
-
-    const lastVisit = await visits.findOne(
-      {
-        clinicId,
-        visitDate: { $gte: todayStart, $lte: todayEnd },
-      },
-      { sort: { tokenNumber: -1 } }
-    );
+    // Get last token number for today
+    const lastVisit = db.select({ tokenNumber: visits.tokenNumber })
+      .from(visits)
+      .where(and(
+        eq(visits.clinicId, session.clinicId),
+        gte(visits.visitDate, todayStart),
+        lte(visits.visitDate, todayEnd),
+      ))
+      .orderBy(desc(visits.tokenNumber))
+      .limit(1)
+      .get();
 
     const tokenNumber = (lastVisit?.tokenNumber || 0) + 1;
+    const id = generateId();
+    const nowISO = now.toISOString();
 
-    const visit: VisitInsert = {
-      clinicId,
-      patient: {
-        name: patientName.trim(),
-        phone: phone.trim(),
-        age: age ? parseInt(age, 10) : undefined,
-        gender: gender || undefined,
-      },
+    db.insert(visits).values({
+      id,
+      clinicId: session.clinicId,
+      patientName: patientName.trim(),
+      patientPhone: phone.trim(),
+      patientAge: age ? parseInt(age, 10) : null,
+      patientGender: gender || null,
       visitReason: visitReason.trim(),
-      visitDate: today,
+      visitDate: nowISO,
       tokenNumber,
       status: "waiting",
-      createdBy: new ObjectId(session.userId),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const result = await visits.insertOne(visit as never);
+      createdBy: session.userId,
+      createdAt: nowISO,
+      updatedAt: nowISO,
+    }).run();
 
     return NextResponse.json({
       success: true,
       visit: {
-        _id: result.insertedId.toString(),
-        ...visit,
-        clinicId: visit.clinicId.toString(),
-        createdBy: visit.createdBy.toString(),
+        id,
+        clinicId: session.clinicId,
+        patient: {
+          name: patientName.trim(),
+          phone: phone.trim(),
+          age: age ? parseInt(age, 10) : undefined,
+          gender: gender || undefined,
+        },
+        visitReason: visitReason.trim(),
+        visitDate: nowISO,
+        tokenNumber,
+        status: "waiting",
+        createdBy: session.userId,
+        createdAt: nowISO,
+        updatedAt: nowISO,
       },
     });
   } catch (error) {

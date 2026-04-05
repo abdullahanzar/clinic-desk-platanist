@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection, getPrescriptionsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, visits as visitsTable, prescriptions } from "@/lib/db/collections";
+import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import ReceiptForm from "@/components/receipts/receipt-form";
 import Link from "next/link";
@@ -16,24 +16,18 @@ export default async function VisitReceiptPage({
 
   const { id } = await params;
 
-  if (!ObjectId.isValid(id)) {
-    notFound();
-  }
+  const db = getDb();
 
-  const visits = await getVisitsCollection();
-  const prescriptions = await getPrescriptionsCollection();
-
-  const visit = await visits.findOne({
-    _id: new ObjectId(id),
-    clinicId: new ObjectId(session.clinicId),
-  });
+  const visit = db.select().from(visitsTable)
+    .where(and(eq(visitsTable.id, id), eq(visitsTable.clinicId, session.clinicId)))
+    .get();
 
   if (!visit) {
     notFound();
   }
 
   // Fetch prescription if exists
-  const prescription = await prescriptions.findOne({ visitId: visit._id });
+  const prescription = db.select().from(prescriptions).where(eq(prescriptions.visitId, visit.id)).get();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -50,17 +44,17 @@ export default async function VisitReceiptPage({
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Generate Receipt</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Patient: <span className="font-medium text-slate-700">{visit.patient.name}</span>
+          Patient: <span className="font-medium text-slate-700">{visit.patientName}</span>
         </p>
       </div>
 
       <ReceiptForm
         visitId={id}
-        patientName={visit.patient.name}
-        patientPhone={visit.patient.phone}
+        patientName={visit.patientName}
+        patientPhone={visit.patientPhone}
         prescriptionData={prescription ? {
-          diagnosis: prescription.diagnosis,
-          advice: prescription.advice,
+          diagnosis: prescription.diagnosis ?? undefined,
+          advice: prescription.advice ?? undefined,
         } : undefined}
       />
     </div>

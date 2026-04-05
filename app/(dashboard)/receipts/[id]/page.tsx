@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, receipts, clinics } from "@/lib/db/collections";
+import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { formatDateIndian } from "@/lib/utils/date";
 import { ShareReceiptButton } from "@/components/receipts/share-receipt-button";
@@ -19,26 +19,20 @@ export default async function ReceiptDetailPage({
 
   const { id } = await params;
 
-  if (!ObjectId.isValid(id)) {
-    notFound();
-  }
+  const db = getDb();
 
-  const receipts = await getReceiptsCollection();
-  const clinics = await getClinicsCollection();
-
-  const receipt = await receipts.findOne({
-    _id: new ObjectId(id),
-    clinicId: new ObjectId(session.clinicId),
-  });
+  const receipt = db.select().from(receipts)
+    .where(and(eq(receipts.id, id), eq(receipts.clinicId, session.clinicId)))
+    .get();
 
   if (!receipt) {
     notFound();
   }
 
-  const clinic = await clinics.findOne({ _id: new ObjectId(session.clinicId) });
+  const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
   const isCurrentlyShared =
-    clinic?.currentSharedReceiptId?.toString() === receipt._id.toString();
+    clinic?.currentSharedReceiptId === receipt.id;
 
   return (
     <div className="max-w-2xl mx-auto">

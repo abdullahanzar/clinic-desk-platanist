@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getExpensesCollection, getBudgetTargetsCollection } from "@/lib/db/collections";
-import { startOfMonth, endOfMonth, formatDateIndian } from "@/lib/utils/date";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, expenses, budgetTargets } from "@/lib/db/schema";
 
 // GET /api/billing/reports - Generate billing reports
 export async function GET(request: Request) {
@@ -16,218 +16,174 @@ export async function GET(request: Request) {
     const reportType = searchParams.get("type") || "monthly"; // monthly, yearly, custom
     const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString(), 10);
     const month = searchParams.get("month") ? parseInt(searchParams.get("month")!, 10) : new Date().getMonth() + 1;
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
 
-    const receipts = await getReceiptsCollection();
-    const expenses = await getExpensesCollection();
-    const budgetTargets = await getBudgetTargetsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
-    let dateStart: Date;
-    let dateEnd: Date;
+    let dateStart: string;
+    let dateEnd: string;
+    let displayText: string;
 
-    if (reportType === "custom" && startDate && endDate) {
-      dateStart = new Date(startDate);
-      dateEnd = new Date(endDate);
-      dateEnd.setHours(23, 59, 59, 999);
+    if (reportType === "custom" && startDateParam && endDateParam) {
+      dateStart = new Date(startDateParam).toISOString();
+      const endD = new Date(endDateParam);
+      endD.setHours(23, 59, 59, 999);
+      dateEnd = endD.toISOString();
+      const startDisplay = new Date(startDateParam);
+      const endDisplay = new Date(endDateParam);
+      displayText = `${startDisplay.getDate().toString().padStart(2, "0")}/${(startDisplay.getMonth() + 1).toString().padStart(2, "0")}/${startDisplay.getFullYear()} - ${endDisplay.getDate().toString().padStart(2, "0")}/${(endDisplay.getMonth() + 1).toString().padStart(2, "0")}/${endDisplay.getFullYear()}`;
     } else if (reportType === "yearly") {
-      dateStart = new Date(year, 0, 1);
-      dateEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+      dateStart = `${year}-01-01T00:00:00.000Z`;
+      dateEnd = `${year}-12-31T23:59:59.999Z`;
+      displayText = `Year ${year}`;
     } else {
       // Monthly (default)
-      const targetDate = new Date(year, month - 1, 1);
-      dateStart = startOfMonth(targetDate);
-      dateEnd = endOfMonth(targetDate);
+      const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+      const lastDay = new Date(year, month, 0).getDate();
+      dateStart = `${monthStr}-01T00:00:00.000Z`;
+      dateEnd = `${monthStr}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+      displayText = new Date(year, month - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
     }
 
-    // Get all receipts in date range
-    const receiptData = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: dateStart, $lte: dateEnd },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalReceipts: { $sum: 1 },
-          grossRevenue: { $sum: "$subtotal" },
-          totalDiscount: { $sum: "$discountAmount" },
-          netRevenue: { $sum: "$totalAmount" },
-          paidAmount: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          unpaidAmount: { $sum: { $cond: ["$isPaid", 0, "$totalAmount"] } },
-          paidCount: { $sum: { $cond: ["$isPaid", 1, 0] } },
-          unpaidCount: { $sum: { $cond: ["$isPaid", 0, 1] } },
-        },
-      },
-    ]).toArray();
+    const clinicFilter = eq(receipts.clinicId, session.clinicId);
+    const dateFilter = and(
+      clinicFilter,
+      gte(receipts.receiptDate, dateStart),
+      lte(receipts.receiptDate, dateEnd),
+    );
+
+    // Get receipt summary
+    const receiptData = db.select({
+      totalReceipts: sql<number>`count(*)`,
+      grossRevenue: sql<number>`coalesce(sum(${receipts.subtotal}), 0)`,
+      totalDiscount: sql<number>`coalesce(sum(${receipts.discountAmount}), 0)`,
+      netRevenue: sql<number>`coalesce(sum(${receipts.totalAmount}), 0)`,
+      paidAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      unpaidAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then ${receipts.totalAmount} else 0 end), 0)`,
+      paidCount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then 1 else 0 end), 0)`,
+      unpaidCount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then 1 else 0 end), 0)`,
+    }).from(receipts).where(dateFilter).get();
 
     // Get payment mode breakdown
-    const paymentBreakdown = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: dateStart, $lte: dateEnd },
-          isPaid: true,
-        },
-      },
-      {
-        $group: {
-          _id: "$paymentMode",
-          count: { $sum: 1 },
-          amount: { $sum: "$totalAmount" },
-        },
-      },
-      {
-        $sort: { amount: -1 },
-      },
-    ]).toArray();
+    const paymentBreakdown = db.select({
+      mode: receipts.paymentMode,
+      count: sql<number>`count(*)`,
+      amount: sql<number>`coalesce(sum(${receipts.totalAmount}), 0)`,
+    }).from(receipts).where(and(
+      dateFilter,
+      eq(receipts.isPaid, true),
+    )).groupBy(receipts.paymentMode)
+      .orderBy(sql`sum(${receipts.totalAmount}) desc`)
+      .all();
 
     // Get daily breakdown
-    const dailyBreakdown = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: dateStart, $lte: dateEnd },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$receiptDate" },
-          },
-          receipts: { $sum: 1 },
-          revenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          pending: { $sum: { $cond: ["$isPaid", 0, "$totalAmount"] } },
-        },
-      },
-      {
-        $sort: { _id: 1 },
-      },
-    ]).toArray();
+    const dailyBreakdown = db.select({
+      date: sql<string>`substr(${receipts.receiptDate}, 1, 10)`,
+      receiptCount: sql<number>`count(*)`,
+      revenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      pending: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then ${receipts.totalAmount} else 0 end), 0)`,
+    }).from(receipts).where(dateFilter)
+      .groupBy(sql`substr(${receipts.receiptDate}, 1, 10)`)
+      .orderBy(sql`substr(${receipts.receiptDate}, 1, 10) asc`)
+      .all();
 
-    // Get line item breakdown (what services are earning the most)
-    const serviceBreakdown = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: dateStart, $lte: dateEnd },
-        },
-      },
-      { $unwind: "$lineItems" },
-      {
-        $group: {
-          _id: "$lineItems.description",
-          count: { $sum: 1 },
-          totalAmount: { $sum: "$lineItems.amount" },
-        },
-      },
-      {
-        $sort: { totalAmount: -1 },
-      },
-      { $limit: 10 },
-    ]).toArray();
+    // Get line item / service breakdown using json_each to unwind lineItems
+    const serviceBreakdown = db.all(sql`
+      SELECT
+        json_extract(item.value, '$.description') as service,
+        count(*) as count,
+        coalesce(sum(json_extract(item.value, '$.amount')), 0) as amount
+      FROM ${receipts}, json_each(${receipts.lineItems}) as item
+      WHERE ${receipts.clinicId} = ${session.clinicId}
+        AND ${receipts.receiptDate} >= ${dateStart}
+        AND ${receipts.receiptDate} <= ${dateEnd}
+      GROUP BY json_extract(item.value, '$.description')
+      ORDER BY amount DESC
+      LIMIT 10
+    `) as Array<{ service: string; count: number; amount: number }>;
 
     // Get expenses for the same period
-    const expenseData = await expenses.aggregate([
-      {
-        $match: {
-          clinicId,
-          expenseDate: { $gte: dateStart, $lte: dateEnd },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalExpenses: { $sum: "$amount" },
-          expenseCount: { $sum: 1 },
-        },
-      },
-    ]).toArray();
+    const expenseClinicFilter = eq(expenses.clinicId, session.clinicId);
+    const expenseDateFilter = and(
+      expenseClinicFilter,
+      gte(expenses.expenseDate, dateStart),
+      lte(expenses.expenseDate, dateEnd),
+    );
 
-    // Get expense breakdown by category
-    const expenseBreakdown = await expenses.aggregate([
-      {
-        $match: {
-          clinicId,
-          expenseDate: { $gte: dateStart, $lte: dateEnd },
-        },
-      },
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: "$amount" },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { total: -1 },
-      },
-    ]).toArray();
+    const expenseData = db.select({
+      totalExpenses: sql<number>`coalesce(sum(${expenses.amount}), 0)`,
+      expenseCount: sql<number>`count(*)`,
+    }).from(expenses).where(expenseDateFilter).get();
+
+    // Expense breakdown by category
+    const expenseBreakdown = db.select({
+      category: expenses.category,
+      total: sql<number>`coalesce(sum(${expenses.amount}), 0)`,
+      count: sql<number>`count(*)`,
+    }).from(expenses).where(expenseDateFilter)
+      .groupBy(expenses.category)
+      .orderBy(sql`sum(${expenses.amount}) desc`)
+      .all();
 
     // Get budget target for the month (if monthly report)
     let budgetTarget = null;
     if (reportType === "monthly") {
-      budgetTarget = await budgetTargets.findOne({
-        clinicId,
-        year,
-        month,
-      });
+      budgetTarget = db.select()
+        .from(budgetTargets)
+        .where(and(
+          eq(budgetTargets.clinicId, session.clinicId),
+          eq(budgetTargets.year, year),
+          eq(budgetTargets.month, month),
+        )).get();
     }
 
     // Calculate profit/loss
-    const totalRevenue = receiptData[0]?.paidAmount || 0;
-    const totalExpenses = expenseData[0]?.totalExpenses || 0;
+    const totalRevenue = receiptData?.paidAmount || 0;
+    const totalExpenses = expenseData?.totalExpenses || 0;
     const netProfit = totalRevenue - totalExpenses;
 
-    // Build report
     const report = {
       period: {
         type: reportType,
-        startDate: dateStart.toISOString(),
-        endDate: dateEnd.toISOString(),
-        displayText: reportType === "monthly"
-          ? `${new Date(year, month - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}`
-          : reportType === "yearly"
-          ? `Year ${year}`
-          : `${formatDateIndian(dateStart)} - ${formatDateIndian(dateEnd)}`,
+        startDate: dateStart,
+        endDate: dateEnd,
+        displayText,
       },
       revenue: {
-        totalReceipts: receiptData[0]?.totalReceipts || 0,
-        grossRevenue: receiptData[0]?.grossRevenue || 0,
-        totalDiscount: receiptData[0]?.totalDiscount || 0,
-        netRevenue: receiptData[0]?.netRevenue || 0,
-        collected: receiptData[0]?.paidAmount || 0,
-        pending: receiptData[0]?.unpaidAmount || 0,
-        paidCount: receiptData[0]?.paidCount || 0,
-        unpaidCount: receiptData[0]?.unpaidCount || 0,
-        averageReceiptValue: receiptData[0]?.totalReceipts
-          ? Math.round((receiptData[0]?.netRevenue || 0) / receiptData[0].totalReceipts)
+        totalReceipts: receiptData?.totalReceipts || 0,
+        grossRevenue: receiptData?.grossRevenue || 0,
+        totalDiscount: receiptData?.totalDiscount || 0,
+        netRevenue: receiptData?.netRevenue || 0,
+        collected: receiptData?.paidAmount || 0,
+        pending: receiptData?.unpaidAmount || 0,
+        paidCount: receiptData?.paidCount || 0,
+        unpaidCount: receiptData?.unpaidCount || 0,
+        averageReceiptValue: receiptData?.totalReceipts
+          ? Math.round((receiptData?.netRevenue || 0) / receiptData.totalReceipts)
           : 0,
       },
       paymentModes: paymentBreakdown.map((p) => ({
-        mode: p._id || "Not specified",
+        mode: p.mode || "Not specified",
         count: p.count,
         amount: p.amount,
       })),
       dailyCollection: dailyBreakdown.map((d) => ({
-        date: d._id,
-        receipts: d.receipts,
+        date: d.date,
+        receipts: d.receiptCount,
         revenue: d.revenue,
         pending: d.pending,
       })),
       topServices: serviceBreakdown.map((s) => ({
-        service: s._id,
+        service: s.service,
         count: s.count,
-        amount: s.totalAmount,
+        amount: s.amount,
       })),
       expenses: {
         total: totalExpenses,
-        count: expenseData[0]?.expenseCount || 0,
+        count: expenseData?.expenseCount || 0,
         byCategory: expenseBreakdown.map((e) => ({
-          category: e._id,
+          category: e.category,
           total: e.total,
           count: e.count,
         })),

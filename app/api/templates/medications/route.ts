@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getMedicationTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { medicationTemplates, generateId } from "@/lib/db/schema";
 
 // GET - Fetch all medication templates for the clinic
 export async function GET(request: NextRequest) {
@@ -14,57 +15,63 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category");
-    const source = searchParams.get("source"); // "allopathic", "homeopathic", "custom", or null for all
+    const source = searchParams.get("source");
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = parseInt(searchParams.get("skip") || "0");
 
-    const templates = await getMedicationTemplatesCollection();
+    const db = getDb();
 
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-    };
+    const conditions = [eq(medicationTemplates.clinicId, session.clinicId)];
 
-    // Add search filter
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { category: { $regex: search, $options: "i" } },
-      ];
+      conditions.push(
+        or(
+          like(medicationTemplates.name, `%${search}%`),
+          like(medicationTemplates.category, `%${search}%`)
+        )!
+      );
     }
 
-    // Add category filter
     if (category) {
-      query.category = category;
+      conditions.push(eq(medicationTemplates.category, category));
     }
 
-    // Add source filter
     if (source) {
-      query.source = source;
+      conditions.push(eq(medicationTemplates.source, source as "allopathic" | "homeopathic" | "custom"));
     }
 
-    // Get total count for pagination
-    const totalCount = await templates.countDocuments(query);
+    const countResult = db
+      .select({ count: sql<number>`count(*)` })
+      .from(medicationTemplates)
+      .where(and(...conditions))
+      .get();
+    const totalCount = countResult?.count ?? 0;
 
-    const results = await templates
-      .find(query)
-      .sort({ usageCount: -1, name: 1 })
-      .skip(skip)
+    const results = db
+      .select()
+      .from(medicationTemplates)
+      .where(and(...conditions))
+      .orderBy(desc(medicationTemplates.usageCount), asc(medicationTemplates.name))
       .limit(limit)
-      .toArray();
+      .offset(skip)
+      .all();
 
-    // Get unique categories for filtering (filtered by source if specified)
-    const categoryQuery: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-      category: { $exists: true, $ne: "" },
-    };
+    // Get unique categories for filtering
+    const catConditions = [eq(medicationTemplates.clinicId, session.clinicId)];
     if (source) {
-      categoryQuery.source = source;
+      catConditions.push(eq(medicationTemplates.source, source as "allopathic" | "homeopathic" | "custom"));
     }
-    const categories = await templates.distinct("category", categoryQuery);
+    const cats = db
+      .select({ category: medicationTemplates.category })
+      .from(medicationTemplates)
+      .where(and(...catConditions))
+      .groupBy(medicationTemplates.category)
+      .all();
+    const categories = cats.map((c) => c.category).filter(Boolean);
 
     return NextResponse.json({
       templates: results.map((t) => ({
-        _id: t._id.toString(),
+        id: t.id,
         name: t.name,
         dosage: t.dosage,
         duration: t.duration,
@@ -75,7 +82,7 @@ export async function GET(request: NextRequest) {
         isDefault: t.isDefault || false,
         usageCount: t.usageCount,
       })),
-      categories: categories.filter(Boolean),
+      categories,
       totalCount,
     });
   } catch (error) {
@@ -95,7 +102,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only doctors can create templates
     if (session.role !== "doctor") {
       return NextResponse.json(
         { error: "Only doctors can create medication templates" },
@@ -113,13 +119,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const templates = await getMedicationTemplatesCollection();
+    const db = getDb();
 
-    // Check for duplicate
-    const existing = await templates.findOne({
-      clinicId: new ObjectId(session.clinicId),
-      name: { $regex: `^${name.trim()}$`, $options: "i" },
-    });
+    // Check for duplicate (case-insensitive)
+    const existing = db
+      .select()
+      .from(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.clinicId, session.clinicId),
+          sql`lower(${medicationTemplates.name}) = lower(${name.trim()})`
+        )
+      )
+      .get();
 
     if (existing) {
       return NextResponse.json(
@@ -128,27 +140,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const result = await templates.insertOne({
-      clinicId: new ObjectId(session.clinicId),
-      name: name.trim(),
-      dosage: dosage.trim(),
-      duration: duration.trim(),
-      instructions: instructions?.trim() || undefined,
-      category: category?.trim() || undefined,
-      description: description?.trim() || undefined,
-      source: "custom",
-      isDefault: false,
-      usageCount: 0,
-      createdBy: new ObjectId(session.userId),
-      createdAt: now,
-      updatedAt: now,
-    } as never);
+    const now = new Date().toISOString();
+    const id = generateId();
+
+    db.insert(medicationTemplates)
+      .values({
+        id,
+        clinicId: session.clinicId,
+        name: name.trim(),
+        dosage: dosage.trim(),
+        duration: duration.trim(),
+        instructions: instructions?.trim() || null,
+        category: category?.trim() || null,
+        description: description?.trim() || null,
+        source: "custom",
+        isDefault: false,
+        usageCount: 0,
+        createdBy: session.userId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     return NextResponse.json({
       success: true,
       template: {
-        _id: result.insertedId.toString(),
+        id,
         name: name.trim(),
         dosage: dosage.trim(),
         duration: duration.trim(),

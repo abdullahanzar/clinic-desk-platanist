@@ -23,7 +23,7 @@ import {
 type ViewMode = "day" | "month";
 
 interface Visit {
-  _id: string;
+  id: string;
   patient: {
     name: string;
     phone: string;
@@ -485,8 +485,8 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
           <div className="lg:hidden space-y-3">
             {visits.map((visit) => (
               <Link
-                key={visit._id}
-                href={`/visits/${visit._id}`}
+                key={visit.id}
+                href={`/visits/${visit.id}`}
                 className="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-3">
@@ -559,7 +559,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {visits.map((visit) => (
-                    <tr key={visit._id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <tr key={visit.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-brand-100 to-brand-200 text-brand-700 font-bold rounded-xl">
                           {visit.tokenNumber}
@@ -600,7 +600,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                       </td>
                       <td className="px-6 py-4">
                         <Link
-                          href={`/visits/${visit._id}`}
+                          href={`/visits/${visit.id}`}
                           className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium text-sm"
                         >
                           View
@@ -718,8 +718,8 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                       .slice(0, 5)
                       .map((visit) => (
                         <Link
-                          key={visit._id}
-                          href={`/visits/${visit._id}`}
+                          key={visit.id}
+                          href={`/visits/${visit.id}`}
                           className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
                           <span className="w-8 h-8 bg-brand-50 text-brand-600 font-medium rounded-lg flex items-center justify-center text-sm">

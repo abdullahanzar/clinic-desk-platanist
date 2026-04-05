@@ -75,6 +75,9 @@ function startNextServer(port) {
 
   const serverPath = path.join(app.getAppPath(), '.next', 'standalone', 'server.js');
 
+  const userDataPath = app.getPath('userData');
+  const dbPath = path.join(userDataPath, 'clinic-desk.db');
+
   nextProcess = spawn(process.execPath, [serverPath], {
     cwd: app.getAppPath(),
     stdio: 'inherit',
@@ -84,6 +87,7 @@ function startNextServer(port) {
       HOSTNAME: '127.0.0.1',
       NODE_ENV: 'production',
       ELECTRON_RUN_AS_NODE: '1',
+      DATABASE_PATH: dbPath,
     },
   });
 }

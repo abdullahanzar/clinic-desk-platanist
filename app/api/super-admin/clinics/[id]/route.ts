@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, desc } from "drizzle-orm";
 import { requireSuperAdminSession } from "@/lib/auth/super-admin";
-import { getClinicsCollection, getUsersCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics, users } from "@/lib/db/schema";
 
 // GET /api/super-admin/clinics/[id] - Get clinic details with users
 export async function GET(
@@ -13,41 +14,33 @@ export async function GET(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid clinic ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const clinics = await getClinicsCollection();
-    const users = await getUsersCollection();
-
-    const clinic = await clinics.findOne({ _id: new ObjectId(id) });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, id)).get();
 
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
-    // Get all users for this clinic
-    const clinicUsers = await users
-      .find(
-        { clinicId: clinic._id },
-        { projection: { passwordHash: 0 } } // Exclude password
-      )
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    const formattedUsers = clinicUsers.map((user) => ({
-      _id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-    }));
+    // Get all users for this clinic (exclude passwordHash)
+    const clinicUsers = db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.clinicId, id))
+      .orderBy(desc(users.createdAt))
+      .all();
 
     return NextResponse.json({
       clinic: {
-        _id: clinic._id.toString(),
+        id: clinic.id,
         name: clinic.name,
         slug: clinic.slug,
         address: clinic.address,
@@ -63,7 +56,7 @@ export async function GET(
         createdAt: clinic.createdAt,
         updatedAt: clinic.updatedAt,
       },
-      users: formattedUsers,
+      users: clinicUsers,
     });
   } catch (error) {
     if ((error as Error).message === "Super Admin Unauthorized") {
@@ -88,20 +81,16 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid clinic ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const clinics = await getClinicsCollection();
-
-    const clinic = await clinics.findOne({ _id: new ObjectId(id) });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, id)).get();
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
     // Build update object with only provided fields
     const updateFields: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     const allowedFields = [
@@ -115,7 +104,7 @@ export async function PUT(
       "taxInfo",
       "publicProfile",
       "receiptShareDurationMinutes",
-    ];
+    ] as const;
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
@@ -126,7 +115,7 @@ export async function PUT(
     // Handle address separately
     if (body.address) {
       updateFields.address = {
-        ...clinic.address,
+        ...(clinic.address as Record<string, unknown>),
         ...body.address,
       };
     }
@@ -141,7 +130,11 @@ export async function PUT(
         );
       }
 
-      const existingClinic = await clinics.findOne({ slug: body.slug });
+      const existingClinic = db
+        .select()
+        .from(clinics)
+        .where(eq(clinics.slug, body.slug))
+        .get();
       if (existingClinic) {
         return NextResponse.json(
           { error: "Clinic slug already exists" },
@@ -151,10 +144,7 @@ export async function PUT(
       updateFields.slug = body.slug;
     }
 
-    await clinics.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateFields }
-    );
+    db.update(clinics).set(updateFields).where(eq(clinics.id, id)).run();
 
     console.log(`[SUPER_ADMIN] Updated clinic: ${clinic.name} (${id})`);
 
@@ -181,31 +171,29 @@ export async function DELETE(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid clinic ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const clinics = await getClinicsCollection();
-    const users = await getUsersCollection();
-
-    const clinic = await clinics.findOne({ _id: new ObjectId(id) });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, id)).get();
     if (!clinic) {
       return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
     }
 
     // Delete all users for this clinic
-    const userDeleteResult = await users.deleteMany({ clinicId: new ObjectId(id) });
+    const deletedUsers = db
+      .delete(users)
+      .where(eq(users.clinicId, id))
+      .run();
 
     // Delete the clinic
-    await clinics.deleteOne({ _id: new ObjectId(id) });
+    db.delete(clinics).where(eq(clinics.id, id)).run();
 
     console.log(
-      `[SUPER_ADMIN] Deleted clinic: ${clinic.name} (${id}) with ${userDeleteResult.deletedCount} users`
+      `[SUPER_ADMIN] Deleted clinic: ${clinic.name} (${id}) with ${deletedUsers.changes} users`
     );
 
     return NextResponse.json({
       success: true,
-      deletedUsers: userDeleteResult.deletedCount,
+      deletedUsers: deletedUsers.changes,
     });
   } catch (error) {
     if ((error as Error).message === "Super Admin Unauthorized") {

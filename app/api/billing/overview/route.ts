@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getBudgetTargetsCollection } from "@/lib/db/collections";
-import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "@/lib/utils/date";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, budgetTargets } from "@/lib/db/schema";
 import type { BillingOverview } from "@/types";
 
 // GET /api/billing/overview - Get billing overview stats
@@ -13,117 +13,97 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const receipts = await getReceiptsCollection();
-    const budgetTargets = await getBudgetTargetsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
     const now = new Date();
 
-    // Date ranges
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
-    const thisMonthStart = startOfMonth(now);
-    const thisMonthEnd = endOfMonth(now);
-    
-    // Last month
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthStart = startOfMonth(lastMonth);
-    const lastMonthEnd = endOfMonth(lastMonth);
+    // Date ranges as ISO strings for SQLite text comparison
+    const todayStr = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const todayStart = `${todayStr}T00:00:00.000Z`;
+    const todayEnd = `${todayStr}T23:59:59.999Z`;
 
-    // Aggregation pipeline for today's stats
-    const todayStats = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: todayStart, $lte: todayEnd },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          totalReceipts: { $sum: 1 },
-          pendingAmount: { $sum: { $cond: ["$isPaid", 0, "$totalAmount"] } },
-        },
-      },
-    ]).toArray();
+    const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const thisMonthStart = `${thisMonthStr}-01T00:00:00.000Z`;
+    // End of this month
+    const lastDayThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const thisMonthEnd = `${thisMonthStr}-${String(lastDayThisMonth).padStart(2, "0")}T23:59:59.999Z`;
+
+    // Last month
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
+    const lastMonthStart = `${lastMonthStr}-01T00:00:00.000Z`;
+    const lastDayLastMonth = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0).getDate();
+    const lastMonthEnd = `${lastMonthStr}-${String(lastDayLastMonth).padStart(2, "0")}T23:59:59.999Z`;
+
+    const clinicFilter = eq(receipts.clinicId, session.clinicId);
+
+    // Today's stats
+    const todayStats = db.select({
+      totalRevenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalReceipts: sql<number>`count(*)`,
+      pendingAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then ${receipts.totalAmount} else 0 end), 0)`,
+    }).from(receipts).where(and(
+      clinicFilter,
+      gte(receipts.receiptDate, todayStart),
+      lte(receipts.receiptDate, todayEnd),
+    )).get();
 
     // This month's stats
-    const thisMonthStats = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: thisMonthStart, $lte: thisMonthEnd },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          totalReceipts: { $sum: 1 },
-          pendingAmount: { $sum: { $cond: ["$isPaid", 0, "$totalAmount"] } },
-        },
-      },
-    ]).toArray();
+    const thisMonthStats = db.select({
+      totalRevenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalReceipts: sql<number>`count(*)`,
+      pendingAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then ${receipts.totalAmount} else 0 end), 0)`,
+    }).from(receipts).where(and(
+      clinicFilter,
+      gte(receipts.receiptDate, thisMonthStart),
+      lte(receipts.receiptDate, thisMonthEnd),
+    )).get();
 
     // Last month's stats
-    const lastMonthStats = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          totalReceipts: { $sum: 1 },
-        },
-      },
-    ]).toArray();
+    const lastMonthStats = db.select({
+      totalRevenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalReceipts: sql<number>`count(*)`,
+    }).from(receipts).where(and(
+      clinicFilter,
+      gte(receipts.receiptDate, lastMonthStart),
+      lte(receipts.receiptDate, lastMonthEnd),
+    )).get();
 
     // All time stats
-    const allTimeStats = await receipts.aggregate([
-      {
-        $match: { clinicId },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-          totalReceipts: { $sum: 1 },
-        },
-      },
-    ]).toArray();
+    const allTimeStats = db.select({
+      totalRevenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalReceipts: sql<number>`count(*)`,
+    }).from(receipts).where(clinicFilter).get();
 
     // Get current month's budget target
-    const currentTarget = await budgetTargets.findOne({
-      clinicId,
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-    });
+    const currentTarget = db.select()
+      .from(budgetTargets)
+      .where(and(
+        eq(budgetTargets.clinicId, session.clinicId),
+        eq(budgetTargets.year, now.getFullYear()),
+        eq(budgetTargets.month, now.getMonth() + 1),
+      )).get();
 
     const overview: BillingOverview = {
       today: {
-        revenue: todayStats[0]?.totalRevenue || 0,
-        receipts: todayStats[0]?.totalReceipts || 0,
-        pending: todayStats[0]?.pendingAmount || 0,
+        revenue: todayStats?.totalRevenue || 0,
+        receipts: todayStats?.totalReceipts || 0,
+        pending: todayStats?.pendingAmount || 0,
       },
       thisMonth: {
-        revenue: thisMonthStats[0]?.totalRevenue || 0,
-        receipts: thisMonthStats[0]?.totalReceipts || 0,
-        pending: thisMonthStats[0]?.pendingAmount || 0,
+        revenue: thisMonthStats?.totalRevenue || 0,
+        receipts: thisMonthStats?.totalReceipts || 0,
+        pending: thisMonthStats?.pendingAmount || 0,
         target: currentTarget?.targetRevenue,
       },
       lastMonth: {
-        revenue: lastMonthStats[0]?.totalRevenue || 0,
-        receipts: lastMonthStats[0]?.totalReceipts || 0,
+        revenue: lastMonthStats?.totalRevenue || 0,
+        receipts: lastMonthStats?.totalReceipts || 0,
       },
       allTime: {
-        totalRevenue: allTimeStats[0]?.totalRevenue || 0,
-        totalReceipts: allTimeStats[0]?.totalReceipts || 0,
-        avgReceiptValue: allTimeStats[0]?.totalReceipts
-          ? Math.round((allTimeStats[0]?.totalRevenue || 0) / allTimeStats[0].totalReceipts)
+        totalRevenue: allTimeStats?.totalRevenue || 0,
+        totalReceipts: allTimeStats?.totalReceipts || 0,
+        avgReceiptValue: allTimeStats?.totalReceipts
+          ? Math.round((allTimeStats?.totalRevenue || 0) / allTimeStats.totalReceipts)
           : 0,
       },
     };

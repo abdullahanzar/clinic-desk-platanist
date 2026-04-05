@@ -1,42 +1,47 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-import { getUsersCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { users, generateId } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { requireRole } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/password";
-import type { UserInsert } from "@/types";
 
 // GET /api/staff - List all staff members for the clinic
 export async function GET() {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
-    const users = await getUsersCollection();
-    const staff = await users
-      .find(
-        { clinicId },
-        {
-          projection: {
-            passwordHash: 0, // Never return password hash
-          },
-        }
-      )
-      .sort({ role: 1, name: 1 }) // Doctors first, then alphabetically
-      .toArray();
+    const staff = await db
+      .select({
+        id: users.id,
+        clinicId: users.clinicId,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLoginAt: users.lastLoginAt,
+        loginHistory: users.loginHistory,
+        createdByUserId: users.createdByUserId,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.clinicId, session.clinicId))
+      .orderBy(users.role, users.name)
+      .all();
 
-    // Transform ObjectIds to strings for JSON response
     const staffList = staff.map((user) => ({
-      id: user._id.toString(),
-      clinicId: user.clinicId.toString(),
+      id: user.id,
+      clinicId: user.clinicId,
       name: user.name,
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt?.toISOString() || null,
-      loginCount: user.loginHistory?.length || 0,
-      createdByUserId: user.createdByUserId?.toString() || null,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      lastLoginAt: user.lastLoginAt || null,
+      loginCount: (user.loginHistory as unknown[])?.length || 0,
+      createdByUserId: user.createdByUserId || null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     }));
 
     return NextResponse.json({ staff: staffList });
@@ -59,8 +64,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await requireRole(["doctor"]);
-    const clinicId = new ObjectId(session.clinicId);
-    const creatorId = new ObjectId(session.userId);
+    const db = getDb();
 
     const body = await request.json();
     const { name, email, password, role } = body;
@@ -88,10 +92,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const users = await getUsersCollection();
-
     // Check if email already exists
-    const existingUser = await users.findOne({ email: email.toLowerCase() });
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .get();
+
     if (existingUser) {
       return NextResponse.json(
         { error: "A user with this email already exists" },
@@ -100,34 +107,34 @@ export async function POST(request: Request) {
     }
 
     // Hash password and create user
-    const passwordHash = await hashPassword(password);
-    const now = new Date();
+    const hashedPassword = await hashPassword(password);
+    const now = new Date().toISOString();
+    const newId = generateId();
 
-    const newUser: UserInsert = {
-      clinicId,
+    await db.insert(users).values({
+      id: newId,
+      clinicId: session.clinicId,
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      passwordHash,
-      role: "frontdesk" as const,
+      passwordHash: hashedPassword,
+      role: "frontdesk",
       isActive: true,
       loginHistory: [],
-      createdByUserId: creatorId,
+      createdByUserId: session.userId,
       createdAt: now,
       updatedAt: now,
-    };
-
-    const result = await users.insertOne(newUser as never);
+    }).run();
 
     return NextResponse.json(
       {
         success: true,
         user: {
-          id: result.insertedId.toString(),
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          isActive: newUser.isActive,
-          createdAt: newUser.createdAt.toISOString(),
+          id: newId,
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          role: "frontdesk",
+          isActive: true,
+          createdAt: now,
         },
       },
       { status: 201 }

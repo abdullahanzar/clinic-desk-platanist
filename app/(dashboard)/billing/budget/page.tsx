@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 interface BudgetTarget {
-  _id?: string;
+  id?: string;
   month: number;
   year: number;
   targetRevenue: number;

@@ -19,7 +19,7 @@ import {
 import type { ExpenseCategory, RecurringFrequency } from "@/types";
 
 interface Expense {
-  _id: string;
+  id: string;
   description: string;
   amount: number;
   category: ExpenseCategory;
@@ -158,7 +158,7 @@ export default function ExpensesPage() {
     setSubmitting(true);
     try {
       const url = editingExpense
-        ? `/api/billing/expenses/${editingExpense._id}`
+        ? `/api/billing/expenses/${editingExpense.id}`
         : "/api/billing/expenses";
       const method = editingExpense ? "PUT" : "POST";
 
@@ -357,7 +357,7 @@ export default function ExpensesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.expenses.map((expense) => (
-                  <tr key={expense._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <tr key={expense.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
                       {new Date(expense.expenseDate).toLocaleDateString("en-IN")}
                     </td>
@@ -392,7 +392,7 @@ export default function ExpensesPage() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(expense._id)}
+                          onClick={() => handleDelete(expense.id)}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />

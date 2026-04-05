@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, ne } from "drizzle-orm";
 import { requireSuperAdminSession } from "@/lib/auth/super-admin";
-import { getUsersCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { clinics, users } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 
 // GET /api/super-admin/users/[id] - Get user details
@@ -14,35 +15,46 @@ export async function GET(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const users = await getUsersCollection();
-    const clinics = await getClinicsCollection();
-
-    const user = await users.findOne(
-      { _id: new ObjectId(id) },
-      { projection: { passwordHash: 0 } }
-    );
+    const user = db
+      .select({
+        id: users.id,
+        clinicId: users.clinicId,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLoginAt: users.lastLoginAt,
+        loginHistory: users.loginHistory,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .get();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const clinic = await clinics.findOne({ _id: user.clinicId });
+    const clinic = db
+      .select({ name: clinics.name })
+      .from(clinics)
+      .where(eq(clinics.id, user.clinicId))
+      .get();
 
     return NextResponse.json({
       user: {
-        _id: user._id.toString(),
-        clinicId: user.clinicId.toString(),
+        id: user.id,
+        clinicId: user.clinicId,
         clinicName: clinic?.name || "Unknown",
         name: user.name,
         email: user.email,
         role: user.role,
         isActive: user.isActive,
         lastLoginAt: user.lastLoginAt,
-        loginHistory: user.loginHistory?.slice(0, 10) || [], // Last 10 logins
+        loginHistory: (user.loginHistory || []).slice(0, 10), // Last 10 logins
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -70,20 +82,16 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const users = await getUsersCollection();
-
-    const user = await users.findOne({ _id: new ObjectId(id) });
+    const user = db.select().from(users).where(eq(users.id, id)).get();
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Build update object
     const updateFields: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     // Update name
@@ -116,10 +124,11 @@ export async function PUT(
         );
       }
 
-      const existingUser = await users.findOne({
-        email: body.email.toLowerCase(),
-        _id: { $ne: new ObjectId(id) },
-      });
+      const existingUser = db
+        .select()
+        .from(users)
+        .where(and(eq(users.email, body.email.toLowerCase()), ne(users.id, id)))
+        .get();
       if (existingUser) {
         return NextResponse.json(
           { error: "Email already registered" },
@@ -141,7 +150,7 @@ export async function PUT(
       console.log(`[SUPER_ADMIN] Reset password for user: ${user.email} (${id})`);
     }
 
-    await users.updateOne({ _id: new ObjectId(id) }, { $set: updateFields });
+    db.update(users).set(updateFields).where(eq(users.id, id)).run();
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -166,18 +175,14 @@ export async function DELETE(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-    }
+    const db = getDb();
 
-    const users = await getUsersCollection();
-
-    const user = await users.findOne({ _id: new ObjectId(id) });
+    const user = db.select().from(users).where(eq(users.id, id)).get();
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    await users.deleteOne({ _id: new ObjectId(id) });
+    db.delete(users).where(eq(users.id, id)).run();
 
     console.log(`[SUPER_ADMIN] Deleted user: ${user.email} (${id})`);
 

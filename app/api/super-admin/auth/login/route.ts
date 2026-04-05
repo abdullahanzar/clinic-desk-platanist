@@ -28,7 +28,6 @@ export async function POST(request: Request) {
     const isValid = validateSuperAdminCredentials(username, password);
 
     if (!isValid) {
-      // Log failed attempt (but don't expose details)
       console.warn(
         `[SUPER_ADMIN] Failed login attempt from IP: ${
           request.headers.get("x-forwarded-for") || "unknown"
@@ -43,7 +42,6 @@ export async function POST(request: Request) {
     // Create session
     await createSuperAdminSession();
 
-    // Log successful login
     console.log(
       `[SUPER_ADMIN] Successful login from IP: ${
         request.headers.get("x-forwarded-for") || "unknown"

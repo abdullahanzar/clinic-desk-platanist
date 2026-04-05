@@ -8,7 +8,7 @@ import type { Medication } from "@/types";
 interface PrescriptionPageClientProps {
   visitId: string;
   existingPrescription?: {
-    _id: string;
+    id: string;
     diagnosis?: string;
     chiefComplaints?: string;
     medications: Medication[];
@@ -40,7 +40,7 @@ export default function PrescriptionPageClient({
             existingPrescription={
               existingPrescription
                 ? {
-                    _id: existingPrescription._id,
+                    id: existingPrescription.id,
                     status: existingPrescription.status,
                   }
                 : undefined

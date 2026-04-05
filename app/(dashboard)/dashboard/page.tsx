@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection, getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, clinics, visits, receipts } from "@/lib/db/collections";
+import { eq, and, gte, lte, count } from "drizzle-orm";
 import { startOfDay, endOfDay } from "@/lib/utils/date";
 import Link from "next/link";
 import { Calendar, Clock, CheckCircle, Receipt, UserPlus, Users, Settings } from "lucide-react";
@@ -10,39 +10,34 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
 
-  const visits = await getVisitsCollection();
-  const receipts = await getReceiptsCollection();
-  const clinics = await getClinicsCollection();
-  const clinicId = new ObjectId(session.clinicId);
+  const db = getDb();
+  const clinicId = session.clinicId;
   const today = new Date();
 
   // Get clinic info for personalized greeting
-  const clinic = await clinics.findOne({ _id: clinicId });
+  const clinic = db.select().from(clinics).where(eq(clinics.id, clinicId)).get();
 
   // Get today's stats
   const todayStart = startOfDay(today);
   const todayEnd = endOfDay(today);
+  const todayStartISO = todayStart.toISOString();
+  const todayEndISO = todayEnd.toISOString();
 
-  const [todayVisits, waitingCount, completedCount, todayReceipts] = await Promise.all([
-    visits.countDocuments({
-      clinicId,
-      visitDate: { $gte: todayStart, $lte: todayEnd },
-    }),
-    visits.countDocuments({
-      clinicId,
-      visitDate: { $gte: todayStart, $lte: todayEnd },
-      status: "waiting",
-    }),
-    visits.countDocuments({
-      clinicId,
-      visitDate: { $gte: todayStart, $lte: todayEnd },
-      status: "completed",
-    }),
-    receipts.countDocuments({
-      clinicId,
-      receiptDate: { $gte: todayStart, $lte: todayEnd },
-    }),
-  ]);
+  const todayVisits = db.select({ value: count() }).from(visits)
+    .where(and(eq(visits.clinicId, clinicId), gte(visits.visitDate, todayStartISO), lte(visits.visitDate, todayEndISO)))
+    .get()!.value;
+
+  const waitingCount = db.select({ value: count() }).from(visits)
+    .where(and(eq(visits.clinicId, clinicId), gte(visits.visitDate, todayStartISO), lte(visits.visitDate, todayEndISO), eq(visits.status, "waiting")))
+    .get()!.value;
+
+  const completedCount = db.select({ value: count() }).from(visits)
+    .where(and(eq(visits.clinicId, clinicId), gte(visits.visitDate, todayStartISO), lte(visits.visitDate, todayEndISO), eq(visits.status, "completed")))
+    .get()!.value;
+
+  const todayReceipts = db.select({ value: count() }).from(receipts)
+    .where(and(eq(receipts.clinicId, clinicId), gte(receipts.receiptDate, todayStartISO), lte(receipts.receiptDate, todayEndISO)))
+    .get()!.value;
 
   // Personalized greeting based on time of day
   const hour = today.getHours();

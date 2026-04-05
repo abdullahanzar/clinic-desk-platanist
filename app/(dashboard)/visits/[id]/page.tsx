@@ -1,10 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import {
-  getVisitsCollection,
-  getPrescriptionsCollection,
-  getReceiptsCollection,
-} from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, visits as visitsTable, prescriptions, receipts } from "@/lib/db/collections";
+import { eq, and, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { formatDateIndian, formatTime } from "@/lib/utils/date";
 import { VisitActions } from "@/components/visits/visit-actions";
@@ -21,28 +17,21 @@ export default async function VisitDetailPage({
 
   const { id } = await params;
 
-  if (!ObjectId.isValid(id)) {
-    notFound();
-  }
+  const db = getDb();
 
-  const visits = await getVisitsCollection();
-  const prescriptions = await getPrescriptionsCollection();
-  const receipts = await getReceiptsCollection();
-
-  const visit = await visits.findOne({
-    _id: new ObjectId(id),
-    clinicId: new ObjectId(session.clinicId),
-  });
+  const visit = db.select().from(visitsTable)
+    .where(and(eq(visitsTable.id, id), eq(visitsTable.clinicId, session.clinicId)))
+    .get();
 
   if (!visit) {
     notFound();
   }
 
-  const prescription = await prescriptions.findOne({ visitId: visit._id });
-  const visitReceipts = await receipts
-    .find({ visitId: visit._id })
-    .sort({ createdAt: -1 })
-    .toArray();
+  const prescription = db.select().from(prescriptions).where(eq(prescriptions.visitId, visit.id)).get();
+  const visitReceipts = db.select().from(receipts)
+    .where(eq(receipts.visitId, visit.id))
+    .orderBy(desc(receipts.createdAt))
+    .all();
 
   const statusConfig = {
     waiting: { bg: "bg-amber-100", text: "text-amber-800", dot: "bg-amber-500", label: "Waiting" },
@@ -71,12 +60,12 @@ export default async function VisitDetailPage({
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-                {visit.patient.name}
+                {visit.patientName}
               </h1>
               <p className="text-slate-500 text-sm sm:text-base">
-                {visit.patient.phone}
-                {visit.patient.age && ` • ${visit.patient.age} years`}
-                {visit.patient.gender && ` • ${visit.patient.gender}`}
+                {visit.patientPhone}
+                {visit.patientAge && ` • ${visit.patientAge} years`}
+                {visit.patientGender && ` • ${visit.patientGender}`}
               </p>
             </div>
           </div>
@@ -187,8 +176,8 @@ export default async function VisitDetailPage({
             <div className="space-y-3">
               {visitReceipts.map((receipt) => (
                 <Link
-                  key={receipt._id.toString()}
-                  href={`/receipts/${receipt._id.toString()}`}
+                  key={receipt.id}
+                  href={`/receipts/${receipt.id}`}
                   className="block bg-slate-50 p-4 rounded-xl hover:bg-slate-100 hover:border-brand-200 border border-slate-100 transition-all"
                 >
                   <div className="flex justify-between items-start">

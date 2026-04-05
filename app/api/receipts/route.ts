@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, desc, like } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts, generateId } from "@/lib/db/schema";
 import { generateReceiptNumber } from "@/lib/utils/receipt-number";
 import { startOfDay, endOfDay } from "@/lib/utils/date";
-import type { ReceiptInsert } from "@/types";
 
 // GET /api/receipts - List receipts
 export async function GET(request: Request) {
@@ -18,35 +18,42 @@ export async function GET(request: Request) {
     const dateParam = searchParams.get("date");
     const limitParam = searchParams.get("limit");
 
-    const receipts = await getReceiptsCollection();
-
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-    };
+    const db = getDb();
+    const conditions = [eq(receipts.clinicId, session.clinicId)];
 
     if (dateParam) {
       const date = new Date(dateParam);
-      query.receiptDate = {
-        $gte: startOfDay(date),
-        $lte: endOfDay(date),
-      };
+      conditions.push(gte(receipts.receiptDate, startOfDay(date).toISOString()));
+      conditions.push(lte(receipts.receiptDate, endOfDay(date).toISOString()));
     }
 
-    let cursor = receipts.find(query).sort({ createdAt: -1 });
+    let query = db.select().from(receipts)
+      .where(and(...conditions))
+      .orderBy(desc(receipts.createdAt));
 
-    if (limitParam) {
-      cursor = cursor.limit(parseInt(limitParam, 10));
-    }
-
-    const results = await cursor.toArray();
+    const results = limitParam
+      ? query.limit(parseInt(limitParam, 10)).all()
+      : query.all();
 
     return NextResponse.json({
       receipts: results.map((r) => ({
-        ...r,
-        _id: r._id.toString(),
-        clinicId: r.clinicId.toString(),
-        visitId: r.visitId?.toString(),
-        createdBy: r.createdBy.toString(),
+        id: r.id,
+        clinicId: r.clinicId,
+        visitId: r.visitId ?? undefined,
+        receiptNumber: r.receiptNumber,
+        patientSnapshot: r.patientSnapshot,
+        prescriptionSnapshot: r.prescriptionSnapshot ?? undefined,
+        lineItems: r.lineItems,
+        subtotal: r.subtotal,
+        discountAmount: r.discountAmount,
+        discountReason: r.discountReason ?? undefined,
+        totalAmount: r.totalAmount,
+        paymentMode: r.paymentMode ?? undefined,
+        isPaid: r.isPaid,
+        receiptDate: r.receiptDate,
+        createdBy: r.createdBy,
+        createdAt: r.createdAt,
+        lastSharedAt: r.lastSharedAt ?? undefined,
       })),
     });
   } catch (error) {
@@ -86,15 +93,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const receipts = await getReceiptsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
     const year = new Date().getFullYear();
 
     // Get next receipt number
-    const lastReceipt = await receipts.findOne(
-      { clinicId, receiptNumber: { $regex: `^RCP-${year}-` } },
-      { sort: { receiptNumber: -1 } }
-    );
+    const lastReceipt = db.select({ receiptNumber: receipts.receiptNumber })
+      .from(receipts)
+      .where(and(
+        eq(receipts.clinicId, session.clinicId),
+        like(receipts.receiptNumber, `RCP-${year}-%`),
+      ))
+      .orderBy(desc(receipts.receiptNumber))
+      .limit(1)
+      .get();
 
     let sequence = 1;
     if (lastReceipt) {
@@ -113,9 +124,18 @@ export async function POST(request: Request) {
     );
     const totalAmount = Math.max(0, subtotal - (discountAmount || 0));
 
-    const receipt: ReceiptInsert = {
-      clinicId,
-      visitId: visitId ? new ObjectId(visitId) : undefined,
+    const id = generateId();
+    const now = new Date().toISOString();
+
+    const items = lineItems.map((item: { description: string; amount: number }) => ({
+      description: item.description.trim(),
+      amount: item.amount,
+    }));
+
+    db.insert(receipts).values({
+      id,
+      clinicId: session.clinicId,
+      visitId: visitId || null,
       receiptNumber,
       patientSnapshot: {
         name: patientName.trim(),
@@ -124,32 +144,36 @@ export async function POST(request: Request) {
       prescriptionSnapshot: prescriptionSnapshot ? {
         diagnosis: prescriptionSnapshot.diagnosis?.trim(),
         advice: prescriptionSnapshot.advice?.trim(),
-      } : undefined,
-      lineItems: lineItems.map((item: { description: string; amount: number }) => ({
-        description: item.description.trim(),
-        amount: item.amount,
-      })),
+      } : null,
+      lineItems: items,
       subtotal,
       discountAmount: discountAmount || 0,
-      discountReason: discountReason?.trim(),
+      discountReason: discountReason?.trim() || null,
       totalAmount,
-      paymentMode: paymentMode || undefined,
+      paymentMode: paymentMode || null,
       isPaid,
-      receiptDate: new Date(),
-      createdBy: new ObjectId(session.userId),
-      createdAt: new Date(),
-    };
-
-    const result = await receipts.insertOne(receipt as never);
+      receiptDate: now,
+      createdBy: session.userId,
+      createdAt: now,
+    }).run();
 
     return NextResponse.json({
       success: true,
       receipt: {
-        _id: result.insertedId.toString(),
-        ...receipt,
-        clinicId: receipt.clinicId.toString(),
-        visitId: receipt.visitId?.toString(),
-        createdBy: receipt.createdBy.toString(),
+        id,
+        clinicId: session.clinicId,
+        visitId: visitId || undefined,
+        receiptNumber,
+        patientSnapshot: { name: patientName.trim(), phone: patientPhone?.trim() },
+        lineItems: items,
+        subtotal,
+        discountAmount: discountAmount || 0,
+        totalAmount,
+        paymentMode: paymentMode || undefined,
+        isPaid,
+        receiptDate: now,
+        createdBy: session.userId,
+        createdAt: now,
       },
     });
   } catch (error) {

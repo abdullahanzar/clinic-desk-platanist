@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
-import { getVisitsCollection, getPrescriptionsCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb, visits as visitsTable, prescriptions } from "@/lib/db/collections";
+import { eq, and } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -21,23 +21,17 @@ export default async function PrescriptionPage({
 
   const { id } = await params;
 
-  if (!ObjectId.isValid(id)) {
-    notFound();
-  }
+  const db = getDb();
 
-  const visits = await getVisitsCollection();
-  const prescriptions = await getPrescriptionsCollection();
-
-  const visit = await visits.findOne({
-    _id: new ObjectId(id),
-    clinicId: new ObjectId(session.clinicId),
-  });
+  const visit = db.select().from(visitsTable)
+    .where(and(eq(visitsTable.id, id), eq(visitsTable.clinicId, session.clinicId)))
+    .get();
 
   if (!visit) {
     notFound();
   }
 
-  const existingPrescription = await prescriptions.findOne({ visitId: visit._id });
+  const existingPrescription = db.select().from(prescriptions).where(eq(prescriptions.visitId, visit.id)).get();
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -56,9 +50,9 @@ export default async function PrescriptionPage({
           {existingPrescription ? "Edit Prescription" : "Write Prescription"}
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Patient: <span className="font-medium text-slate-700">{visit.patient.name}</span>
-          {visit.patient.age && ` • ${visit.patient.age} years`}
-          {visit.patient.gender && ` • ${visit.patient.gender}`}
+          Patient: <span className="font-medium text-slate-700">{visit.patientName}</span>
+          {visit.patientAge && ` • ${visit.patientAge} years`}
+          {visit.patientGender && ` • ${visit.patientGender}`}
         </p>
       </div>
 
@@ -68,12 +62,12 @@ export default async function PrescriptionPage({
         existingPrescription={
           existingPrescription
             ? {
-                _id: existingPrescription._id.toString(),
-                diagnosis: existingPrescription.diagnosis,
-                chiefComplaints: existingPrescription.chiefComplaints,
+                id: existingPrescription.id,
+                diagnosis: existingPrescription.diagnosis ?? undefined,
+                chiefComplaints: existingPrescription.chiefComplaints ?? undefined,
                 medications: existingPrescription.medications,
-                advice: existingPrescription.advice,
-                followUpDate: existingPrescription.followUpDate?.toISOString(),
+                advice: existingPrescription.advice ?? undefined,
+                followUpDate: existingPrescription.followUpDate ?? undefined,
                 status: existingPrescription.status,
               }
             : undefined

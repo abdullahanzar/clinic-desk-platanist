@@ -1,6 +1,6 @@
-import { ObjectId } from "mongodb";
-import { getDiagnosisTemplatesCollection } from "./collections";
-import { DiagnosisTemplateInsert } from "@/types";
+import { getDb } from "@/lib/db/sqlite";
+import { diagnosisTemplates, generateId } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -57,21 +57,25 @@ function parseCSV(content: string): DiagnosisCSVRow[] {
   return rows;
 }
 
-export async function seedDefaultDiagnoses(
+export function seedDefaultDiagnoses(
   clinicId: string,
   userId: string,
   force: boolean = false
-): Promise<{ inserted: number; skipped: number }> {
-  const collection = await getDiagnosisTemplatesCollection();
-  const clinicOid = new ObjectId(clinicId);
-  const userOid = new ObjectId(userId);
+): { inserted: number; skipped: number } {
+  const db = getDb();
 
   // Check if default diagnoses already exist
   if (!force) {
-    const existingDefault = await collection.findOne({
-      clinicId: clinicOid,
-      isDefault: true,
-    });
+    const existingDefault = db
+      .select({ id: diagnosisTemplates.id })
+      .from(diagnosisTemplates)
+      .where(
+        and(
+          eq(diagnosisTemplates.clinicId, clinicId),
+          eq(diagnosisTemplates.isDefault, true)
+        )
+      )
+      .get();
 
     if (existingDefault) {
       return { inserted: 0, skipped: 0 };
@@ -93,59 +97,91 @@ export async function seedDefaultDiagnoses(
 
   let inserted = 0;
   let skipped = 0;
-  const now = new Date();
+  const now = new Date().toISOString();
 
   for (const diagnosis of diagnoses) {
-    // Check if diagnosis already exists
-    const existing = await collection.findOne({
-      clinicId: clinicOid,
-      name: { $regex: `^${diagnosis.name}$`, $options: "i" },
-    });
+    // Check if diagnosis already exists (case-insensitive)
+    const existing = db
+      .select({ id: diagnosisTemplates.id })
+      .from(diagnosisTemplates)
+      .where(
+        and(
+          eq(diagnosisTemplates.clinicId, clinicId),
+          sql`lower(${diagnosisTemplates.name}) = lower(${diagnosis.name})`
+        )
+      )
+      .get();
 
     if (existing) {
       skipped++;
       continue;
     }
 
-    const doc: DiagnosisTemplateInsert = {
-      clinicId: clinicOid,
-      name: diagnosis.name,
-      icdCode: diagnosis.icd10_code || undefined,
-      category: diagnosis.category || undefined,
-      description: diagnosis.description || undefined,
-      isDefault: true,
-      usageCount: 0,
-      createdBy: userOid,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await collection.insertOne(doc as never);
+    db.insert(diagnosisTemplates)
+      .values({
+        id: generateId(),
+        clinicId,
+        name: diagnosis.name,
+        icdCode: diagnosis.icd10_code || null,
+        category: diagnosis.category || null,
+        description: diagnosis.description || null,
+        isDefault: true,
+        usageCount: 0,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
     inserted++;
   }
 
   return { inserted, skipped };
 }
 
-export async function hasDefaultDiagnoses(clinicId: string): Promise<boolean> {
-  const collection = await getDiagnosisTemplatesCollection();
-  const count = await collection.countDocuments({
-    clinicId: new ObjectId(clinicId),
-    isDefault: true,
-  });
-  return count > 0;
+export function hasDefaultDiagnoses(clinicId: string): boolean {
+  const db = getDb();
+  const row = db
+    .select({ count: sql<number>`count(*)` })
+    .from(diagnosisTemplates)
+    .where(
+      and(
+        eq(diagnosisTemplates.clinicId, clinicId),
+        eq(diagnosisTemplates.isDefault, true)
+      )
+    )
+    .get();
+  return (row?.count ?? 0) > 0;
 }
 
-export async function getDefaultDiagnosesStats(
+export function getDefaultDiagnosesStats(
   clinicId: string
-): Promise<{ default: number; custom: number }> {
-  const collection = await getDiagnosisTemplatesCollection();
-  const clinicOid = new ObjectId(clinicId);
+): { default: number; custom: number } {
+  const db = getDb();
 
-  const [defaultCount, customCount] = await Promise.all([
-    collection.countDocuments({ clinicId: clinicOid, isDefault: true }),
-    collection.countDocuments({ clinicId: clinicOid, isDefault: { $ne: true } }),
-  ]);
+  const defaultCount = db
+    .select({ count: sql<number>`count(*)` })
+    .from(diagnosisTemplates)
+    .where(
+      and(
+        eq(diagnosisTemplates.clinicId, clinicId),
+        eq(diagnosisTemplates.isDefault, true)
+      )
+    )
+    .get();
 
-  return { default: defaultCount, custom: customCount };
+  const customCount = db
+    .select({ count: sql<number>`count(*)` })
+    .from(diagnosisTemplates)
+    .where(
+      and(
+        eq(diagnosisTemplates.clinicId, clinicId),
+        eq(diagnosisTemplates.isDefault, false)
+      )
+    )
+    .get();
+
+  return {
+    default: defaultCount?.count ?? 0,
+    custom: customCount?.count ?? 0,
+  };
 }

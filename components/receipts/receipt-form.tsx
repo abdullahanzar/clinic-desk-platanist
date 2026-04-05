@@ -105,7 +105,7 @@ export default function ReceiptForm({
         return;
       }
 
-      router.push(`/receipts/${data.receipt._id}`);
+      router.push(`/receipts/${data.receipt.id}`);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

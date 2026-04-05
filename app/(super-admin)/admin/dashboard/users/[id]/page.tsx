@@ -22,7 +22,7 @@ interface LoginHistory {
 }
 
 interface UserDetails {
-  _id: string;
+  id: string;
   clinicId: string;
   clinicName: string;
   name: string;

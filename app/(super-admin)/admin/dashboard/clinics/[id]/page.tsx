@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 interface ClinicUser {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -26,7 +26,7 @@ interface ClinicUser {
 }
 
 interface ClinicDetails {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   address: {
@@ -503,7 +503,7 @@ export default function ClinicDetailPage({
                 ) : (
                   users.map((user) => (
                     <div
-                      key={user._id}
+                      key={user.id}
                       className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg"
                     >
                       <div>
@@ -530,7 +530,7 @@ export default function ClinicDetailPage({
                       </div>
                       <button
                         onClick={() =>
-                          handleToggleUserStatus(user._id, user.isActive)
+                          handleToggleUserStatus(user.id, user.isActive)
                         }
                         className={`p-2 rounded-lg transition-colors ${
                           user.isActive
@@ -571,7 +571,7 @@ export default function ClinicDetailPage({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">ID</span>
-                  <code className="text-slate-400 text-xs">{clinic._id}</code>
+                  <code className="text-slate-400 text-xs">{clinic.id}</code>
                 </div>
               </div>
             </div>

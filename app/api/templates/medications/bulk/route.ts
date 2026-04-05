@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getMedicationTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { medicationTemplates, generateId } from "@/lib/db/schema";
 
 // POST - Bulk import medications from XLSX data
 export async function POST(request: NextRequest) {
@@ -28,10 +29,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const templates = await getMedicationTemplatesCollection();
-    const now = new Date();
-    const clinicId = new ObjectId(session.clinicId);
-    const userId = new ObjectId(session.userId);
+    const db = getDb();
+    const now = new Date().toISOString();
 
     // Validate and prepare medications
     const validMedications: {
@@ -77,12 +76,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing medication names to check for duplicates
-    const existingNames = await templates
-      .find(
-        { clinicId },
-        { projection: { name: 1 } }
-      )
-      .toArray();
+    const existingNames = db
+      .select({ name: medicationTemplates.name })
+      .from(medicationTemplates)
+      .where(eq(medicationTemplates.clinicId, session.clinicId))
+      .all();
     const existingNamesSet = new Set(
       existingNames.map((m) => m.name.toLowerCase())
     );
@@ -107,26 +105,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new medications
-    const documents = newMedications.map((med) => ({
-      clinicId,
-      name: med.name,
-      dosage: med.dosage,
-      duration: med.duration,
-      instructions: med.instructions,
-      category: med.category,
-      source: "custom",
-      isDefault: false,
-      usageCount: 0,
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    }));
-
-    const result = await templates.insertMany(documents as never);
+    let imported = 0;
+    for (const med of newMedications) {
+      db.insert(medicationTemplates)
+        .values({
+          id: generateId(),
+          clinicId: session.clinicId,
+          name: med.name,
+          dosage: med.dosage,
+          duration: med.duration,
+          instructions: med.instructions || null,
+          category: med.category || null,
+          source: "custom",
+          isDefault: false,
+          usageCount: 0,
+          createdBy: session.userId,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run();
+      imported++;
+    }
 
     return NextResponse.json({
       success: true,
-      imported: result.insertedCount,
+      imported,
       skipped: validMedications.length - newMedications.length,
       totalProcessed: medications.length,
       errors: errors.length > 0 ? errors : undefined,

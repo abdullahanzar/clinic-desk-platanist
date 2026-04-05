@@ -15,48 +15,48 @@ interface LineItem {
 
 interface ReceiptData {
   receiptNumber: string;
-  receiptDate: Date;
+  receiptDate: Date | string;
   patientSnapshot: {
     name: string;
-    phone?: string;
+    phone?: string | null;
   };
   prescriptionSnapshot?: {
-    diagnosis?: string;
-    advice?: string;
-  };
+    diagnosis?: string | null;
+    advice?: string | null;
+  } | null;
   lineItems: LineItem[];
   subtotal: number;
   discountAmount: number;
-  discountReason?: string;
+  discountReason?: string | null;
   totalAmount: number;
-  paymentMode?: string;
+  paymentMode?: string | null;
   isPaid: boolean;
 }
 
 interface ClinicData {
   name: string;
-  headerText?: string;
-  footerText?: string;
-  phone?: string;
-  email?: string;
+  headerText?: string | null;
+  footerText?: string | null;
+  phone?: string | null;
+  email?: string | null;
   address?: {
     line1: string;
     line2?: string;
     city: string;
     state: string;
     pincode: string;
-  };
+  } | null;
   publicProfile?: {
     doctorName?: string;
     qualifications?: string;
-  };
+  } | null;
   taxInfo?: {
     gstin?: string;
     pan?: string;
     registrationNumber?: string;
     sacCode?: string;
     showTaxOnReceipt?: boolean;
-  };
+  } | null;
 }
 
 interface ReceiptPDFProps {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
 });
 
 // Helper function to format date
-function formatDate(date: Date): string {
+function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",

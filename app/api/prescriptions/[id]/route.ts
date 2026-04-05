@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getPrescriptionsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { prescriptions } from "@/lib/db/schema";
 
 // GET /api/prescriptions/[id] - Get single prescription
 export async function GET(
@@ -15,30 +16,17 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid prescription ID" }, { status: 400 });
-    }
-
-    const prescriptions = await getPrescriptionsCollection();
-    const prescription = await prescriptions.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const prescription = db.select().from(prescriptions)
+      .where(and(eq(prescriptions.id, id), eq(prescriptions.clinicId, session.clinicId)))
+      .get();
 
     if (!prescription) {
       return NextResponse.json({ error: "Prescription not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      prescription: {
-        ...prescription,
-        _id: prescription._id.toString(),
-        clinicId: prescription.clinicId.toString(),
-        visitId: prescription.visitId.toString(),
-        createdBy: prescription.createdBy.toString(),
-      },
-    });
+    return NextResponse.json({ prescription });
   } catch (error) {
     console.error("Get prescription error:", error);
     return NextResponse.json(
@@ -64,21 +52,14 @@ export async function PATCH(
     }
 
     const { id } = await params;
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid prescription ID" }, { status: 400 });
-    }
-
     const body = await request.json();
     const { diagnosis, chiefComplaints, medications, advice, followUpDate } = body;
 
-    const prescriptions = await getPrescriptionsCollection();
+    const db = getDb();
 
-    // Check if prescription exists and is not finalized
-    const existing = await prescriptions.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const existing = db.select().from(prescriptions)
+      .where(and(eq(prescriptions.id, id), eq(prescriptions.clinicId, session.clinicId)))
+      .get();
 
     if (!existing) {
       return NextResponse.json({ error: "Prescription not found" }, { status: 404 });
@@ -92,15 +73,13 @@ export async function PATCH(
     }
 
     const updateFields: Record<string, unknown> = {
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (diagnosis !== undefined) updateFields.diagnosis = diagnosis?.trim() || null;
     if (chiefComplaints !== undefined) updateFields.chiefComplaints = chiefComplaints?.trim() || null;
     if (advice !== undefined) updateFields.advice = advice?.trim() || null;
-    if (followUpDate !== undefined) {
-      updateFields.followUpDate = followUpDate ? new Date(followUpDate) : null;
-    }
+    if (followUpDate !== undefined) updateFields.followUpDate = followUpDate || null;
     if (medications !== undefined) {
       updateFields.medications = medications.map((m: { name: string; dosage: string; duration: string; instructions?: string }) => ({
         name: m.name.trim(),
@@ -110,11 +89,14 @@ export async function PATCH(
       }));
     }
 
-    const result = await prescriptions.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updateFields },
-      { returnDocument: "after" }
-    );
+    db.update(prescriptions)
+      .set(updateFields)
+      .where(eq(prescriptions.id, id))
+      .run();
+
+    const result = db.select().from(prescriptions)
+      .where(eq(prescriptions.id, id))
+      .get();
 
     if (!result) {
       return NextResponse.json({ error: "Prescription not found" }, { status: 404 });
@@ -122,13 +104,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      prescription: {
-        ...result,
-        _id: result._id.toString(),
-        clinicId: result.clinicId.toString(),
-        visitId: result.visitId.toString(),
-        createdBy: result.createdBy.toString(),
-      },
+      prescription: result,
     });
   } catch (error) {
     console.error("Update prescription error:", error);

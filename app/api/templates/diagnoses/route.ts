@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getDiagnosisTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { diagnosisTemplates, generateId } from "@/lib/db/schema";
 
 // GET - Fetch all diagnosis templates for the clinic
 export async function GET(request: NextRequest) {
@@ -17,45 +18,55 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = parseInt(searchParams.get("skip") || "0");
 
-    const templates = await getDiagnosisTemplatesCollection();
+    const db = getDb();
 
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-    };
+    const conditions = [eq(diagnosisTemplates.clinicId, session.clinicId)];
 
-    // Add search filter
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { icdCode: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      conditions.push(
+        or(
+          like(diagnosisTemplates.name, `%${search}%`),
+          like(diagnosisTemplates.icdCode, `%${search}%`),
+          like(diagnosisTemplates.description, `%${search}%`)
+        )!
+      );
     }
 
-    // Add category filter
     if (category) {
-      query.category = category;
+      conditions.push(eq(diagnosisTemplates.category, category));
     }
 
-    // Get total count for pagination
-    const totalCount = await templates.countDocuments(query);
+    const countResult = db
+      .select({ count: sql<number>`count(*)` })
+      .from(diagnosisTemplates)
+      .where(and(...conditions))
+      .get();
+    const totalCount = countResult?.count ?? 0;
 
-    const results = await templates
-      .find(query)
-      .sort({ usageCount: -1, name: 1 })
-      .skip(skip)
+    const results = db
+      .select()
+      .from(diagnosisTemplates)
+      .where(and(...conditions))
+      .orderBy(desc(diagnosisTemplates.usageCount), asc(diagnosisTemplates.name))
       .limit(limit)
-      .toArray();
+      .offset(skip)
+      .all();
 
     // Get all categories for filter dropdown
-    const categories = await templates.distinct("category", {
-      clinicId: new ObjectId(session.clinicId),
-      category: { $exists: true, $ne: "" },
-    });
+    const cats = db
+      .select({ category: diagnosisTemplates.category })
+      .from(diagnosisTemplates)
+      .where(eq(diagnosisTemplates.clinicId, session.clinicId))
+      .groupBy(diagnosisTemplates.category)
+      .all();
+    const categories = cats
+      .map((c) => c.category)
+      .filter(Boolean)
+      .sort();
 
     return NextResponse.json({
       templates: results.map((t) => ({
-        _id: t._id.toString(),
+        id: t.id,
         name: t.name,
         icdCode: t.icdCode,
         category: t.category,
@@ -63,7 +74,7 @@ export async function GET(request: NextRequest) {
         isDefault: t.isDefault || false,
         usageCount: t.usageCount,
       })),
-      categories: categories.filter(Boolean).sort(),
+      categories,
       totalCount,
     });
   } catch (error) {
@@ -83,7 +94,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only doctors can create templates
     if (session.role !== "doctor") {
       return NextResponse.json(
         { error: "Only doctors can create diagnosis templates" },
@@ -101,13 +111,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const templates = await getDiagnosisTemplatesCollection();
+    const db = getDb();
 
-    // Check for duplicate
-    const existing = await templates.findOne({
-      clinicId: new ObjectId(session.clinicId),
-      name: { $regex: `^${name.trim()}$`, $options: "i" },
-    });
+    // Check for duplicate (case-insensitive)
+    const existing = db
+      .select()
+      .from(diagnosisTemplates)
+      .where(
+        and(
+          eq(diagnosisTemplates.clinicId, session.clinicId),
+          sql`lower(${diagnosisTemplates.name}) = lower(${name.trim()})`
+        )
+      )
+      .get();
 
     if (existing) {
       return NextResponse.json(
@@ -116,24 +132,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const result = await templates.insertOne({
-      clinicId: new ObjectId(session.clinicId),
-      name: name.trim(),
-      icdCode: icdCode?.trim() || undefined,
-      category: category?.trim() || undefined,
-      description: description?.trim() || undefined,
-      isDefault: false,
-      usageCount: 0,
-      createdBy: new ObjectId(session.userId),
-      createdAt: now,
-      updatedAt: now,
-    } as never);
+    const now = new Date().toISOString();
+    const id = generateId();
+
+    db.insert(diagnosisTemplates)
+      .values({
+        id,
+        clinicId: session.clinicId,
+        name: name.trim(),
+        icdCode: icdCode?.trim() || null,
+        category: category?.trim() || null,
+        description: description?.trim() || null,
+        isDefault: false,
+        usageCount: 0,
+        createdBy: session.userId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     return NextResponse.json({
       success: true,
       template: {
-        _id: result.insertedId.toString(),
+        id,
         name: name.trim(),
         icdCode: icdCode?.trim(),
         category: category?.trim(),

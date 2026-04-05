@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Loader2 } from "lucide-react";
 
 export interface DiagnosisSuggestion {
-  _id: string;
+  id: string;
   name: string;
   icdCode?: string;
   usageCount: number;
@@ -91,7 +91,7 @@ export default function DiagnosisAutosuggest({
 
     // Increment usage count
     try {
-      await fetch(`/api/templates/diagnoses/${suggestion._id}`, {
+      await fetch(`/api/templates/diagnoses/${suggestion.id}`, {
         method: "POST",
       });
     } catch (error) {
@@ -158,7 +158,7 @@ export default function DiagnosisAutosuggest({
         <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto">
           {suggestions.map((suggestion, idx) => (
             <button
-              key={suggestion._id}
+              key={suggestion.id}
               type="button"
               onClick={() => selectSuggestion(suggestion)}
               className={`w-full px-3 py-2 text-left text-sm hover:bg-brand-50 border-b border-slate-100 last:border-b-0 ${

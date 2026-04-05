@@ -12,7 +12,7 @@ import Link from "next/link";
 interface PrescriptionFormProps {
   visitId: string;
   existingPrescription?: {
-    _id: string;
+    id: string;
     diagnosis?: string;
     chiefComplaints?: string;
     medications: Medication[];
@@ -67,7 +67,7 @@ export default function PrescriptionForm({
 
     try {
       const url = existingPrescription
-        ? `/api/prescriptions/${existingPrescription._id}`
+        ? `/api/prescriptions/${existingPrescription.id}`
         : "/api/prescriptions";
       const method = existingPrescription ? "PATCH" : "POST";
 
@@ -90,7 +90,7 @@ export default function PrescriptionForm({
 
       // Finalize if requested
       if (finalize) {
-        const prescriptionId = existingPrescription?._id || data.prescription._id;
+        const prescriptionId = existingPrescription?.id || data.prescription.id;
         const finalizeRes = await fetch(
           `/api/prescriptions/${prescriptionId}/finalize`,
           { method: "POST" }

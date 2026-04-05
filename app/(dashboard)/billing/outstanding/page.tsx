@@ -18,7 +18,7 @@ import { formatDateIndian } from "@/lib/utils/date";
 import type { PaymentMode } from "@/types";
 
 interface OutstandingReceipt {
-  _id: string;
+  id: string;
   receiptNumber: string;
   patientSnapshot: {
     name: string;
@@ -78,7 +78,7 @@ export default function OutstandingPaymentsPage() {
 
   const selectAll = () => {
     if (data) {
-      setSelectedIds(data.receipts.map((r) => r._id));
+      setSelectedIds(data.receipts.map((r) => r.id));
     }
   };
 
@@ -259,9 +259,9 @@ export default function OutstandingPaymentsPage() {
           <div className="lg:hidden space-y-3">
             {data.receipts.map((receipt) => (
               <div
-                key={receipt._id}
+                key={receipt.id}
                 className={`bg-white dark:bg-slate-800 rounded-xl border p-4 transition-all ${
-                  selectedIds.includes(receipt._id)
+                  selectedIds.includes(receipt.id)
                     ? "border-teal-500 ring-2 ring-teal-100 dark:ring-teal-900/30"
                     : "border-slate-200 dark:border-slate-700"
                 }`}
@@ -269,8 +269,8 @@ export default function OutstandingPaymentsPage() {
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={selectedIds.includes(receipt._id)}
-                    onChange={() => toggleSelect(receipt._id)}
+                    checked={selectedIds.includes(receipt.id)}
+                    onChange={() => toggleSelect(receipt.id)}
                     className="mt-1 w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
                   />
                   <div className="flex-1 min-w-0">
@@ -291,7 +291,7 @@ export default function OutstandingPaymentsPage() {
                     </div>
                   </div>
                   <Link
-                    href={`/receipts/${receipt._id}`}
+                    href={`/receipts/${receipt.id}`}
                     className="p-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -339,16 +339,16 @@ export default function OutstandingPaymentsPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.receipts.map((receipt) => (
                   <tr
-                    key={receipt._id}
+                    key={receipt.id}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                      selectedIds.includes(receipt._id) ? "bg-teal-50 dark:bg-teal-900/20" : ""
+                      selectedIds.includes(receipt.id) ? "bg-teal-50 dark:bg-teal-900/20" : ""
                     }`}
                   >
                     <td className="px-4 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(receipt._id)}
-                        onChange={() => toggleSelect(receipt._id)}
+                        checked={selectedIds.includes(receipt.id)}
+                        onChange={() => toggleSelect(receipt.id)}
                         className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
                       />
                     </td>
@@ -373,7 +373,7 @@ export default function OutstandingPaymentsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <Link
-                        href={`/receipts/${receipt._id}`}
+                        href={`/receipts/${receipt.id}`}
                         className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium text-sm flex items-center gap-1"
                       >
                         View <ChevronRight className="w-4 h-4" />

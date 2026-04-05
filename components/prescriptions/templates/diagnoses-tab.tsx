@@ -21,7 +21,7 @@ import {
 const ITEMS_PER_PAGE = 20;
 
 interface DiagnosisTemplate {
-  _id: string;
+  id: string;
   name: string;
   icdCode?: string;
   category?: string;
@@ -210,7 +210,7 @@ export default function DiagnosesTab() {
 
     try {
       const url = editingTemplate
-        ? `/api/templates/diagnoses/${editingTemplate._id}`
+        ? `/api/templates/diagnoses/${editingTemplate.id}`
         : "/api/templates/diagnoses";
       const method = editingTemplate ? "PATCH" : "POST";
 
@@ -244,7 +244,7 @@ export default function DiagnosesTab() {
       });
 
       if (res.ok) {
-        setTemplates((prev) => prev.filter((t) => t._id !== id));
+        setTemplates((prev) => prev.filter((t) => t.id !== id));
       } else {
         const data = await res.json();
         setDeleteError(data.error || "Failed to delete diagnosis");
@@ -441,7 +441,7 @@ export default function DiagnosesTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {templates.map((template) => (
             <div
-              key={template._id}
+              key={template.id}
               className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-slate-200 transition-colors"
             >
               <div className="flex items-start justify-between gap-3">
@@ -482,10 +482,10 @@ export default function DiagnosesTab() {
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      {deleteConfirm === template._id ? (
+                      {deleteConfirm === template.id ? (
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => handleDelete(template._id)}
+                            onClick={() => handleDelete(template.id)}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Confirm delete"
                           >
@@ -501,7 +501,7 @@ export default function DiagnosesTab() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setDeleteConfirm(template._id)}
+                          onClick={() => setDeleteConfirm(template.id)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getUsersCollection, getClinicsCollection } from "@/lib/db/collections";
+import { getDb } from "@/lib/db/sqlite";
+import { users, clinics } from "@/lib/db/schema";
 
 export async function GET() {
   try {
@@ -14,8 +15,8 @@ export async function GET() {
       );
     }
 
-    const users = await getUsersCollection();
-    const user = await users.findOne({ _id: new ObjectId(session.userId) });
+    const db = getDb();
+    const user = db.select().from(users).where(eq(users.id, session.userId)).get();
 
     if (!user || !user.isActive) {
       return NextResponse.json(
@@ -24,19 +25,18 @@ export async function GET() {
       );
     }
 
-    const clinics = await getClinicsCollection();
-    const clinic = await clinics.findOne({ _id: new ObjectId(session.clinicId) });
+    const clinic = db.select().from(clinics).where(eq(clinics.id, session.clinicId)).get();
 
     return NextResponse.json({
       user: {
-        id: user._id.toString(),
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
       },
       clinic: clinic
         ? {
-            id: clinic._id.toString(),
+            id: clinic.id,
             name: clinic.name,
             slug: clinic.slug,
           }

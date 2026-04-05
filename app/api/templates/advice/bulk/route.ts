@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getAdviceTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { adviceTemplates, generateId } from "@/lib/db/schema";
 
 // POST - Bulk import advice templates from XLSX data
 export async function POST(request: NextRequest) {
@@ -28,10 +29,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const templates = await getAdviceTemplatesCollection();
-    const now = new Date();
-    const clinicId = new ObjectId(session.clinicId);
-    const userId = new ObjectId(session.userId);
+    const db = getDb();
+    const now = new Date().toISOString();
 
     // Validate and prepare advice templates
     const validAdvice: {
@@ -69,12 +68,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing advice titles to check for duplicates
-    const existingTitles = await templates
-      .find(
-        { clinicId },
-        { projection: { title: 1 } }
-      )
-      .toArray();
+    const existingTitles = db
+      .select({ title: adviceTemplates.title })
+      .from(adviceTemplates)
+      .where(eq(adviceTemplates.clinicId, session.clinicId))
+      .all();
     const existingTitlesSet = new Set(
       existingTitles.map((a) => a.title.toLowerCase())
     );
@@ -99,22 +97,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new advice templates
-    const documents = newAdvice.map((item) => ({
-      clinicId,
-      title: item.title,
-      content: item.content,
-      category: item.category,
-      usageCount: 0,
-      createdBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    }));
-
-    const result = await templates.insertMany(documents as never);
+    let imported = 0;
+    for (const item of newAdvice) {
+      db.insert(adviceTemplates)
+        .values({
+          id: generateId(),
+          clinicId: session.clinicId,
+          title: item.title,
+          content: item.content,
+          category: item.category || null,
+          isDefault: false,
+          usageCount: 0,
+          createdBy: session.userId,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run();
+      imported++;
+    }
 
     return NextResponse.json({
       success: true,
-      imported: result.insertedCount,
+      imported,
       skipped: validAdvice.length - newAdvice.length,
       totalProcessed: advice.length,
       errors: errors.length > 0 ? errors : undefined,

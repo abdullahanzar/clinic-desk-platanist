@@ -21,7 +21,7 @@ import {
 const ITEMS_PER_PAGE = 20;
 
 interface AdviceTemplate {
-  _id: string;
+  id: string;
   title: string;
   content: string;
   category?: string;
@@ -206,7 +206,7 @@ export default function AdviceTab() {
 
     try {
       const url = editingTemplate
-        ? `/api/templates/advice/${editingTemplate._id}`
+        ? `/api/templates/advice/${editingTemplate.id}`
         : "/api/templates/advice";
       const method = editingTemplate ? "PATCH" : "POST";
 
@@ -240,7 +240,7 @@ export default function AdviceTab() {
       });
 
       if (res.ok) {
-        setTemplates((prev) => prev.filter((t) => t._id !== id));
+        setTemplates((prev) => prev.filter((t) => t.id !== id));
       } else {
         const data = await res.json();
         setDeleteError(data.error || "Failed to delete advice");
@@ -437,7 +437,7 @@ export default function AdviceTab() {
         <div className="space-y-3">
           {templates.map((template) => (
             <div
-              key={template._id}
+              key={template.id}
               className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-slate-200 transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
@@ -471,10 +471,10 @@ export default function AdviceTab() {
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
-                      {deleteConfirm === template._id ? (
+                      {deleteConfirm === template.id ? (
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => handleDelete(template._id)}
+                            onClick={() => handleDelete(template.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Confirm delete"
                           >
@@ -490,7 +490,7 @@ export default function AdviceTab() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setDeleteConfirm(template._id)}
+                          onClick={() => setDeleteConfirm(template.id)}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >

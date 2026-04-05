@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 interface Clinic {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   phone: string;
@@ -29,7 +29,7 @@ interface Clinic {
 }
 
 interface User {
-  _id: string;
+  id: string;
   clinicId: string;
   clinicName: string;
   name: string;
@@ -279,7 +279,7 @@ export default function SuperAdminDashboard() {
                   </tr>
                 ) : (
                   clinics.map((clinic) => (
-                    <tr key={clinic._id} className="hover:bg-slate-700/30">
+                    <tr key={clinic.id} className="hover:bg-slate-700/30">
                       <td className="px-4 py-4">
                         <div>
                           <p className="text-white font-medium">{clinic.name}</p>
@@ -303,7 +303,7 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
-                          onClick={() => router.push(`/admin/dashboard/clinics/${clinic._id}`)}
+                          onClick={() => router.push(`/admin/dashboard/clinics/${clinic.id}`)}
                           className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function SuperAdminDashboard() {
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user._id} className="hover:bg-slate-700/30">
+                    <tr key={user.id} className="hover:bg-slate-700/30">
                       <td className="px-4 py-4">
                         <div>
                           <p className="text-white font-medium">{user.name}</p>
@@ -391,7 +391,7 @@ export default function SuperAdminDashboard() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() =>
-                              handleToggleUserStatus(user._id, user.isActive)
+                              handleToggleUserStatus(user.id, user.isActive)
                             }
                             className={`p-2 rounded-lg transition-colors ${
                               user.isActive
@@ -408,7 +408,7 @@ export default function SuperAdminDashboard() {
                           </button>
                           <button
                             onClick={() =>
-                              router.push(`/admin/dashboard/users/${user._id}`)
+                              router.push(`/admin/dashboard/users/${user.id}`)
                             }
                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                           >
@@ -1030,7 +1030,7 @@ function CreateUserModal({
             >
               <option value="">Select a clinic</option>
               {clinics.map((clinic) => (
-                <option key={clinic._id} value={clinic._id}>
+                <option key={clinic.id} value={clinic.id}>
                   {clinic.name}
                 </option>
               ))}

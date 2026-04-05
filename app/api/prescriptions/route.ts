@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, desc } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getPrescriptionsCollection, getVisitsCollection } from "@/lib/db/collections";
-import type { PrescriptionInsert } from "@/types";
+import { getDb } from "@/lib/db/sqlite";
+import { prescriptions, visits, generateId } from "@/lib/db/schema";
 
 // GET /api/prescriptions - List prescriptions
 export async function GET(request: Request) {
@@ -16,31 +16,38 @@ export async function GET(request: Request) {
     const visitId = searchParams.get("visitId");
     const limitParam = searchParams.get("limit");
 
-    const prescriptions = await getPrescriptionsCollection();
+    const db = getDb();
+    const conditions = [eq(prescriptions.clinicId, session.clinicId)];
 
-    const query: Record<string, unknown> = {
-      clinicId: new ObjectId(session.clinicId),
-    };
-
-    if (visitId && ObjectId.isValid(visitId)) {
-      query.visitId = new ObjectId(visitId);
+    if (visitId) {
+      conditions.push(eq(prescriptions.visitId, visitId));
     }
 
-    let cursor = prescriptions.find(query).sort({ createdAt: -1 });
+    let query = db.select().from(prescriptions)
+      .where(and(...conditions))
+      .orderBy(desc(prescriptions.createdAt));
 
-    if (limitParam) {
-      cursor = cursor.limit(parseInt(limitParam, 10));
-    }
-
-    const results = await cursor.toArray();
+    const results = limitParam
+      ? query.limit(parseInt(limitParam, 10)).all()
+      : query.all();
 
     return NextResponse.json({
       prescriptions: results.map((p) => ({
-        ...p,
-        _id: p._id.toString(),
-        clinicId: p.clinicId.toString(),
-        visitId: p.visitId.toString(),
-        createdBy: p.createdBy.toString(),
+        id: p.id,
+        clinicId: p.clinicId,
+        visitId: p.visitId,
+        patientSnapshot: p.patientSnapshot,
+        diagnosis: p.diagnosis,
+        chiefComplaints: p.chiefComplaints,
+        medications: p.medications,
+        advice: p.advice,
+        followUpDate: p.followUpDate,
+        status: p.status,
+        finalizedAt: p.finalizedAt,
+        pdfGeneratedAt: p.pdfGeneratedAt,
+        createdBy: p.createdBy,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
       })),
     });
   } catch (error) {
@@ -60,7 +67,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only doctors can create prescriptions
     if (session.role !== "doctor") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -68,26 +74,26 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { visitId, diagnosis, chiefComplaints, medications, advice, followUpDate } = body;
 
-    if (!visitId || !ObjectId.isValid(visitId)) {
+    if (!visitId) {
       return NextResponse.json({ error: "Valid visit ID is required" }, { status: 400 });
     }
 
-    const visits = await getVisitsCollection();
-    const prescriptions = await getPrescriptionsCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
     // Get visit to snapshot patient info
-    const visit = await visits.findOne({
-      _id: new ObjectId(visitId),
-      clinicId,
-    });
+    const visit = db.select().from(visits)
+      .where(and(eq(visits.id, visitId), eq(visits.clinicId, session.clinicId)))
+      .get();
 
     if (!visit) {
       return NextResponse.json({ error: "Visit not found" }, { status: 404 });
     }
 
     // Check if prescription already exists for this visit
-    const existing = await prescriptions.findOne({ visitId: new ObjectId(visitId) });
+    const existing = db.select({ id: prescriptions.id }).from(prescriptions)
+      .where(eq(prescriptions.visitId, visitId))
+      .get();
+
     if (existing) {
       return NextResponse.json(
         { error: "Prescription already exists for this visit" },
@@ -95,40 +101,56 @@ export async function POST(request: Request) {
       );
     }
 
-    const prescription: PrescriptionInsert = {
-      clinicId,
-      visitId: new ObjectId(visitId),
-      patientSnapshot: {
-        name: visit.patient.name,
-        age: visit.patient.age,
-        gender: visit.patient.gender,
-      },
-      diagnosis: diagnosis?.trim(),
-      chiefComplaints: chiefComplaints?.trim(),
-      medications: (medications || []).map((m: { name: string; dosage: string; duration: string; instructions?: string }) => ({
-        name: m.name.trim(),
-        dosage: m.dosage.trim(),
-        duration: m.duration.trim(),
-        instructions: m.instructions?.trim(),
-      })),
-      advice: advice?.trim(),
-      followUpDate: followUpDate ? new Date(followUpDate) : undefined,
-      status: "draft",
-      createdBy: new ObjectId(session.userId),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const id = generateId();
+    const now = new Date().toISOString();
 
-    const result = await prescriptions.insertOne(prescription as never);
+    const meds = (medications || []).map((m: { name: string; dosage: string; duration: string; instructions?: string }) => ({
+      name: m.name.trim(),
+      dosage: m.dosage.trim(),
+      duration: m.duration.trim(),
+      instructions: m.instructions?.trim(),
+    }));
+
+    db.insert(prescriptions).values({
+      id,
+      clinicId: session.clinicId,
+      visitId,
+      patientSnapshot: {
+        name: visit.patientName,
+        age: visit.patientAge ?? undefined,
+        gender: visit.patientGender ?? undefined,
+      },
+      diagnosis: diagnosis?.trim() || null,
+      chiefComplaints: chiefComplaints?.trim() || null,
+      medications: meds,
+      advice: advice?.trim() || null,
+      followUpDate: followUpDate || null,
+      status: "draft",
+      createdBy: session.userId,
+      createdAt: now,
+      updatedAt: now,
+    }).run();
 
     return NextResponse.json({
       success: true,
       prescription: {
-        _id: result.insertedId.toString(),
-        ...prescription,
-        clinicId: prescription.clinicId.toString(),
-        visitId: prescription.visitId.toString(),
-        createdBy: prescription.createdBy.toString(),
+        id,
+        clinicId: session.clinicId,
+        visitId,
+        patientSnapshot: {
+          name: visit.patientName,
+          age: visit.patientAge ?? undefined,
+          gender: visit.patientGender ?? undefined,
+        },
+        diagnosis: diagnosis?.trim() || null,
+        chiefComplaints: chiefComplaints?.trim() || null,
+        medications: meds,
+        advice: advice?.trim() || null,
+        followUpDate: followUpDate || null,
+        status: "draft",
+        createdBy: session.userId,
+        createdAt: now,
+        updatedAt: now,
       },
     });
   } catch (error) {

@@ -19,25 +19,28 @@ export function endOfDay(date: Date): Date {
 /**
  * Format date as DD/MM/YYYY
  */
-export function formatDateIndian(date: Date): string {
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
+export function formatDateIndian(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
   return `${day}/${month}/${year}`;
 }
 
 /**
  * Format date as YYYY-MM-DD (for inputs)
  */
-export function formatDateISO(date: Date): string {
-  return date.toISOString().split("T")[0];
+export function formatDateISO(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toISOString().split("T")[0];
 }
 
 /**
  * Format time as HH:MM AM/PM
  */
-export function formatTime(date: Date): string {
-  return date.toLocaleTimeString("en-IN", {
+export function formatTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,

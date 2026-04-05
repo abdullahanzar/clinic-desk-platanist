@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Loader2, Plus, Check } from "lucide-react";
 
 export interface AdviceSuggestion {
-  _id: string;
+  id: string;
   title: string;
   content: string;
   category?: string;
@@ -97,11 +97,11 @@ export default function AdviceAutosuggest({
     onChange(newValue);
     
     // Mark as selected
-    setSelectedAdvice((prev) => new Set(prev).add(suggestion._id));
+    setSelectedAdvice((prev) => new Set(prev).add(suggestion.id));
 
     // Increment usage count
     try {
-      await fetch(`/api/templates/advice/${suggestion._id}`, {
+      await fetch(`/api/templates/advice/${suggestion.id}`, {
         method: "POST",
       });
     } catch (error) {
@@ -112,11 +112,11 @@ export default function AdviceAutosuggest({
   const replaceAdvice = async (suggestion: AdviceSuggestion) => {
     onChange(suggestion.content);
     setShowSuggestions(false);
-    setSelectedAdvice(new Set([suggestion._id]));
+    setSelectedAdvice(new Set([suggestion.id]));
 
     // Increment usage count
     try {
-      await fetch(`/api/templates/advice/${suggestion._id}`, {
+      await fetch(`/api/templates/advice/${suggestion.id}`, {
         method: "POST",
       });
     } catch (error) {
@@ -188,7 +188,7 @@ export default function AdviceAutosuggest({
             </div>
             {suggestions.map((suggestion, idx) => (
               <div
-                key={suggestion._id}
+                key={suggestion.id}
                 className={`px-3 py-2 border-b border-slate-100 last:border-b-0 ${
                   idx === highlightedIndex ? "bg-brand-50" : ""
                 }`}
@@ -201,7 +201,7 @@ export default function AdviceAutosuggest({
                   >
                     <div className="font-medium text-sm text-slate-900 flex items-center gap-2">
                       {suggestion.title}
-                      {selectedAdvice.has(suggestion._id) && (
+                      {selectedAdvice.has(suggestion.id) && (
                         <Check className="w-3 h-3 text-green-600" />
                       )}
                     </div>

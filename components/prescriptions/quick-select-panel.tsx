@@ -181,7 +181,7 @@ function DiagnosisPanel() {
 
   const handleSelect = (template: DiagnosisTemplate) => {
     setDiagnosis(template.name);
-    incrementUsage("diagnosis", template._id);
+    incrementUsage("diagnosis", template.id);
   };
 
   if (isLoading) {
@@ -204,7 +204,7 @@ function DiagnosisPanel() {
           <div className="space-y-1">
             {recentlyUsed.map((template) => (
               <button
-                key={template._id}
+                key={template.id}
                 type="button"
                 onClick={() => handleSelect(template)}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
@@ -268,7 +268,7 @@ function DiagnosisPanel() {
         ) : (
           filteredTemplates.map((template) => (
             <button
-              key={template._id}
+              key={template.id}
               type="button"
               onClick={() => handleSelect(template)}
               className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
@@ -360,7 +360,7 @@ function MedicationPanel() {
       duration: template.duration,
       instructions: template.instructions || "",
     });
-    incrementUsage("medication", template._id);
+    incrementUsage("medication", template.id);
   };
 
   const currentMedication =
@@ -405,7 +405,7 @@ function MedicationPanel() {
           <div className="space-y-1">
             {recentlyUsed.map((template) => (
               <button
-                key={template._id}
+                key={template.id}
                 type="button"
                 onClick={() => handleSelect(template)}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
@@ -477,7 +477,7 @@ function MedicationPanel() {
         ) : (
           filteredTemplates.map((template) => (
             <button
-              key={template._id}
+              key={template.id}
               type="button"
               onClick={() => handleSelect(template)}
               className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
@@ -567,7 +567,7 @@ function AdvicePanel() {
     } else {
       setAdvice(template.content);
     }
-    incrementUsage("advice", template._id);
+    incrementUsage("advice", template.id);
   };
 
   if (isLoading) {
@@ -590,7 +590,7 @@ function AdvicePanel() {
           <div className="space-y-1">
             {recentlyUsed.map((template) => (
               <div
-                key={template._id}
+                key={template.id}
                 className="px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-brand-300"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -669,7 +669,7 @@ function AdvicePanel() {
         ) : (
           filteredTemplates.map((template) => (
             <div
-              key={template._id}
+              key={template.id}
               className="px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-brand-300"
             >
               <div className="flex items-start justify-between gap-2">

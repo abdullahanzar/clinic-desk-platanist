@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getExpensesCollection } from "@/lib/db/collections";
-import { startOfMonth, endOfMonth } from "@/lib/utils/date";
-import type { ExpenseInsert, ExpenseCategory } from "@/types";
+import { getDb } from "@/lib/db/sqlite";
+import { expenses, generateId } from "@/lib/db/schema";
+import type { ExpenseCategory } from "@/types";
 
 // GET /api/billing/expenses - List expenses
 export async function GET(request: Request) {
@@ -19,68 +19,53 @@ export async function GET(request: Request) {
     const category = searchParams.get("category") as ExpenseCategory | null;
     const limit = parseInt(searchParams.get("limit") || "100", 10);
 
-    const expenses = await getExpensesCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
 
-    // Build query
-    const query: Record<string, unknown> = { clinicId };
+    // Build conditions
+    const conditions = [eq(expenses.clinicId, session.clinicId)];
 
     if (month) {
-      const targetDate = new Date(year, month - 1, 1);
-      query.expenseDate = {
-        $gte: startOfMonth(targetDate),
-        $lte: endOfMonth(targetDate),
-      };
+      const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+      const lastDay = new Date(year, month, 0).getDate();
+      conditions.push(gte(expenses.expenseDate, `${monthStr}-01T00:00:00.000Z`));
+      conditions.push(lte(expenses.expenseDate, `${monthStr}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`));
     } else {
-      // Get all expenses for the year
-      query.expenseDate = {
-        $gte: new Date(year, 0, 1),
-        $lte: new Date(year, 11, 31, 23, 59, 59, 999),
-      };
+      conditions.push(gte(expenses.expenseDate, `${year}-01-01T00:00:00.000Z`));
+      conditions.push(lte(expenses.expenseDate, `${year}-12-31T23:59:59.999Z`));
     }
 
     if (category) {
-      query.category = category;
+      conditions.push(eq(expenses.category, category));
     }
 
-    const results = await expenses
-      .find(query)
-      .sort({ expenseDate: -1 })
+    const results = db.select()
+      .from(expenses)
+      .where(and(...conditions))
+      .orderBy(desc(expenses.expenseDate))
       .limit(limit)
-      .toArray();
+      .all();
 
     // Get category breakdown
-    const categoryStats = await expenses.aggregate([
-      {
-        $match: query,
-      },
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: "$amount" },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { total: -1 },
-      },
-    ]).toArray();
+    const categoryStats = db.select({
+      category: expenses.category,
+      total: sql<number>`coalesce(sum(${expenses.amount}), 0)`,
+      count: sql<number>`count(*)`,
+    }).from(expenses)
+      .where(and(...conditions))
+      .groupBy(expenses.category)
+      .orderBy(sql`sum(${expenses.amount}) desc`)
+      .all();
 
     // Calculate totals
     const totalExpenses = results.reduce((sum, e) => sum + e.amount, 0);
 
     return NextResponse.json({
-      expenses: results.map((e) => ({
-        ...e,
-        _id: e._id.toString(),
-        clinicId: e.clinicId.toString(),
-        createdBy: e.createdBy.toString(),
-      })),
+      expenses: results,
       summary: {
         total: totalExpenses,
         count: results.length,
         byCategory: categoryStats.map((c) => ({
-          category: c._id,
+          category: c.category,
           total: c.total,
           count: c.count,
         })),
@@ -123,35 +108,32 @@ export async function POST(request: Request) {
       );
     }
 
-    const expenses = await getExpensesCollection();
-    const clinicId = new ObjectId(session.clinicId);
+    const db = getDb();
+    const now = new Date().toISOString();
+    const id = generateId();
 
-    const expense: ExpenseInsert = {
-      clinicId,
+    db.insert(expenses).values({
+      id,
+      clinicId: session.clinicId,
       description: description.trim(),
       amount: Number(amount),
       category,
-      expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
+      expenseDate: expenseDate ? new Date(expenseDate).toISOString() : now,
       isRecurring,
       recurringFrequency: isRecurring ? recurringFrequency : undefined,
       vendor: vendor?.trim(),
       invoiceNumber: invoiceNumber?.trim(),
       notes: notes?.trim(),
-      createdBy: new ObjectId(session.userId),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      createdBy: session.userId,
+      createdAt: now,
+      updatedAt: now,
+    }).run();
 
-    const result = await expenses.insertOne(expense as never);
+    const expense = db.select().from(expenses).where(eq(expenses.id, id)).get();
 
     return NextResponse.json({
       success: true,
-      expense: {
-        _id: result.insertedId.toString(),
-        ...expense,
-        clinicId: expense.clinicId.toString(),
-        createdBy: expense.createdBy.toString(),
-      },
+      expense,
     });
   } catch (error) {
     console.error("Create expense error:", error);

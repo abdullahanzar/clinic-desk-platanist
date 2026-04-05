@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getMedicationTemplatesCollection } from "@/lib/db/collections";
-import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db/sqlite";
+import { medicationTemplates } from "@/lib/db/schema";
 
 // GET - Get a specific medication template
 export async function GET(
@@ -15,16 +16,18 @@ export async function GET(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getMedicationTemplatesCollection();
-    const template = await templates.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const template = db
+      .select()
+      .from(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.id, id),
+          eq(medicationTemplates.clinicId, session.clinicId)
+        )
+      )
+      .get();
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -32,7 +35,7 @@ export async function GET(
 
     return NextResponse.json({
       template: {
-        _id: template._id.toString(),
+        id: template.id,
         name: template.name,
         dosage: template.dosage,
         duration: template.duration,
@@ -73,10 +76,6 @@ export async function PATCH(
 
     const { id } = await params;
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
     const body = await request.json();
     const { name, dosage, duration, instructions, category } = body;
 
@@ -87,14 +86,20 @@ export async function PATCH(
       );
     }
 
-    const templates = await getMedicationTemplatesCollection();
+    const db = getDb();
 
     // Check for duplicate (excluding current template)
-    const existing = await templates.findOne({
-      clinicId: new ObjectId(session.clinicId),
-      name: { $regex: `^${name.trim()}$`, $options: "i" },
-      _id: { $ne: new ObjectId(id) },
-    });
+    const existing = db
+      .select()
+      .from(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.clinicId, session.clinicId),
+          sql`lower(${medicationTemplates.name}) = lower(${name.trim()})`,
+          sql`${medicationTemplates.id} != ${id}`
+        )
+      )
+      .get();
 
     if (existing) {
       return NextResponse.json(
@@ -103,24 +108,25 @@ export async function PATCH(
       );
     }
 
-    const result = await templates.updateOne(
-      {
-        _id: new ObjectId(id),
-        clinicId: new ObjectId(session.clinicId),
-      },
-      {
-        $set: {
-          name: name.trim(),
-          dosage: dosage.trim(),
-          duration: duration.trim(),
-          instructions: instructions?.trim() || null,
-          category: category?.trim() || null,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    const result = db
+      .update(medicationTemplates)
+      .set({
+        name: name.trim(),
+        dosage: dosage.trim(),
+        duration: duration.trim(),
+        instructions: instructions?.trim() || null,
+        category: category?.trim() || null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(medicationTemplates.id, id),
+          eq(medicationTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
-    if (result.matchedCount === 0) {
+    if (result.changes === 0) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
     }
 
@@ -153,18 +159,19 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getMedicationTemplatesCollection();
-    
     // Check if it's a default medication
-    const template = await templates.findOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
+    const template = db
+      .select()
+      .from(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.id, id),
+          eq(medicationTemplates.clinicId, session.clinicId)
+        )
+      )
+      .get();
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -177,14 +184,14 @@ export async function DELETE(
       );
     }
 
-    const result = await templates.deleteOne({
-      _id: new ObjectId(id),
-      clinicId: new ObjectId(session.clinicId),
-    });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    }
+    db.delete(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.id, id),
+          eq(medicationTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -208,21 +215,17 @@ export async function POST(
     }
 
     const { id } = await params;
+    const db = getDb();
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid template ID" }, { status: 400 });
-    }
-
-    const templates = await getMedicationTemplatesCollection();
-    await templates.updateOne(
-      {
-        _id: new ObjectId(id),
-        clinicId: new ObjectId(session.clinicId),
-      },
-      {
-        $inc: { usageCount: 1 },
-      }
-    );
+    db.update(medicationTemplates)
+      .set({ usageCount: sql`${medicationTemplates.usageCount} + 1` })
+      .where(
+        and(
+          eq(medicationTemplates.id, id),
+          eq(medicationTemplates.clinicId, session.clinicId)
+        )
+      )
+      .run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

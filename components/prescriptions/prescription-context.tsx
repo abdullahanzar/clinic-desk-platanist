@@ -13,7 +13,7 @@ import { COMMON_COMPLAINTS, ComplaintCategory } from "@/lib/data/common-complain
 
 // Template types
 export interface DiagnosisTemplate {
-  _id: string;
+  id: string;
   name: string;
   icdCode?: string;
   category?: string;
@@ -23,7 +23,7 @@ export interface DiagnosisTemplate {
 }
 
 export interface MedicationTemplate {
-  _id: string;
+  id: string;
   name: string;
   dosage: string;
   duration: string;
@@ -36,7 +36,7 @@ export interface MedicationTemplate {
 }
 
 export interface AdviceTemplate {
-  _id: string;
+  id: string;
   title: string;
   content: string;
   category?: string;

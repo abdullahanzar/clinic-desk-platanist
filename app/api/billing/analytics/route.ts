@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
-import { getReceiptsCollection } from "@/lib/db/collections";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "@/lib/utils/date";
+import { getDb } from "@/lib/db/sqlite";
+import { receipts } from "@/lib/db/schema";
 import type { MonthlyRevenue, PaymentModeBreakdown, DailyRevenue } from "@/types";
 
 // GET /api/billing/analytics - Get detailed billing analytics
@@ -18,111 +18,110 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString(), 10);
     const month = searchParams.get("month") ? parseInt(searchParams.get("month")!, 10) : null;
 
-    const receipts = await getReceiptsCollection();
-    const clinicId = new ObjectId(session.clinicId);
-
-    // Get monthly revenue for the last N months
-    const monthlyRevenueData: MonthlyRevenue[] = [];
+    const db = getDb();
     const now = new Date();
+    const clinicFilter = eq(receipts.clinicId, session.clinicId);
 
+    // Get monthly revenue for the last N months using a single query with groupBy
+    // Build date range covering all N months
+    const oldestMonth = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    const oldestStart = `${oldestMonth.getFullYear()}-${String(oldestMonth.getMonth() + 1).padStart(2, "0")}-01T00:00:00.000Z`;
+    const latestEnd = (() => {
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+    })();
+
+    const monthlyRaw = db.select({
+      monthKey: sql<string>`substr(${receipts.receiptDate}, 1, 7)`,
+      totalRevenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalReceipts: sql<number>`count(*)`,
+      paidAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      unpaidAmount: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 0 then ${receipts.totalAmount} else 0 end), 0)`,
+      totalDiscount: sql<number>`coalesce(sum(${receipts.discountAmount}), 0)`,
+    }).from(receipts).where(and(
+      clinicFilter,
+      gte(receipts.receiptDate, oldestStart),
+      lte(receipts.receiptDate, latestEnd),
+    )).groupBy(sql`substr(${receipts.receiptDate}, 1, 7)`)
+      .orderBy(sql`substr(${receipts.receiptDate}, 1, 7) asc`)
+      .all();
+
+    // Build a map for quick lookup
+    const monthlyMap = new Map(monthlyRaw.map((r) => [r.monthKey, r]));
+
+    // Fill in all months (including zero-data months)
+    const monthlyRevenueData: MonthlyRevenue[] = [];
     for (let i = months - 1; i >= 0; i--) {
       const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStart = startOfMonth(targetDate);
-      const monthEnd = endOfMonth(targetDate);
-
-      const stats = await receipts.aggregate([
-        {
-          $match: {
-            clinicId,
-            receiptDate: { $gte: monthStart, $lte: monthEnd },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-            totalReceipts: { $sum: 1 },
-            paidAmount: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-            unpaidAmount: { $sum: { $cond: ["$isPaid", 0, "$totalAmount"] } },
-            totalDiscount: { $sum: "$discountAmount" },
-          },
-        },
-      ]).toArray();
+      const mKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+      const stats = monthlyMap.get(mKey);
 
       monthlyRevenueData.push({
         month: targetDate.getMonth() + 1,
         year: targetDate.getFullYear(),
-        totalRevenue: stats[0]?.totalRevenue || 0,
-        totalReceipts: stats[0]?.totalReceipts || 0,
-        paidAmount: stats[0]?.paidAmount || 0,
-        unpaidAmount: stats[0]?.unpaidAmount || 0,
-        totalDiscount: stats[0]?.totalDiscount || 0,
-        avgReceiptValue: stats[0]?.totalReceipts
-          ? Math.round((stats[0]?.paidAmount || 0) / stats[0].totalReceipts)
+        totalRevenue: stats?.totalRevenue || 0,
+        totalReceipts: stats?.totalReceipts || 0,
+        paidAmount: stats?.paidAmount || 0,
+        unpaidAmount: stats?.unpaidAmount || 0,
+        totalDiscount: stats?.totalDiscount || 0,
+        avgReceiptValue: stats?.totalReceipts
+          ? Math.round((stats?.paidAmount || 0) / stats.totalReceipts)
           : 0,
       });
     }
 
     // Get payment mode breakdown for the specified month or current month
-    const targetMonth = month 
+    const targetMonth = month
       ? new Date(year, month - 1, 1)
       : new Date();
-    const paymentMonthStart = startOfMonth(targetMonth);
-    const paymentMonthEnd = endOfMonth(targetMonth);
+    const paymentMonthStr = `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, "0")}`;
+    const paymentLastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    const paymentStart = `${paymentMonthStr}-01T00:00:00.000Z`;
+    const paymentEnd = `${paymentMonthStr}-${String(paymentLastDay).padStart(2, "0")}T23:59:59.999Z`;
 
-    const paymentModeStats = await receipts.aggregate([
-      {
-        $match: {
-          clinicId,
-          receiptDate: { $gte: paymentMonthStart, $lte: paymentMonthEnd },
-        },
-      },
-      {
-        $group: {
-          _id: { $ifNull: ["$paymentMode", "unpaid"] },
-          count: { $sum: 1 },
-          amount: { $sum: "$totalAmount" },
-        },
-      },
-    ]).toArray();
+    const paymentDateFilter = and(
+      clinicFilter,
+      gte(receipts.receiptDate, paymentStart),
+      lte(receipts.receiptDate, paymentEnd),
+    );
+
+    const paymentModeStats = db.select({
+      mode: sql<string>`coalesce(${receipts.paymentMode}, 'unpaid')`,
+      count: sql<number>`count(*)`,
+      amount: sql<number>`coalesce(sum(${receipts.totalAmount}), 0)`,
+    }).from(receipts).where(paymentDateFilter)
+      .groupBy(sql`coalesce(${receipts.paymentMode}, 'unpaid')`)
+      .all();
 
     const totalPayments = paymentModeStats.reduce((sum, item) => sum + item.amount, 0);
     const paymentModeBreakdown: PaymentModeBreakdown[] = paymentModeStats.map((item) => ({
-      mode: item._id,
+      mode: item.mode as PaymentModeBreakdown["mode"],
       count: item.count,
       amount: item.amount,
       percentage: totalPayments > 0 ? Math.round((item.amount / totalPayments) * 100) : 0,
     }));
 
-    // Get daily revenue for the specified month
-    const dailyRevenueData: DailyRevenue[] = [];
+    // Get daily revenue for the specified month using a single groupBy query
+    const dailyRaw = db.select({
+      date: sql<string>`substr(${receipts.receiptDate}, 1, 10)`,
+      revenue: sql<number>`coalesce(sum(case when ${receipts.isPaid} = 1 then ${receipts.totalAmount} else 0 end), 0)`,
+      receiptCount: sql<number>`count(*)`,
+    }).from(receipts).where(paymentDateFilter)
+      .groupBy(sql`substr(${receipts.receiptDate}, 1, 10)`)
+      .orderBy(sql`substr(${receipts.receiptDate}, 1, 10) asc`)
+      .all();
+
+    const dailyMap = new Map(dailyRaw.map((d) => [d.date, d]));
     const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    const dailyRevenueData: DailyRevenue[] = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dayDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), day);
-      const dayStart = startOfDay(dayDate);
-      const dayEnd = endOfDay(dayDate);
-
-      const dayStats = await receipts.aggregate([
-        {
-          $match: {
-            clinicId,
-            receiptDate: { $gte: dayStart, $lte: dayEnd },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            revenue: { $sum: { $cond: ["$isPaid", "$totalAmount", 0] } },
-            receipts: { $sum: 1 },
-          },
-        },
-      ]).toArray();
-
+      const dateStr = `${paymentMonthStr}-${String(day).padStart(2, "0")}`;
+      const dayData = dailyMap.get(dateStr);
       dailyRevenueData.push({
-        date: dayDate.toISOString().split("T")[0],
-        revenue: dayStats[0]?.revenue || 0,
-        receipts: dayStats[0]?.receipts || 0,
+        date: dateStr,
+        revenue: dayData?.revenue || 0,
+        receipts: dayData?.receiptCount || 0,
       });
     }
 

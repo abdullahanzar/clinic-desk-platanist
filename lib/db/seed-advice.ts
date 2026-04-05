@@ -1,5 +1,6 @@
-import { ObjectId } from "mongodb";
-import { getAdviceTemplatesCollection } from "./collections";
+import { getDb } from "@/lib/db/sqlite";
+import { adviceTemplates, generateId } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -51,14 +52,12 @@ function parseCSV(csvContent: string): CSVAdvice[] {
   return advices;
 }
 
-export async function seedDefaultAdvice(
+export function seedDefaultAdvice(
   clinicId: string,
   createdBy: string
-): Promise<{ added: number; skipped: number }> {
-  const templates = await getAdviceTemplatesCollection();
-  const clinicObjectId = new ObjectId(clinicId);
-  const createdByObjectId = new ObjectId(createdBy);
-  const now = new Date();
+): { added: number; skipped: number } {
+  const db = getDb();
+  const now = new Date().toISOString();
 
   let addedCount = 0;
   let skippedCount = 0;
@@ -77,28 +76,37 @@ export async function seedDefaultAdvice(
 
   for (const advice of advices) {
     // Check if this default advice already exists for this clinic
-    const existing = await templates.findOne({
-      clinicId: clinicObjectId,
-      title: advice.title,
-      isDefault: true,
-    });
+    const existing = db
+      .select({ id: adviceTemplates.id })
+      .from(adviceTemplates)
+      .where(
+        and(
+          eq(adviceTemplates.clinicId, clinicId),
+          eq(adviceTemplates.title, advice.title),
+          eq(adviceTemplates.isDefault, true)
+        )
+      )
+      .get();
 
     if (existing) {
       skippedCount++;
       continue;
     }
 
-    await templates.insertOne({
-      clinicId: clinicObjectId,
-      title: advice.title,
-      content: advice.advice_text,
-      category: advice.category || undefined,
-      isDefault: true,
-      usageCount: 0,
-      createdBy: createdByObjectId,
-      createdAt: now,
-      updatedAt: now,
-    } as never);
+    db.insert(adviceTemplates)
+      .values({
+        id: generateId(),
+        clinicId,
+        title: advice.title,
+        content: advice.advice_text,
+        category: advice.category || null,
+        isDefault: true,
+        usageCount: 0,
+        createdBy,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
 
     addedCount++;
   }
@@ -109,32 +117,51 @@ export async function seedDefaultAdvice(
   };
 }
 
-export async function hasDefaultAdvice(clinicId: string): Promise<boolean> {
-  const templates = await getAdviceTemplatesCollection();
-  const count = await templates.countDocuments({
-    clinicId: new ObjectId(clinicId),
-    isDefault: true,
-  });
-  return count > 0;
+export function hasDefaultAdvice(clinicId: string): boolean {
+  const db = getDb();
+  const row = db
+    .select({ count: sql<number>`count(*)` })
+    .from(adviceTemplates)
+    .where(
+      and(
+        eq(adviceTemplates.clinicId, clinicId),
+        eq(adviceTemplates.isDefault, true)
+      )
+    )
+    .get();
+  return (row?.count ?? 0) > 0;
 }
 
-export async function getDefaultAdviceStats(clinicId: string): Promise<{
+export function getDefaultAdviceStats(clinicId: string): {
   default: number;
   custom: number;
-}> {
-  const templates = await getAdviceTemplatesCollection();
-  const clinicObjectId = new ObjectId(clinicId);
+} {
+  const db = getDb();
 
-  const [defaultCount, customCount] = await Promise.all([
-    templates.countDocuments({
-      clinicId: clinicObjectId,
-      isDefault: true,
-    }),
-    templates.countDocuments({
-      clinicId: clinicObjectId,
-      $or: [{ isDefault: { $ne: true } }, { isDefault: { $exists: false } }],
-    }),
-  ]);
+  const defaultCount = db
+    .select({ count: sql<number>`count(*)` })
+    .from(adviceTemplates)
+    .where(
+      and(
+        eq(adviceTemplates.clinicId, clinicId),
+        eq(adviceTemplates.isDefault, true)
+      )
+    )
+    .get();
 
-  return { default: defaultCount, custom: customCount };
+  const customCount = db
+    .select({ count: sql<number>`count(*)` })
+    .from(adviceTemplates)
+    .where(
+      and(
+        eq(adviceTemplates.clinicId, clinicId),
+        eq(adviceTemplates.isDefault, false)
+      )
+    )
+    .get();
+
+  return {
+    default: defaultCount?.count ?? 0,
+    custom: customCount?.count ?? 0,
+  };
 }

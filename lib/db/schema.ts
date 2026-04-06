@@ -80,6 +80,27 @@ export const users = sqliteTable("users", {
 ]);
 
 // ============================================
+// SUPER ADMINS
+// ============================================
+export const superAdmins = sqliteTable("super_admins", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  username: text("username").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  mustChangeCredentials: integer("must_change_credentials", { mode: "boolean" }).notNull().default(true),
+  usedDefaultCredentials: integer("used_default_credentials", { mode: "boolean" }).notNull().default(true),
+  lastLoginAt: text("last_login_at"),
+  loginHistory: text("login_history", { mode: "json" }).$type<Array<{
+    loginAt: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }>>().notNull().default(sql`'[]'`),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+}, (table) => [
+  uniqueIndex("super_admins_username_idx").on(table.username),
+]);
+
+// ============================================
 // VISITS
 // ============================================
 export const visits = sqliteTable("visits", {

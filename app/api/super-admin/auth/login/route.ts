@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import {
   validateSuperAdminCredentials,
   createSuperAdminSession,
+  buildSuperAdminLoginHistoryEntry,
   isSuperAdminConfigured,
+  recordPersistedSuperAdminLogin,
 } from "@/lib/auth/super-admin";
 
 export async function POST(request: Request) {
   try {
-    // Check if super admin is configured
     if (!isSuperAdminConfigured()) {
       return NextResponse.json(
-        { error: "Super admin not configured" },
+        { error: "Super admin access is unavailable" },
         { status: 503 }
       );
     }
@@ -25,9 +26,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const isValid = validateSuperAdminCredentials(username, password);
+    const result = await validateSuperAdminCredentials(username, password);
 
-    if (!isValid) {
+    if (!result.authenticated || !result.authSource || !result.username) {
       console.warn(
         `[SUPER_ADMIN] Failed login attempt from IP: ${
           request.headers.get("x-forwarded-for") || "unknown"
@@ -39,8 +40,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create session
-    await createSuperAdminSession();
+    if (result.authSource === "database" && result.superAdmin?.id) {
+      recordPersistedSuperAdminLogin(
+        result.superAdmin.id,
+        buildSuperAdminLoginHistoryEntry(request)
+      );
+    }
+
+    await createSuperAdminSession({
+      superAdminId: result.superAdmin?.id,
+      username: result.username,
+      authSource: result.authSource,
+      mustChangeCredentials: Boolean(result.mustChangeCredentials),
+    });
 
     console.log(
       `[SUPER_ADMIN] Successful login from IP: ${
@@ -48,7 +60,13 @@ export async function POST(request: Request) {
       }`
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      mustChangeCredentials: Boolean(result.mustChangeCredentials),
+      redirectTo: result.mustChangeCredentials
+        ? "/admin/change-credentials"
+        : "/admin/dashboard",
+    });
   } catch (error) {
     console.error("Super admin login error:", error);
     return NextResponse.json(

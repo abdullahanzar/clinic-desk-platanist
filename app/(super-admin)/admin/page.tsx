@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, ArrowLeft } from "lucide-react";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -27,15 +28,14 @@ export default function SuperAdminLoginPage() {
 
       if (!res.ok) {
         if (res.status === 503) {
-          setError("Super admin access is not configured");
+          setError("Super admin access is unavailable");
         } else {
           setError(data.error || "Login failed");
         }
         return;
       }
 
-      // Redirect to super admin dashboard
-      router.push("/admin/dashboard");
+      router.push(data.redirectTo || "/admin/dashboard");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -50,7 +50,7 @@ export default function SuperAdminLoginPage() {
         {/* Card */}
         <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-red-600 to-red-700 px-8 py-8 text-center">
+          <div className="bg-linear-to-r from-red-600 to-red-700 px-8 py-8 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-800 rounded-2xl shadow-lg mb-4">
               <Shield className="w-10 h-10 text-red-400" />
             </div>
@@ -60,7 +60,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Warning Banner */}
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
             <p className="text-amber-400 text-xs">
               This area is restricted to system administrators only.
               All actions are logged.
@@ -69,6 +69,15 @@ export default function SuperAdminLoginPage() {
 
           {/* Form */}
           <div className="p-8">
+            <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+              <p className="text-sm font-medium text-red-200">
+                Fresh installs start with <span className="font-semibold text-white">admin</span> / <span className="font-semibold text-white">admin123</span>.
+              </p>
+              <p className="mt-1 text-xs text-red-100/80">
+                You will be required to change these credentials before dashboard access.
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
@@ -117,7 +126,7 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="w-full py-3.5 px-4 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -129,6 +138,14 @@ export default function SuperAdminLoginPage() {
                 )}
               </button>
             </form>
+
+            <Link
+              href="/login"
+              className="mt-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to clinic login
+            </Link>
           </div>
         </div>
 

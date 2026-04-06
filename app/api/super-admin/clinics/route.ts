@@ -50,8 +50,15 @@ export async function GET() {
 
     return NextResponse.json({ clinics: clinicsWithStats });
   } catch (error) {
-    if ((error as Error).message === "Super Admin Unauthorized") {
+    const message = (error as Error).message;
+    if (message === "Super Admin Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (message === "Super Admin Credentials Update Required") {
+      return NextResponse.json(
+        { error: "Credentials update required" },
+        { status: 403 }
+      );
     }
     console.error("Super admin clinics list error:", error);
     return NextResponse.json(
@@ -235,8 +242,15 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    if ((error as Error).message === "Super Admin Unauthorized") {
+    const message = (error as Error).message;
+    if (message === "Super Admin Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (message === "Super Admin Credentials Update Required") {
+      return NextResponse.json(
+        { error: "Credentials update required" },
+        { status: 403 }
+      );
     }
     console.error("Super admin create clinic error:", error);
     return NextResponse.json(

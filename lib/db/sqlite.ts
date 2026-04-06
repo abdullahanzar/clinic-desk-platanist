@@ -1,13 +1,19 @@
 import fs from "fs";
 import path from "path";
+import { eq } from "drizzle-orm";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "./schema";
+import { hashPasswordSync } from "@/lib/auth/password";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _sqlite: Database.Database | null = null;
 let _migrationsApplied = false;
+let _defaultSuperAdminEnsured = false;
+
+const DEFAULT_SUPER_ADMIN_USERNAME = "admin";
+const DEFAULT_SUPER_ADMIN_PASSWORD = "admin123";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -16,6 +22,8 @@ declare global {
   var _sqliteInstance: Database.Database | undefined;
   // eslint-disable-next-line no-var
   var _sqliteMigrationsApplied: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var _sqliteDefaultSuperAdminEnsured: boolean | undefined;
 }
 
 function getDatabasePath(): string {
@@ -45,6 +53,7 @@ function createDb() {
 
   const db = drizzle(sqlite, { schema });
   ensureMigrations(db);
+  ensureDefaultSuperAdmin(db);
 
   return { db, sqlite };
 }
@@ -73,6 +82,46 @@ function ensureMigrations(db: ReturnType<typeof drizzle>) {
   }
 
   _migrationsApplied = true;
+}
+
+function ensureDefaultSuperAdmin(db: ReturnType<typeof drizzle>) {
+  if (process.env.NODE_ENV === "development") {
+    if (global._sqliteDefaultSuperAdminEnsured) {
+      return;
+    }
+  } else if (_defaultSuperAdminEnsured) {
+    return;
+  }
+
+  const hasEnvironmentCredentials = Boolean(
+    process.env.SUPER_ADMIN_USERNAME && process.env.SUPER_ADMIN_PASSWORD
+  );
+
+  const existingSuperAdmin = db.select({ id: schema.superAdmins.id })
+    .from(schema.superAdmins)
+    .get();
+
+  if (!existingSuperAdmin && !hasEnvironmentCredentials) {
+    const now = new Date().toISOString();
+    db.insert(schema.superAdmins)
+      .values({
+        username: DEFAULT_SUPER_ADMIN_USERNAME,
+        passwordHash: hashPasswordSync(DEFAULT_SUPER_ADMIN_PASSWORD),
+        mustChangeCredentials: true,
+        usedDefaultCredentials: true,
+        loginHistory: [],
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    global._sqliteDefaultSuperAdminEnsured = true;
+    return;
+  }
+
+  _defaultSuperAdminEnsured = true;
 }
 
 export function getDb() {

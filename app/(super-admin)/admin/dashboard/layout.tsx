@@ -6,7 +6,6 @@ export default async function SuperAdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Check if super admin is configured and authenticated
   if (!isSuperAdminConfigured()) {
     redirect("/");
   }
@@ -14,6 +13,10 @@ export default async function SuperAdminDashboardLayout({
   const session = await getSuperAdminSession();
   if (!session) {
     redirect("/admin");
+  }
+
+  if (session.mustChangeCredentials) {
+    redirect("/admin/change-credentials");
   }
 
   return <>{children}</>;

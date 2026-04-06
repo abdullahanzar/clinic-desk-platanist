@@ -65,8 +65,10 @@ Required environment variables:
 
 - `MONGODB_URI` - MongoDB connection string
 - `JWT_SECRET` - Secret key for JWT authentication (generate with `openssl rand -base64 32`)
-- `SUPER_ADMIN_USERNAME` - Super admin username
-- `SUPER_ADMIN_PASSWORD` - Super admin password
+- `SUPER_ADMIN_USERNAME` - Optional super admin fallback username
+- `SUPER_ADMIN_PASSWORD` - Optional super admin fallback password
+
+Super admin access is now bootstrapped in the application itself. On a fresh install without super admin environment variables, open `/admin` and sign in with the default credentials `admin` / `admin123`, then change them immediately on first login.
 
 See `.env.example` for a complete configuration template.
 
@@ -109,7 +111,7 @@ Generated artifacts are written to `electron-dist/` and include targets for:
 - macOS: DMG and ZIP
 - Linux: AppImage and DEB
 
-> Note: This app still requires runtime environment variables (for example `MONGODB_URI`, `JWT_SECRET`, and super admin credentials).
+> Note: This app still requires runtime environment variables such as `MONGODB_URI` and `JWT_SECRET`. Super admin credentials can be bootstrapped from the login flow, while `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD` remain available as an optional fallback for server-style deployments.
 
 ## Deploy on Vercel
 

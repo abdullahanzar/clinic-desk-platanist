@@ -59,8 +59,15 @@ export async function GET(
       users: clinicUsers,
     });
   } catch (error) {
-    if ((error as Error).message === "Super Admin Unauthorized") {
+    const message = (error as Error).message;
+    if (message === "Super Admin Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (message === "Super Admin Credentials Update Required") {
+      return NextResponse.json(
+        { error: "Credentials update required" },
+        { status: 403 }
+      );
     }
     console.error("Super admin get clinic error:", error);
     return NextResponse.json(
@@ -150,8 +157,15 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if ((error as Error).message === "Super Admin Unauthorized") {
+    const message = (error as Error).message;
+    if (message === "Super Admin Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (message === "Super Admin Credentials Update Required") {
+      return NextResponse.json(
+        { error: "Credentials update required" },
+        { status: 403 }
+      );
     }
     console.error("Super admin update clinic error:", error);
     return NextResponse.json(
@@ -196,8 +210,15 @@ export async function DELETE(
       deletedUsers: deletedUsers.changes,
     });
   } catch (error) {
-    if ((error as Error).message === "Super Admin Unauthorized") {
+    const message = (error as Error).message;
+    if (message === "Super Admin Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (message === "Super Admin Credentials Update Required") {
+      return NextResponse.json(
+        { error: "Credentials update required" },
+        { status: 403 }
+      );
     }
     console.error("Super admin delete clinic error:", error);
     return NextResponse.json(

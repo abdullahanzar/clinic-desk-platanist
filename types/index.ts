@@ -69,6 +69,20 @@ export interface LoginHistoryEntry {
   userAgent?: string;
 }
 
+export type SuperAdminAuthSource = "database" | "environment";
+
+export interface SuperAdminRecord {
+  id: string;
+  username: string;
+  passwordHash: string;
+  mustChangeCredentials: boolean;
+  usedDefaultCredentials: boolean;
+  lastLoginAt?: string | null;
+  loginHistory: LoginHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
   clinicId: string;
@@ -256,6 +270,15 @@ export interface SessionPayload {
   userId: string;
   clinicId: string;
   role: UserRole;
+  exp: number;
+}
+
+export interface SuperAdminSessionPayload {
+  isSuperAdmin: true;
+  superAdminId?: string;
+  username: string;
+  authSource: SuperAdminAuthSource;
+  mustChangeCredentials: boolean;
   exp: number;
 }
 

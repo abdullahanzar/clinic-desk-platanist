@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSuperAdminSession, isSuperAdminConfigured } from "@/lib/auth/super-admin";
+import { isSuperAdminConfigured } from "@/lib/auth/super-admin";
 
 export default async function SuperAdminLayout({
   children,

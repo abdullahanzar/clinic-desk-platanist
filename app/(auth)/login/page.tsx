@@ -89,7 +89,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen flex flex-col bg-linear-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -142,7 +142,7 @@ export default function LoginPage() {
             </div>
 
             {/* CTA Section */}
-            <div className="bg-gradient-to-r from-brand-50 to-brand-100 dark:from-brand-950/50 dark:to-brand-900/30 rounded-xl p-5 border border-brand-200 dark:border-brand-800">
+            <div className="bg-linear-to-r from-brand-50 to-brand-100 dark:from-brand-950/50 dark:to-brand-900/30 rounded-xl p-5 border border-brand-200 dark:border-brand-800">
               <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                 Don&apos;t have an account?
               </h3>
@@ -177,7 +177,7 @@ export default function LoginPage() {
             {/* Card */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
               {/* Header with gradient */}
-              <div className="bg-gradient-to-r from-brand-600 to-brand-700 px-8 py-8 text-center">
+              <div className="bg-linear-to-r from-brand-600 to-brand-700 px-8 py-8 text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
                   <Image
                     src="/platanist_clinic_desk_minimal.png"
@@ -243,7 +243,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
+                    className="w-full py-3.5 px-4 bg-linear-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -255,6 +255,29 @@ export default function LoginPage() {
                     )}
                   </button>
                 </form>
+
+                <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-red-100 p-2 dark:bg-red-500/10">
+                      <Shield className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        Need super admin access?
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        Use the dedicated system administration sign-in for clinic-wide setup and distribution bootstrap.
+                      </p>
+                      <Link
+                        href="/admin"
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-600 transition-colors hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        Open super admin login
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Mobile-only: Account creation info */}
                 <div className="lg:hidden mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">

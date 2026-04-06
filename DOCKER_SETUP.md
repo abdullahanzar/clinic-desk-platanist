@@ -33,8 +33,8 @@ This method sets up both the application and MongoDB database automatically.
    **Required environment variables:**
    - `MONGODB_URI`: MongoDB connection string (default: `mongodb://mongodb:27017/clinic_desk`)
    - `JWT_SECRET`: Secret key for JWT authentication (MUST change in production)
-   - `SUPER_ADMIN_USERNAME`: Super admin username
-   - `SUPER_ADMIN_PASSWORD`: Super admin password
+   - `SUPER_ADMIN_USERNAME`: Optional super admin fallback username
+   - `SUPER_ADMIN_PASSWORD`: Optional super admin fallback password
 
 4. **Start the application**
    ```bash
@@ -83,8 +83,10 @@ If you already have a MongoDB instance running, you can run just the application
 |----------|-------------|---------|
 | `MONGODB_URI` | MongoDB connection string | `mongodb://mongodb:27017/clinic_desk` |
 | `JWT_SECRET` | Secret key for JWT tokens | Use `openssl rand -base64 32` to generate |
-| `SUPER_ADMIN_USERNAME` | Super admin username | `admin` |
-| `SUPER_ADMIN_PASSWORD` | Super admin password | Strong password |
+| `SUPER_ADMIN_USERNAME` | Optional super admin fallback username | `admin` |
+| `SUPER_ADMIN_PASSWORD` | Optional super admin fallback password | Strong password |
+
+If you do not provide `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD`, Clinic Desk creates a local super admin account on first run. Sign in at `/admin` with `admin` / `admin123`, then rotate the username and password before dashboard access.
 
 ### Generating a Secure JWT Secret
 
@@ -258,7 +260,7 @@ docker-compose build --no-cache
 
 ## Security Best Practices
 
-1. **Change default credentials**: Always change `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD`
+1. **Rotate bootstrap credentials immediately**: If you use the built-in `admin` / `admin123` bootstrap login, change both values on first sign-in.
 2. **Generate strong JWT secret**: Use `openssl rand -base64 32`
 3. **Use environment variables**: Never commit `.env` file to version control
 4. **Update regularly**: Keep Docker images and dependencies up to date
@@ -301,11 +303,13 @@ After starting the application for the first time:
 
 1. Access the super admin panel at: `http://localhost:3000/admin`
 
-2. Login with your `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD` credentials
+2. Login with either your configured `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD`, or the built-in bootstrap credentials `admin` / `admin123` when no fallback env credentials are set
 
-3. Create a new clinic and configure your clinic settings
+3. If you used bootstrap credentials, change them immediately when prompted
 
-4. Add staff members (doctors, front desk)
+4. Create a new clinic and configure your clinic settings
+
+5. Add staff members (doctors, front desk)
 
 ## Support
 

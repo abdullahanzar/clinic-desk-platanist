@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 const cmd = process.platform === 'win32' ? 'electron.cmd' : 'electron';
-const child = spawn(cmd, ['.'], {
+const child = spawn(cmd, ['.', ...process.argv.slice(2)], {
   stdio: 'inherit',
   env: {
     ...process.env,

@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { AlertTriangle, ExternalLink, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 
 export const metadata = {
   title: "Disclaimer | Clinic Desk by Platanist",
@@ -9,15 +8,6 @@ export const metadata = {
 export default function DisclaimerPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-      {/* Back Link */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to app
-      </Link>
-
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
@@ -74,8 +64,8 @@ export default function DisclaimerPage() {
           </h3>
 
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            This software is provided "AS IS", without warranty of any kind.
-            Use of this software is entirely at the user's own risk.
+            This software is provided &quot;AS IS&quot;, without warranty of any kind.
+            Use of this software is entirely at the user&apos;s own risk.
           </p>
 
           <h3 className="text-base font-medium text-slate-800 dark:text-slate-200 mb-3">

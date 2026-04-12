@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Scale, ExternalLink, ArrowLeft } from "lucide-react";
+import { Scale, ExternalLink } from "lucide-react";
 
 export const metadata = {
   title: "License | Clinic Desk by Platanist",
@@ -9,15 +8,6 @@ export const metadata = {
 export default function LicensePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-      {/* Back Link */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to app
-      </Link>
-
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">

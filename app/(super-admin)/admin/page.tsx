@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Shield, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, AlertTriangle } from "lucide-react";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -138,14 +137,6 @@ export default function SuperAdminLoginPage() {
                 )}
               </button>
             </form>
-
-            <Link
-              href="/login"
-              className="mt-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to clinic login
-            </Link>
           </div>
         </div>
 

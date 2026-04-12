@@ -16,7 +16,8 @@
     "build:electron": "pnpm run build:next && node electron/prepare-standalone.cjs",
     "electron:dev": "node electron/run-dev.cjs",
     "electron:pack": "pnpm run build:electron && electron-builder --dir",
-    "electron:dist": "pnpm run build:electron && electron-builder"
+    "electron:dist": "pnpm run build:electron && electron-builder",
+    "electron:dist:win": "pnpm run build:electron && electron-builder --win nsis"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.3.2",

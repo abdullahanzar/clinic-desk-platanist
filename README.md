@@ -103,6 +103,9 @@ pnpm electron:pack
 
 # Build distributable installers/packages
 pnpm electron:dist
+
+# Build only the Windows NSIS installer
+pnpm electron:dist:win
 ```
 
 Generated artifacts are written to `electron-dist/` and include targets for:
@@ -112,6 +115,29 @@ Generated artifacts are written to `electron-dist/` and include targets for:
 - Linux: AppImage and DEB
 
 > Note: This app still requires runtime environment variables such as `MONGODB_URI` and `JWT_SECRET`. Super admin credentials can be bootstrapped from the login flow, while `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD` remain available as an optional fallback for server-style deployments.
+
+### GitHub Actions Windows releases
+
+The repository includes a GitHub Actions workflow at `.github/workflows/electron-release.yml` that builds a signed Windows NSIS installer.
+
+- Push a tag like `v0.1.0` to trigger a release build.
+- Use `workflow_dispatch` to run the same build manually for verification; manual runs upload the installer as a workflow artifact and do not publish a GitHub Release.
+- The workflow validates that the tag version matches `package.json` before publishing.
+- If signing secrets are absent, the workflow still publishes an unsigned installer. Windows will typically show SmartScreen or publisher trust warnings to users.
+
+Required GitHub repository secrets:
+
+- `WINDOWS_CERT_BASE64`: optional base64-encoded `.pfx` signing certificate
+- `WINDOWS_CERT_PASSWORD`: optional password for the `.pfx` certificate
+
+Example tag flow:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The published GitHub Release attaches the generated NSIS installer `.exe` from `electron-dist/`.
 
 ## Deploy on Vercel
 

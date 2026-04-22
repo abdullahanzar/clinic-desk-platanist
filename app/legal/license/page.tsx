@@ -1,10 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Scale, ExternalLink, ArrowLeft } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "License | Clinic Desk by Platanist",
-  description: "Open source license information for Clinic Desk by Platanist",
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "License",
+  description:
+    "Open-source AGPL-3.0 license information for Clinic Desk by Platanist.",
+  path: "/legal/license",
+  keywords: ["clinic desk license", "AGPL clinic software", "open source license"],
+});
 
 export default function LicensePage() {
   return (

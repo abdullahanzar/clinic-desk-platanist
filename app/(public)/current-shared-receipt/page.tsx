@@ -1,14 +1,27 @@
+import type { Metadata } from "next";
 import { getClinicsCollection, getReceiptsCollection } from "@/lib/db/collections";
 import { formatDateIndian } from "@/lib/utils/date";
 import { PublicPrintButton } from "@/components/receipts/public-print-button";
 import { RefreshButton } from "@/components/receipts/refresh-button";
 import { Building2, Receipt, Download, Check, Clock, Pill } from "lucide-react";
+import { absoluteUrl } from "@/lib/seo";
 
 // For V1, we'll use a hardcoded clinic slug since we're single-tenant
 const CLINIC_SLUG = "demo-clinic";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const metadata: Metadata = {
+  title: "Shared Receipt",
+  description: "Publicly shared clinic receipt view.",
+  alternates: {
+    canonical: absoluteUrl("/current-shared-receipt"),
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function CurrentSharedReceiptPage() {
   const clinics = await getClinicsCollection();
@@ -19,7 +32,7 @@ export default async function CurrentSharedReceiptPage() {
 
   if (!clinic) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-4">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-slate-400" />
@@ -66,12 +79,12 @@ export default async function CurrentSharedReceiptPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 sm:py-8 px-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-6 sm:py-8 px-4">
       <div className="max-w-md mx-auto">
         {/* Receipt Card */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center">
+          <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center">
             <h1 className="text-lg sm:text-xl font-bold">{clinic.name}</h1>
             {clinic.headerText && (
               <p className="text-brand-100 text-xs mt-0.5">{clinic.headerText}</p>
@@ -206,7 +219,7 @@ export default async function CurrentSharedReceiptPage() {
             href={`/api/public/receipt/${receipt._id.toString()}/pdf`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white text-center font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 shadow-lg shadow-brand-500/20 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-brand-600 to-brand-700 text-white text-center font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 shadow-lg shadow-brand-500/20 transition-all"
           >
             <Download className="w-5 h-5" />
             Download PDF
@@ -228,9 +241,9 @@ export default async function CurrentSharedReceiptPage() {
 
 function NoReceiptView({ clinicName }: { clinicName: string }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-linear-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
           <Receipt className="w-10 h-10 text-slate-400" />
         </div>
         <h1 className="text-xl font-bold text-slate-900 mb-2">{clinicName}</h1>

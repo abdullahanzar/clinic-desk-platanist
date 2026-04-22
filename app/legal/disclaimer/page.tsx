@@ -1,10 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, ExternalLink, ArrowLeft } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Disclaimer | Clinic Desk by Platanist",
-  description: "Important disclaimer information for Clinic Desk by Platanist",
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "Disclaimer",
+  description:
+    "Important medical and software disclaimer information for Clinic Desk by Platanist.",
+  path: "/legal/disclaimer",
+  keywords: ["clinic software disclaimer", "medical software disclaimer"],
+});
 
 export default function DisclaimerPage() {
   return (
@@ -74,8 +79,8 @@ export default function DisclaimerPage() {
           </h3>
 
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            This software is provided "AS IS", without warranty of any kind.
-            Use of this software is entirely at the user's own risk.
+            This software is provided &quot;AS IS&quot;, without warranty of any kind.
+            Use of this software is entirely at the user&apos;s own risk.
           </p>
 
           <h3 className="text-base font-medium text-slate-800 dark:text-slate-200 mb-3">

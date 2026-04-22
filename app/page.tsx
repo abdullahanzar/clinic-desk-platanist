@@ -14,12 +14,30 @@ import {
   Shield,
 } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
+import { absoluteUrl, buildPageMetadata, siteName } from "@/lib/seo";
 import { ThemeToggle } from "@/components/theme";
 
-export const metadata: Metadata = {
-  title: "Clinic Desk by Platanist",
+const homePageMetadata = buildPageMetadata({
+  title: "Open-Source Clinic Management Software for Doctors",
   description:
-    "Run Clinic Desk on the web, download desktop binaries, and inspect the full source code and license.",
+    "Clinic Desk helps doctors and small clinics manage OPD visits, prescriptions, receipts, billing, staff access, and self-hosted deployments from one workflow.",
+  path: "/",
+  keywords: [
+    "clinic management software",
+    "OPD software for doctors",
+    "prescription writing software",
+    "clinic billing and receipts",
+    "self-hosted medical software",
+    "open source EMR alternative",
+  ],
+});
+
+export const metadata: Metadata = {
+  ...homePageMetadata,
+  openGraph: {
+    ...homePageMetadata.openGraph,
+    locale: "en_US",
+  },
 };
 
 const APP_VERSION = "0.1.0";
@@ -77,6 +95,53 @@ const sourceLinks = [
   },
 ] as const;
 
+const homeStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": absoluteUrl("/#organization").toString(),
+      name: "Platanist",
+      url: absoluteUrl("/").toString(),
+      logo: absoluteUrl("/platanist_clinic_desk_minimal.png").toString(),
+      sameAs: [
+        "https://platanist.com",
+        "https://github.com/abdullahanzar/clinic-desk-platanist",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": absoluteUrl("/#software").toString(),
+      name: siteName,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, Windows, macOS, Linux",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      description:
+        "Open-source clinic management software for visits, prescriptions, billing, and staff workflows.",
+      url: absoluteUrl("/").toString(),
+      image: absoluteUrl("/platanist_clinic_desk.png").toString(),
+      author: {
+        "@id": absoluteUrl("/#organization").toString(),
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": absoluteUrl("/#website").toString(),
+      name: siteName,
+      url: absoluteUrl("/").toString(),
+      description:
+        "Clinic Desk by Platanist public site for hosted access, desktop downloads, licensing, and source review.",
+      publisher: {
+        "@id": absoluteUrl("/#organization").toString(),
+      },
+    },
+  ],
+};
+
 function buildDownloadUrl(filename: string) {
   return `${DOWNLOAD_BASE_URL}/${encodeURIComponent(filename)}`;
 }
@@ -90,6 +155,12 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-linear-to-b from-brand-50 via-white to-slate-100 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(homeStructuredData),
+        }}
+      />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-0 top-20 h-72 w-72 -translate-x-1/3 rounded-full bg-brand-200/70 blur-3xl dark:bg-brand-700/25" />
         <div className="absolute right-0 top-32 h-80 w-80 translate-x-1/4 rounded-full bg-accent-200/60 blur-3xl dark:bg-accent-500/15" />

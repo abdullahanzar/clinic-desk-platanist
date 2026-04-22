@@ -59,6 +59,47 @@ const features = [
 const DEMO_EMAIL = "doctor@demo.com";
 const DEMO_PASSWORD = "doctor123";
 const MIN_LOADING_MS = 700;
+const loginFaqs = [
+  {
+    question: "Who is Clinic Desk built for?",
+    answer:
+      "Clinic Desk is built for doctors, small clinics, and front-desk staff who need one OPD workflow for visits, prescriptions, receipts, and billing.",
+  },
+  {
+    question: "Can clinics try the software before creating an account?",
+    answer:
+      "Yes. The login page includes a demo doctor account so clinics can inspect the workflow before signing up for a new workspace.",
+  },
+  {
+    question: "Is Clinic Desk self-hosted and open source?",
+    answer:
+      "Yes. Clinic Desk is open source under AGPL-3.0 and can be deployed by clinics that want ownership of their software and data.",
+  },
+] as const;
+
+const loginStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      name: "Clinic Login for Doctors and Staff",
+      description:
+        "Sign in to Clinic Desk to manage OPD visits, digital prescriptions, billing, receipts, and clinic staff workflows.",
+      url: "/login",
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: loginFaqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    },
+  ],
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -126,6 +167,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(loginStructuredData),
+        }}
+      />
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -415,6 +462,76 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="px-4 pb-8 sm:pb-10">
+        <section className="mx-auto max-w-6xl rounded-[2rem] border border-slate-200/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">
+                Clinic software access
+              </p>
+              <h2 className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
+                A discoverable entry point for modern clinic operations
+              </h2>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
+                This login page is the front door for Clinic Desk, an open-source OPD
+                management system for doctors, clinic owners, and reception teams.
+                Teams use it to handle patient visits, write prescriptions faster,
+                issue digital receipts, and keep staff workflows in one secure clinic portal.
+              </p>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
+                Clinics evaluating self-hosted medical software can review the product,
+                test the demo account, and create a doctor-owned workspace directly from
+                this page. That makes the route useful both for returning staff and for
+                search users looking for practical clinic management tools.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <article className="rounded-3xl border border-brand-100 bg-brand-50/80 p-5 dark:border-brand-900/60 dark:bg-brand-950/30">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  OPD workflow
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Track daily visits, maintain status-driven queues, and keep consultations moving without separate tools.
+                </p>
+              </article>
+              <article className="rounded-3xl border border-slate-200/70 bg-white/80 p-5 dark:border-slate-800 dark:bg-slate-900/70">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  Prescriptions and billing
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Generate prescriptions, advice, receipts, and billing records from a single clinic system.
+                </p>
+              </article>
+              <article className="rounded-3xl border border-slate-200/70 bg-white/80 p-5 dark:border-slate-800 dark:bg-slate-900/70">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  Open source deployment
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Run the software on the web or inspect the open-source codebase before rolling it out for your clinic.
+                </p>
+              </article>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {loginFaqs.map((faq) => (
+              <article
+                key={faq.question}
+                className="rounded-3xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/60"
+              >
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                  {faq.question}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  {faq.answer}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* Footer */}

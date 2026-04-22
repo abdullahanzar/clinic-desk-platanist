@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import type { UserRole } from "@/types";
 import { ThemeToggle } from "@/components/theme";
 import { LayoutDashboard, Users, Receipt, LogOut, Stethoscope, Monitor, Pill, DollarSign, UserCog, Settings, Building2 } from "lucide-react";
@@ -16,11 +16,20 @@ interface SidebarProps {
 export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    setLoggingOut(true);
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const navItems: { href: string; label: string; icon: LucideIcon }[] = [
@@ -37,6 +46,28 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
     navItems.push({ href: "/settings", label: "Settings", icon: Settings });
   }
 
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    navItems.forEach((item) => {
+      router.prefetch(item.href);
+    });
+    router.prefetch("/login");
+  }, [router, role]);
+
+  const handleNavigation = (href: string) => {
+    if (pathname === href || pathname.startsWith(`${href}/`)) {
+      return;
+    }
+
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -44,7 +75,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
         {/* Clinic Branding */}
         <div className="p-5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -76,19 +107,25 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
           <ul className="space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isNavigating = pendingHref === item.href && isPending;
               return (
                 <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  <button
+                    type="button"
+                    onClick={() => handleNavigation(item.href)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                       isActive
                         ? "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-medium shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+                        : isNavigating
+                          ? "bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-busy={isNavigating}
                   >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </Link>
+                    <item.icon className={`w-5 h-5 ${isNavigating ? "animate-pulse" : ""}`} />
+                    <span>{isNavigating ? `Opening ${item.label}...` : item.label}</span>
+                  </button>
                 </li>
               );
             })}
@@ -103,10 +140,12 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all"
+            disabled={loggingOut}
+            className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all disabled:cursor-not-allowed disabled:opacity-60"
+            aria-busy={loggingOut}
           >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
+            <LogOut className={`w-5 h-5 ${loggingOut ? "animate-pulse" : ""}`} />
+            <span className="font-medium">{loggingOut ? "Signing out..." : "Logout"}</span>
           </button>
         </div>
       </aside>
@@ -115,7 +154,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-lg bg-linear-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-md">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
@@ -129,10 +168,12 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
             <ThemeToggle variant="compact" />
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors"
+              disabled={loggingOut}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60"
               title="Logout"
+              aria-busy={loggingOut}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className={`w-5 h-5 ${loggingOut ? "animate-pulse" : ""}`} />
             </button>
           </div>
         </div>
@@ -143,28 +184,35 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
         <ul className="flex items-center justify-around px-1 py-1.5 overflow-x-auto scrollbar-hide">
           {navItems.slice(0, 5).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isNavigating = pendingHref === item.href && isPending;
             return (
-              <li key={item.href} className="flex-shrink-0">
-                <Link
-                  href={item.href}
-                  className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
+              <li key={item.href} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleNavigation(item.href)}
+                  className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                     isActive
                       ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
-                      : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
+                      : isNavigating
+                        ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                        : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                   }`}
+                  aria-current={isActive ? "page" : undefined}
+                  aria-busy={isNavigating}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
-                  <span className="text-[10px] font-medium leading-tight truncate max-w-[56px]">{item.label}</span>
-                </Link>
+                  <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5px]" : ""} ${isNavigating ? "animate-pulse" : ""}`} />
+                  <span className="max-w-14 truncate text-[10px] font-medium leading-tight">{isNavigating ? "Loading" : item.label}</span>
+                </button>
               </li>
             );
           })}
           {/* More menu for additional items on mobile */}
           {navItems.length > 5 && (
-            <li className="flex-shrink-0">
-              <Link
-                href={navItems[5].href}
-                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
+            <li className="shrink-0">
+              <button
+                type="button"
+                onClick={() => handleNavigation(navItems[5].href)}
+                className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                   navItems.slice(5).some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
                     ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
                     : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
@@ -172,7 +220,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
               >
                 <Settings className="w-5 h-5" />
                 <span className="text-[10px] font-medium leading-tight">More</span>
-              </Link>
+              </button>
             </li>
           )}
         </ul>

@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+electron-dist
 
 # next.js
 /.next/

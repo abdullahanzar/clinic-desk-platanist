@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
 import { requireSuperAdminSession } from "@/lib/auth/super-admin";
 import { getClinicsCollection, getUsersCollection, ensureIndexes } from "@/lib/db/collections";
 import { hashPassword } from "@/lib/auth/password";
@@ -193,6 +192,7 @@ export async function POST(request: Request) {
       passwordHash,
       role: "doctor",
       isActive: true,
+      emailVerifiedAt: new Date(),
       loginHistory: [],
       createdAt: new Date(),
       updatedAt: new Date(),

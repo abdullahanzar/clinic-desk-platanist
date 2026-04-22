@@ -3,6 +3,7 @@ import { getDb } from "./mongodb";
 import type {
   Clinic,
   User,
+  PendingSignup,
   Visit,
   Prescription,
   Receipt,
@@ -24,6 +25,11 @@ export async function getClinicsCollection(): Promise<Collection<Clinic>> {
 export async function getUsersCollection(): Promise<Collection<User>> {
   const db = await getDb();
   return db.collection<User>("users");
+}
+
+export async function getPendingSignupsCollection(): Promise<Collection<PendingSignup>> {
+  const db = await getDb();
+  return db.collection<PendingSignup>("pendingSignups");
 }
 
 export async function getVisitsCollection(): Promise<Collection<Visit>> {
@@ -94,6 +100,14 @@ export async function ensureIndexes(): Promise<void> {
     { key: { clinicId: 1 } },
   ];
   await db.collection("users").createIndexes(usersIndexes);
+
+  // Pending signup indexes
+  const pendingSignupsIndexes: IndexDescription[] = [
+    { key: { "doctor.email": 1 }, unique: true },
+    { key: { "clinic.slug": 1 }, unique: true },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+  ];
+  await db.collection("pendingSignups").createIndexes(pendingSignupsIndexes);
 
   // Visits indexes
   const visitsIndexes: IndexDescription[] = [

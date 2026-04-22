@@ -67,8 +67,19 @@ Required environment variables:
 - `JWT_SECRET` - Secret key for JWT authentication (generate with `openssl rand -base64 32`)
 - `SUPER_ADMIN_USERNAME` - Super admin username
 - `SUPER_ADMIN_PASSWORD` - Super admin password
+- `APP_BASE_URL` - Public base URL used in verification emails
+- `SMTP_HOST` - AWS SES SMTP endpoint, for example `email-smtp.us-east-1.amazonaws.com`
+- `SMTP_PORT` - SMTP port, usually `587`
+- `SMTP_SECURE` - `true` for implicit TLS on port `465`, otherwise `false`
+- `SMTP_USER` - AWS SES SMTP username
+- `SMTP_PASS` - AWS SES SMTP password
+- `SMTP_FROM_EMAIL` - Verified SES sender address used for doctor signup verification emails
+- `SMTP_FROM_NAME` - Optional sender display name
+- `SMTP_REPLY_TO` - Optional reply-to address
 
 See `.env.example` for a complete configuration template.
+
+Doctor self-signup on the web now requires SMTP to be configured because the clinic owner account is created only after email verification succeeds.
 
 ## Learn More
 
@@ -126,7 +137,7 @@ project and have feedback or improvement ideas, please use:
 
 When suggesting changes, please keep the scope in mind:
 - No patient accounts
-- No email or SMS delivery
+- No general-purpose email or SMS messaging beyond account verification
 - No automated messaging
 - No expansion into EHR or hospital-scale systems
 

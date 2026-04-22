@@ -139,6 +139,7 @@ export async function POST(request: Request) {
       passwordHash,
       role,
       isActive: true,
+      emailVerifiedAt: new Date(),
       loginHistory: [],
       createdAt: new Date(),
       updatedAt: new Date(),

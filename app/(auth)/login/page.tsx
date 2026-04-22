@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   Loader2,
   Calendar,
   Pill,
@@ -17,6 +18,9 @@ import {
   Scale,
   AlertTriangle,
   Heart,
+  Eye,
+  EyeOff,
+  UserPlus,
 } from "lucide-react";
 
 const features = [
@@ -52,28 +56,49 @@ const features = [
   },
 ];
 
+const DEMO_EMAIL = "doctor@demo.com";
+const DEMO_PASSWORD = "doctor123";
+const MIN_LOADING_MS = 700;
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    router.prefetch("/dashboard");
+    router.prefetch("/register");
+  }, [router]);
+
+  const loginWithCredentials = async (nextEmail: string, nextPassword: string) => {
     setError("");
     setLoading(true);
+    const loadingDelay = new Promise((resolve) => {
+      window.setTimeout(resolve, MIN_LOADING_MS);
+    });
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const resPromise = fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: nextEmail, password: nextPassword }),
       });
+
+      const [res] = await Promise.all([resPromise, loadingDelay]);
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.code === "EMAIL_VERIFICATION_REQUIRED" && data.signupId && data.email) {
+          router.push(
+            `/register/verify?signupId=${encodeURIComponent(data.signupId)}&email=${encodeURIComponent(data.email)}`
+          );
+          return;
+        }
+
         setError(data.error || "Login failed");
         return;
       }
@@ -88,8 +113,19 @@ export default function LoginPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await loginWithCredentials(email, password);
+  };
+
+  const handleDemoLogin = async () => {
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
+    await loginWithCredentials(DEMO_EMAIL, DEMO_PASSWORD);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen flex flex-col bg-linear-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -142,15 +178,22 @@ export default function LoginPage() {
             </div>
 
             {/* CTA Section */}
-            <div className="bg-gradient-to-r from-brand-50 to-brand-100 dark:from-brand-950/50 dark:to-brand-900/30 rounded-xl p-5 border border-brand-200 dark:border-brand-800">
+            <div className="bg-linear-to-r from-brand-50 to-brand-100 dark:from-brand-950/50 dark:to-brand-900/30 rounded-xl p-5 border border-brand-200 dark:border-brand-800">
               <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                 Don&apos;t have an account?
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Get started with Clinic Desk for your practice. We&apos;ll help you
-                set up and get running.
+                Create a doctor account for a new clinic, verify the email address,
+                and unlock the dashboard in one flow.
               </p>
               <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 transition-colors"
+                >
+                  Start doctor signup
+                </Link>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
                 <a
                   href="https://platanist.com"
                   target="_blank"
@@ -177,7 +220,7 @@ export default function LoginPage() {
             {/* Card */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
               {/* Header with gradient */}
-              <div className="bg-gradient-to-r from-brand-600 to-brand-700 px-8 py-8 text-center">
+              <div className="bg-linear-to-r from-brand-600 to-brand-700 px-8 py-8 text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4">
                   <Image
                     src="/platanist_clinic_desk_minimal.png"
@@ -193,9 +236,28 @@ export default function LoginPage() {
 
               {/* Form */}
               <div className="p-8">
-                <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-                  Sign in to your clinic portal
-                </p>
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-300"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to home
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-200 dark:hover:border-brand-700 dark:hover:bg-brand-950/60"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Sign up
+                  </Link>
+                </div>
+
+                <div className="mb-6 space-y-3 text-center">
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Sign in to your clinic portal
+                  </p>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {error && (
@@ -229,21 +291,35 @@ export default function LoginPage() {
                     >
                       Password
                     </label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 pr-12 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
+                    className="w-full py-3.5 px-4 bg-linear-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -254,6 +330,35 @@ export default function LoginPage() {
                       "Sign in"
                     )}
                   </button>
+
+                  <Link
+                    href="/register"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3.5 text-sm font-semibold text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-200 dark:hover:border-brand-700 dark:hover:bg-brand-950/60"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Create a doctor account
+                  </Link>
+
+                  <div className="rounded-xl border border-brand-200 bg-brand-50/80 px-4 py-3 text-left dark:border-brand-800 dark:bg-brand-950/30">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      Just exploring?
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                      Continue with the demo doctor account to check the system first.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleDemoLogin}
+                      disabled={loading}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-700 dark:bg-slate-900 dark:text-brand-200 dark:hover:bg-brand-950/70"
+                    >
+                      <Users className="h-4 w-4" />
+                      Continue with demo account
+                    </button>
+                    <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
+                      {DEMO_EMAIL} / {DEMO_PASSWORD}
+                    </p>
+                  </div>
                 </form>
 
                 {/* Mobile-only: Account creation info */}
@@ -262,6 +367,13 @@ export default function LoginPage() {
                     Need an account?
                   </p>
                   <div className="flex flex-col gap-2 text-center">
+                    <Link
+                      href="/register"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-200 dark:hover:border-brand-700 dark:hover:bg-brand-950/60"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Start doctor signup
+                    </Link>
                     <a
                       href="https://platanist.com"
                       target="_blank"

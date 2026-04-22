@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getUsersCollection } from "@/lib/db/collections";
+import { getPendingSignupsCollection, getUsersCollection } from "@/lib/db/collections";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
+import { normalizeEmail } from "@/lib/auth/signup-verification";
 import type { LoginHistoryEntry } from "@/types";
 
 const MAX_LOGIN_HISTORY = 50;
@@ -18,10 +19,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedEmail = normalizeEmail(email);
     const users = await getUsersCollection();
-    const user = await users.findOne({ email: email.toLowerCase() });
+    const user = await users.findOne({ email: normalizedEmail });
 
     if (!user) {
+      const pendingSignups = await getPendingSignupsCollection();
+      const pendingSignup = await pendingSignups.findOne({ "doctor.email": normalizedEmail });
+
+      if (pendingSignup) {
+        if (pendingSignup.expiresAt <= new Date()) {
+          await pendingSignups.deleteOne({ _id: pendingSignup._id });
+        } else {
+          return NextResponse.json(
+            {
+              error: "Please verify your email before signing in",
+              code: "EMAIL_VERIFICATION_REQUIRED",
+              signupId: pendingSignup._id.toString(),
+              email: pendingSignup.doctor.email,
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }

@@ -110,6 +110,7 @@ export async function POST(request: Request) {
       passwordHash,
       role: "frontdesk" as const,
       isActive: true,
+      emailVerifiedAt: now,
       loginHistory: [],
       createdByUserId: creatorId,
       createdAt: now,

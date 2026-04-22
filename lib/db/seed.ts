@@ -1,4 +1,3 @@
-import { getDb } from "./mongodb";
 import { ensureIndexes, getClinicsCollection, getUsersCollection } from "./collections";
 import { hashPassword } from "../auth/password";
 import type { ClinicInsert, UserInsert } from "@/types";
@@ -62,6 +61,7 @@ export async function seedDatabase() {
     passwordHash: doctorPassword,
     role: "doctor",
     isActive: true,
+    emailVerifiedAt: new Date(),
     loginHistory: [],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -79,6 +79,7 @@ export async function seedDatabase() {
     passwordHash: frontdeskPassword,
     role: "frontdesk",
     isActive: true,
+    emailVerifiedAt: new Date(),
     loginHistory: [],
     createdAt: new Date(),
     updatedAt: new Date(),

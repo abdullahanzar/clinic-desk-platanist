@@ -35,6 +35,15 @@ This method sets up both the application and MongoDB database automatically.
    - `JWT_SECRET`: Secret key for JWT authentication (MUST change in production)
    - `SUPER_ADMIN_USERNAME`: Super admin username
    - `SUPER_ADMIN_PASSWORD`: Super admin password
+   - `APP_BASE_URL`: Public app URL used in doctor verification emails
+   - `SMTP_HOST`: AWS SES SMTP host such as `email-smtp.us-east-1.amazonaws.com`
+   - `SMTP_PORT`: SMTP port, typically `587`
+   - `SMTP_SECURE`: `true` for implicit TLS on `465`, otherwise `false`
+   - `SMTP_USER`: AWS SES SMTP username
+   - `SMTP_PASS`: AWS SES SMTP password
+   - `SMTP_FROM_EMAIL`: Verified SES sender email address
+   - `SMTP_FROM_NAME`: Optional sender display name
+   - `SMTP_REPLY_TO`: Optional reply-to email address
 
 4. **Start the application**
    ```bash
@@ -67,6 +76,13 @@ If you already have a MongoDB instance running, you can run just the application
      -e JWT_SECRET="your-secret-key" \
      -e SUPER_ADMIN_USERNAME="admin" \
      -e SUPER_ADMIN_PASSWORD="your-password" \
+   -e APP_BASE_URL="https://clinic.example.com" \
+   -e SMTP_HOST="email-smtp.us-east-1.amazonaws.com" \
+   -e SMTP_PORT="587" \
+   -e SMTP_SECURE="false" \
+   -e SMTP_USER="your-ses-smtp-username" \
+   -e SMTP_PASS="your-ses-smtp-password" \
+   -e SMTP_FROM_EMAIL="hello@example.com" \
      --name clinic-desk \
      clinic-desk:latest
    ```
@@ -85,6 +101,15 @@ If you already have a MongoDB instance running, you can run just the application
 | `JWT_SECRET` | Secret key for JWT tokens | Use `openssl rand -base64 32` to generate |
 | `SUPER_ADMIN_USERNAME` | Super admin username | `admin` |
 | `SUPER_ADMIN_PASSWORD` | Super admin password | Strong password |
+| `APP_BASE_URL` | Public application URL for verification links | `http://localhost:3000` |
+| `SMTP_HOST` | AWS SES SMTP endpoint | `email-smtp.us-east-1.amazonaws.com` |
+| `SMTP_PORT` | SMTP port | `587` |
+| `SMTP_SECURE` | Whether SMTP uses implicit TLS | `false` |
+| `SMTP_USER` | AWS SES SMTP username | `<ses-smtp-username>` |
+| `SMTP_PASS` | AWS SES SMTP password | `<ses-smtp-password>` |
+| `SMTP_FROM_EMAIL` | Verified sender address | `hello@example.com` |
+| `SMTP_FROM_NAME` | Sender display name | `Clinic Desk by Platanist` |
+| `SMTP_REPLY_TO` | Optional reply-to address | `hello@example.com` |
 
 ### Generating a Secure JWT Secret
 
@@ -110,6 +135,15 @@ MONGODB_URI=mongodb://mongodb:27017/clinic_desk_dev
 JWT_SECRET=dev-secret-key-for-testing-only
 SUPER_ADMIN_USERNAME=admin
 SUPER_ADMIN_PASSWORD=admin123
+APP_BASE_URL=http://localhost:3000
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=<ses-smtp-username>
+SMTP_PASS=<ses-smtp-password>
+SMTP_FROM_EMAIL=hello@example.com
+SMTP_FROM_NAME=Clinic Desk by Platanist
+SMTP_REPLY_TO=hello@example.com
 ```
 
 > ⚠️ **Warning**: Never use weak credentials in production!
@@ -121,7 +155,23 @@ MONGODB_URI=mongodb://username:password@your-mongodb-host:27017/clinic_desk?auth
 JWT_SECRET=<generated-with-openssl-rand-base64-32>
 SUPER_ADMIN_USERNAME=<strong-username>
 SUPER_ADMIN_PASSWORD=<strong-password>
+APP_BASE_URL=https://clinic.example.com
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=<ses-smtp-username>
+SMTP_PASS=<ses-smtp-password>
+SMTP_FROM_EMAIL=<verified-sender@example.com>
+SMTP_FROM_NAME=Clinic Desk by Platanist
+SMTP_REPLY_TO=<reply-to@example.com>
 ```
+
+### AWS SES SMTP Notes
+
+- Verify the sender email address or domain in AWS SES before enabling doctor self-signup.
+- Generate SMTP credentials from the SES console; they are not the same as AWS access keys.
+- If you are still in the SES sandbox, you can only send to verified recipient addresses.
+- Doctor self-signup depends on SMTP being configured because access is granted only after the email OTP is verified.
 
 ## Docker Compose Commands
 

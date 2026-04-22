@@ -79,6 +79,7 @@ export interface User {
   passwordHash: string;
   role: UserRole;
   isActive: boolean;
+  emailVerifiedAt?: Date;
   lastLoginAt?: Date;
   loginHistory: LoginHistoryEntry[]; // Last 50 login entries
   createdByUserId?: ObjectId; // Who created this user (for staff created by doctor)
@@ -90,6 +91,36 @@ export type UserInsert = Omit<User, "_id">;
 
 // Safe user object without password
 export type SafeUser = Omit<User, "passwordHash">;
+
+export interface PendingSignupClinicDraft {
+  name: string;
+  slug: string;
+  address: Address;
+  phone: string;
+  email?: string;
+  website?: string;
+}
+
+export interface PendingSignupDoctorDraft {
+  name: string;
+  email: string;
+  passwordHash: string;
+}
+
+export interface PendingSignup {
+  _id: ObjectId;
+  clinic: PendingSignupClinicDraft;
+  doctor: PendingSignupDoctorDraft;
+  otpHash: string;
+  expiresAt: Date;
+  lastSentAt: Date;
+  resendCount: number;
+  verificationAttemptCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type PendingSignupInsert = Omit<PendingSignup, "_id">;
 
 // ============================================
 // VISIT

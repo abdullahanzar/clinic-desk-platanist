@@ -18,7 +18,15 @@ export default async function DashboardLayout({
 
   // Fetch clinic data for sidebar branding
   const clinics = await getClinicsCollection();
-  const clinic = await clinics.findOne({ _id: new ObjectId(session.clinicId) });
+  const clinic = await clinics.findOne(
+    { _id: new ObjectId(session.clinicId) },
+    {
+      projection: {
+        name: 1,
+        "publicProfile.doctorName": 1,
+      },
+    }
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">

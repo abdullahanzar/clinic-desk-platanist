@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Shield, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Shield, AlertTriangle } from "lucide-react";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
@@ -136,6 +137,16 @@ export default function SuperAdminLoginPage() {
                   "Access System"
                 )}
               </button>
+
+              <div className="flex justify-center pt-1">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Back to normal login
+                </Link>
+              </div>
             </form>
           </div>
         </div>

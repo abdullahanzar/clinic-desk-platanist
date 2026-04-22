@@ -16,10 +16,24 @@ const shouldRunSuperAdminReset = process.argv.includes('--reset-super-admin');
 let nextProcess = null;
 let activePort = null;
 
+function getRuntimeAppPath() {
+  return app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked') : app.getAppPath();
+}
+
+function getRuntimeNodePath() {
+  const nodePaths = [
+    path.join(getRuntimeAppPath(), 'node_modules'),
+    path.join(app.getAppPath(), 'node_modules'),
+    process.env.NODE_PATH,
+  ].filter(Boolean);
+
+  return nodePaths.join(path.delimiter);
+}
+
 function getEnvDirectories() {
   return [
     process.cwd(),
-    app.getAppPath(),
+    getRuntimeAppPath(),
     path.dirname(process.execPath),
     app.getPath('userData'),
   ];
@@ -399,10 +413,23 @@ function waitForServer(url, timeoutMs = 120000) {
 }
 
 function startNextServer(port) {
+  const runtimeAppPath = getRuntimeAppPath();
+
   if (isDev) {
-    const cmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-    nextProcess = spawn(cmd, ['dev', '--hostname', '0.0.0.0', '-p', String(port)], {
-      cwd: app.getAppPath(),
+    const npmExecPath = process.env.npm_execpath;
+    const devArgs = ['dev', '--hostname', '0.0.0.0', '-p', String(port)];
+    const npmExecIsScript = npmExecPath && /\.(cjs|mjs|js)$/i.test(npmExecPath);
+    const command = npmExecPath
+      ? npmExecIsScript
+        ? process.execPath
+        : npmExecPath
+      : process.platform === 'win32'
+        ? 'pnpm.cmd'
+        : 'pnpm';
+    const commandArgs = npmExecPath ? (npmExecIsScript ? [npmExecPath, ...devArgs] : devArgs) : devArgs;
+
+    nextProcess = spawn(command, commandArgs, {
+      cwd: runtimeAppPath,
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -413,13 +440,13 @@ function startNextServer(port) {
     return;
   }
 
-  const serverPath = path.join(app.getAppPath(), '.next', 'standalone', 'server.js');
+  const serverPath = path.join(runtimeAppPath, '.next', 'standalone', 'server.js');
 
   const userDataPath = app.getPath('userData');
   const dbPath = path.join(userDataPath, 'clinic-desk.db');
 
   nextProcess = spawn(process.execPath, [serverPath], {
-    cwd: app.getAppPath(),
+    cwd: runtimeAppPath,
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -428,6 +455,7 @@ function startNextServer(port) {
       NODE_ENV: 'production',
       ELECTRON_RUN_AS_NODE: '1',
       DATABASE_PATH: dbPath,
+      NODE_PATH: getRuntimeNodePath(),
     },
   });
 }

@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import { Sidebar } from "@/components/layout/sidebar";
 import { DesktopNetworkStatus } from "@/components/layout/desktop-network-status";
 import { Footer } from "@/components/layout/footer";
-import { AppBackButton } from "@/components/layout/app-back-button";
 
 export default async function DashboardLayout({
   children,
@@ -28,10 +27,6 @@ export default async function DashboardLayout({
         role={session.role} 
         clinicName={clinic?.name}
         doctorName={clinic?.publicProfile?.doctorName}
-      />
-      <AppBackButton
-        defaultFallbackHref="/dashboard"
-        className="fixed left-4 top-20 z-30 lg:left-[17rem] lg:top-6"
       />
       {/* Desktop: offset for sidebar, Mobile: offset for header and bottom nav */}
       <main className="lg:ml-64 pt-16 pb-24 lg:pt-0 lg:pb-0 flex-1">

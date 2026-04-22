@@ -7,6 +7,7 @@ interface AppBackButtonProps {
   defaultFallbackHref: string;
   className?: string;
   variant?: "default" | "inverse";
+  showLabel?: boolean;
 }
 
 function getFallbackHref(pathname: string, defaultFallbackHref: string) {
@@ -23,6 +24,7 @@ export function AppBackButton({
   defaultFallbackHref,
   className = "",
   variant = "default",
+  showLabel = true,
 }: AppBackButtonProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -54,7 +56,7 @@ export function AppBackButton({
       className={`no-print inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium shadow-sm backdrop-blur transition-colors ${variantClasses} ${className}`}
     >
       <ArrowLeft className="h-4 w-4" />
-      <span>Back</span>
+      {showLabel && <span>Back</span>}
     </button>
   );
 }

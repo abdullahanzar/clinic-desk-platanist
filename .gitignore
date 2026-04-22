@@ -40,4 +40,18 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# electron build artifacts
 electron-dist
+electron-dist-permachine
+electron-dist-verify
+electron-dist-verify2
+electron-dir-verify
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea
+*.swp
+*.swo

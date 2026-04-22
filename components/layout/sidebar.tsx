@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
 import { ThemeToggle } from "@/components/theme";
+import { AppBackButton } from "@/components/layout/app-back-button";
 import { LayoutDashboard, Users, Receipt, LogOut, Stethoscope, Monitor, Pill, DollarSign, UserCog, Settings, Building2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -71,6 +72,13 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
           </span>
         </div>
 
+        <div className="px-3 pb-2">
+          <AppBackButton
+            defaultFallbackHref="/dashboard"
+            className="w-full justify-start rounded-xl shadow-none"
+          />
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto">
           <ul className="space-y-1">
@@ -126,6 +134,11 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <AppBackButton
+              defaultFallbackHref="/dashboard"
+              showLabel={false}
+              className="rounded-lg px-2.5 py-2 shadow-none"
+            />
             <ThemeToggle variant="compact" />
             <button
               onClick={handleLogout}

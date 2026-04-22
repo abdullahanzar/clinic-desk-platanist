@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "author": {
-    "name": "Abdullah Anzar",
+    "name": "Platanist",
     "email": "anzar@platanist.com",
     "url": "https://clinicdesk.platanist.com"
   },
@@ -12,9 +12,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:generate": "node scripts/rebuild-db.cjs",
     "build:next": "next build",
-    "build:electron": "pnpm run build:next && node electron/prepare-standalone.cjs",
-    "electron:dev": "node electron/run-dev.cjs",
+    "build:electron": "pnpm run db:generate && pnpm run build:next && node electron/prepare-standalone.cjs",
+    "electron:dev": "pnpm run db:generate && node electron/run-dev.cjs",
     "electron:pack": "pnpm run build:electron && electron-builder --dir",
     "electron:dist": "pnpm run build:electron && electron-builder",
     "electron:dist:win": "pnpm run build:electron && electron-builder --win nsis"
@@ -48,6 +49,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3",
+      "electron",
       "esbuild"
     ]
   },
@@ -55,7 +57,13 @@
   "build": {
     "appId": "com.platanist.clinicdesk",
     "productName": "Clinic Desk",
-    "asar": false,
+    "icon": "build/icon.png",
+    "asar": true,
+    "asarUnpack": [
+      ".next/standalone/**/*",
+      "drizzle/**/*",
+      "public/**/*"
+    ],
     "directories": {
       "output": "electron-dist"
     },
@@ -78,10 +86,22 @@
       "category": "public.app-category.medical"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis",
         "portable"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Clinic Desk",
+      "runAfterFinish": true,
+      "uninstallDisplayName": "Clinic Desk"
     },
     "linux": {
       "target": [

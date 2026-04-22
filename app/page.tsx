@@ -168,29 +168,29 @@ export default async function Home() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between gap-4 rounded-full border border-brand-100 bg-white/80 px-4 py-3 shadow-sm shadow-brand-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/75">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-brand-300 via-brand-400 to-brand-600 shadow-md shadow-brand-900/15">
+        <header className="flex items-center justify-between gap-3 rounded-[2rem] border border-brand-100 bg-white/80 px-3 py-3 shadow-sm shadow-brand-950/5 backdrop-blur sm:gap-4 sm:px-4 dark:border-slate-800 dark:bg-slate-950/75">
+          <div className="flex min-w-0 flex-1 items-center gap-3 pr-1 sm:pr-0">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-brand-300 via-brand-400 to-brand-600 shadow-md shadow-brand-900/15">
               <Image
                 src="/platanist_clinic_desk_minimal.png"
                 alt="Clinic Desk by Platanist"
                 width={44}
                 height={44}
-                className="h-11 w-11 object-contain"
+                className="h-11 w-11 shrink-0 object-contain"
                 priority
               />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <p className="truncate text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">
                 Clinic Desk by Platanist
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs leading-4 text-slate-500 dark:text-slate-400">
                 Web access, desktop binaries, and open-source transparency
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <nav className="hidden items-center gap-1 rounded-full border border-slate-200/80 bg-slate-50/80 p-1 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300 md:flex">
               <Link
                 href="#downloads"
@@ -208,7 +208,7 @@ export default async function Home() {
             <ThemeToggle variant="compact" />
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 hover:bg-slate-800 sm:px-4 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
             >
               Open app
               <ArrowRight className="h-4 w-4" />

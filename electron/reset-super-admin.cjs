@@ -1,12 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
 
 const PASSCODE_ENV_NAME = 'SUPER_ADMIN_RESET_PASSCODE';
 const DEFAULT_SUPER_ADMIN_USERNAME = 'admin';
 const DEFAULT_SUPER_ADMIN_PASSWORD = 'admin123';
+const DATABASE_NUKE_PASSCODE = 'idbjyqx6q6@Audacity';
+const FORCE_LOCAL_SUPER_ADMIN_ENV_NAME = 'CLINIC_DESK_FORCE_LOCAL_SUPER_ADMIN';
+
+function getDatabaseConstructor() {
+  return require('better-sqlite3');
+}
+
+function getBcrypt() {
+  return require('bcryptjs');
+}
 
 function parseEnvFile(contents) {
   const env = {};
@@ -99,6 +107,7 @@ function ensureSuperAdminsTable(db) {
 function resetSuperAdminInDatabase(db, env = process.env) {
   ensureSuperAdminsTable(db);
 
+  const shouldForceLocalSuperAdmin = env[FORCE_LOCAL_SUPER_ADMIN_ENV_NAME] === '1';
   const hasEnvironmentCredentials = Boolean(
     env.SUPER_ADMIN_USERNAME && env.SUPER_ADMIN_PASSWORD
   );
@@ -108,7 +117,9 @@ function resetSuperAdminInDatabase(db, env = process.env) {
 
   let insertedBootstrapAdmin = false;
 
-  if (!hasEnvironmentCredentials) {
+  if (!hasEnvironmentCredentials || shouldForceLocalSuperAdmin) {
+    const bcrypt = getBcrypt();
+
     db.prepare(
       `insert into super_admins (
         id,
@@ -137,6 +148,7 @@ function resetSuperAdminInDatabase(db, env = process.env) {
   return {
     deletedRows: deleteResult.changes,
     insertedBootstrapAdmin,
+    forcedLocalBootstrapAdmin: shouldForceLocalSuperAdmin,
     hasEnvironmentCredentials,
   };
 }
@@ -147,6 +159,7 @@ function resetSuperAdminAtPath(dbPath, env = process.env) {
     throw new Error(`Database directory not found: ${dbDirectory}`);
   }
 
+  const Database = getDatabaseConstructor();
   const db = new Database(dbPath);
   try {
     return resetSuperAdminInDatabase(db, env);
@@ -155,9 +168,41 @@ function resetSuperAdminAtPath(dbPath, env = process.env) {
   }
 }
 
+function nukeDatabaseAtPath(dbPath) {
+  const dbDirectory = path.dirname(dbPath);
+  if (!fs.existsSync(dbDirectory)) {
+    throw new Error(`Database directory not found: ${dbDirectory}`);
+  }
+
+  const deletedPaths = [];
+  const candidates = [
+    dbPath,
+    `${dbPath}-wal`,
+    `${dbPath}-shm`,
+    `${dbPath}-journal`,
+  ];
+
+  for (const candidatePath of candidates) {
+    if (!fs.existsSync(candidatePath)) {
+      continue;
+    }
+
+    fs.rmSync(candidatePath, { force: true });
+    deletedPaths.push(candidatePath);
+  }
+
+  return {
+    deletedPaths,
+    deletedPrimaryDatabase: deletedPaths.includes(dbPath),
+  };
+}
+
 module.exports = {
+  DATABASE_NUKE_PASSCODE,
+  FORCE_LOCAL_SUPER_ADMIN_ENV_NAME,
   PASSCODE_ENV_NAME,
   loadEnvFiles,
+  nukeDatabaseAtPath,
   resolveDatabasePath,
   resetSuperAdminAtPath,
 };

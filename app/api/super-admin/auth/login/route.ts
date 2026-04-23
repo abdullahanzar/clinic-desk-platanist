@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       username: result.username,
       authSource: result.authSource,
       mustChangeCredentials: Boolean(result.mustChangeCredentials),
-    });
+    }, request);
 
     console.log(
       `[SUPER_ADMIN] Successful login from IP: ${

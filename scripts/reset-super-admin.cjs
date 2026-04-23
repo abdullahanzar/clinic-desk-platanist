@@ -1,8 +1,10 @@
 const path = require('path');
 const readline = require('readline');
 const {
+  DATABASE_NUKE_PASSCODE,
   PASSCODE_ENV_NAME,
   loadEnvFiles,
+  nukeDatabaseAtPath,
   resolveDatabasePath,
   resetSuperAdminAtPath,
 } = require('../electron/reset-super-admin.cjs');
@@ -16,6 +18,10 @@ function parsePasscodeArg(argv) {
   }
 
   return passcodeArg.slice('--passcode='.length);
+}
+
+function shouldNukeDatabase(argv) {
+  return argv.includes('--nuke-database');
 }
 
 function promptForPasscode() {
@@ -47,12 +53,15 @@ function promptForPasscode() {
 }
 
 async function main() {
-  const expectedPasscode = process.env[PASSCODE_ENV_NAME];
-  if (!expectedPasscode) {
+  const argv = process.argv.slice(2);
+  const nukeMode = shouldNukeDatabase(argv);
+  const expectedPasscode = nukeMode ? DATABASE_NUKE_PASSCODE : process.env[PASSCODE_ENV_NAME];
+
+  if (!nukeMode && !expectedPasscode) {
     throw new Error(`${PASSCODE_ENV_NAME} is not set. Add it to your .env file first.`);
   }
 
-  const providedPasscode = parsePasscodeArg(process.argv.slice(2)) ||
+  const providedPasscode = parsePasscodeArg(argv) ||
     (process.stdin.isTTY ? await promptForPasscode() : null);
 
   if (!providedPasscode) {
@@ -64,6 +73,21 @@ async function main() {
   }
 
   const dbPath = resolveDatabasePath({ cwd: process.cwd() });
+
+  if (nukeMode) {
+    const result = nukeDatabaseAtPath(dbPath);
+
+    console.log(`Database: ${dbPath}`);
+    console.log(`Deleted files: ${result.deletedPaths.length}`);
+    for (const deletedPath of result.deletedPaths) {
+      console.log(`- ${deletedPath}`);
+    }
+    if (result.deletedPaths.length === 0) {
+      console.log('No database files were present.');
+    }
+    return;
+  }
+
   const result = resetSuperAdminAtPath(dbPath, process.env);
 
   console.log(`Database: ${dbPath}`);

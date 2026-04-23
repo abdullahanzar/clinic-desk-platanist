@@ -5,14 +5,18 @@ const { spawn } = require('child_process');
 const net = require('net');
 const http = require('http');
 const {
+  DATABASE_NUKE_PASSCODE,
+  FORCE_LOCAL_SUPER_ADMIN_ENV_NAME,
   PASSCODE_ENV_NAME,
   loadEnvFiles,
+  nukeDatabaseAtPath,
   resolveDatabasePath,
   resetSuperAdminAtPath,
 } = require('./reset-super-admin.cjs');
 
 const isDev = process.env.ELECTRON_DEV === '1';
 const shouldRunSuperAdminReset = process.argv.includes('--reset-super-admin');
+const shouldNukeDatabase = process.argv.includes('--nuke-database');
 let nextProcess = null;
 let activePort = null;
 
@@ -22,7 +26,9 @@ function getRuntimeAppPath() {
 
 function getRuntimeNodePath() {
   const nodePaths = [
+    path.join(getRuntimeAppPath(), '.next', 'standalone', 'node_modules'),
     path.join(getRuntimeAppPath(), 'node_modules'),
+    path.join(app.getAppPath(), '.next', 'standalone', 'node_modules'),
     path.join(app.getAppPath(), 'node_modules'),
     process.env.NODE_PATH,
   ].filter(Boolean);
@@ -39,7 +45,12 @@ function getEnvDirectories() {
   ];
 }
 
-function createResetPromptHtml() {
+function createMaintenancePromptHtml(options) {
+  const title = options.title || 'Developer Reset';
+  const description = options.description || 'Enter the maintenance passcode to continue.';
+  const submitLabel = options.submitLabel || 'Continue';
+  const note = options.note || 'No dashboard or normal app UI is loaded in this mode.';
+
   return `<!doctype html>
 <html>
   <head>
@@ -139,15 +150,15 @@ function createResetPromptHtml() {
   </head>
   <body>
     <form class="panel" id="reset-form">
-      <h1>Developer Reset</h1>
-      <p>This hidden maintenance mode clears persisted super admin credentials on this device only.</p>
+      <h1>${title}</h1>
+      <p>${description}</p>
       <label for="passcode">Developer passcode</label>
       <input id="passcode" name="passcode" type="password" autocomplete="off" autofocus />
       <div class="actions">
         <button class="secondary" type="button" id="cancel">Cancel</button>
-        <button class="danger" type="submit">Reset Super Admin</button>
+        <button class="danger" type="submit">${submitLabel}</button>
       </div>
-      <div class="note">No dashboard or normal app UI is loaded in this mode.</div>
+      <div class="note">${note}</div>
     </form>
     <script>
       const form = document.getElementById('reset-form');
@@ -173,7 +184,7 @@ function createResetPromptHtml() {
 </html>`;
 }
 
-async function promptForSuperAdminResetPasscode() {
+async function promptForMaintenancePasscode(options) {
   return new Promise((resolve) => {
     const resetWindow = new BrowserWindow({
       width: 440,
@@ -224,10 +235,18 @@ async function promptForSuperAdminResetPasscode() {
       finish(null);
     });
 
-    resetWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(createResetPromptHtml())}`);
+    resetWindow.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(createMaintenancePromptHtml(options))}`);
     resetWindow.once('ready-to-show', () => {
       resetWindow.show();
     });
+  });
+}
+
+function resolveElectronDatabasePath() {
+  return resolveDatabasePath({
+    env: process.env,
+    cwd: app.getAppPath(),
+    userDataPath: isDev ? undefined : app.getPath('userData'),
   });
 }
 
@@ -244,7 +263,12 @@ async function runSuperAdminResetFlow() {
   let providedPasscode = null;
 
   while (providedPasscode !== expectedPasscode) {
-    providedPasscode = await promptForSuperAdminResetPasscode();
+    providedPasscode = await promptForMaintenancePasscode({
+      title: 'Developer Reset',
+      description: 'This hidden maintenance mode clears persisted super admin credentials on this device only.',
+      submitLabel: 'Reset Super Admin',
+      note: 'No dashboard or normal app UI is loaded in this mode.',
+    });
     if (providedPasscode === null) {
       return false;
     }
@@ -258,12 +282,11 @@ async function runSuperAdminResetFlow() {
     }
   }
 
-  const dbPath = resolveDatabasePath({
-    env: process.env,
-    cwd: app.getAppPath(),
-    userDataPath: isDev ? undefined : app.getPath('userData'),
+  const dbPath = resolveElectronDatabasePath();
+  const result = resetSuperAdminAtPath(dbPath, {
+    ...process.env,
+    [FORCE_LOCAL_SUPER_ADMIN_ENV_NAME]: '1',
   });
-  const result = resetSuperAdminAtPath(dbPath, process.env);
 
   const detailLines = [
     `Database: ${dbPath}`,
@@ -272,7 +295,7 @@ async function runSuperAdminResetFlow() {
 
   if (result.insertedBootstrapAdmin) {
     detailLines.push('Bootstrap credentials restored: admin / admin123');
-  } else if (result.hasEnvironmentCredentials) {
+  } else if (result.hasEnvironmentCredentials && !result.forcedLocalBootstrapAdmin) {
     detailLines.push('Bootstrap credentials were not restored because SUPER_ADMIN_USERNAME and SUPER_ADMIN_PASSWORD are configured.');
   }
 
@@ -280,6 +303,54 @@ async function runSuperAdminResetFlow() {
     type: 'info',
     title: 'Super Admin Reset Complete',
     message: 'Developer maintenance reset completed successfully.',
+    detail: detailLines.join('\n'),
+  });
+
+  return true;
+}
+
+async function runDatabaseNukeFlow() {
+  const expectedPasscode = DATABASE_NUKE_PASSCODE;
+  let providedPasscode = null;
+
+  while (providedPasscode !== expectedPasscode) {
+    providedPasscode = await promptForMaintenancePasscode({
+      title: 'Database Wipe',
+      description: 'This hidden maintenance mode permanently deletes the local SQLite database on this device.',
+      submitLabel: 'Delete Database',
+      note: 'This action removes all local records and cannot be undone.',
+    });
+
+    if (providedPasscode === null) {
+      return false;
+    }
+
+    if (providedPasscode !== expectedPasscode) {
+      await dialog.showMessageBox({
+        type: 'error',
+        title: 'Invalid Passcode',
+        message: 'The maintenance passcode did not match. Database wipe was not performed.',
+      });
+    }
+  }
+
+  const dbPath = resolveElectronDatabasePath();
+  const result = nukeDatabaseAtPath(dbPath);
+  const detailLines = [
+    `Database: ${dbPath}`,
+    `Deleted files: ${result.deletedPaths.length}`,
+  ];
+
+  if (result.deletedPaths.length > 0) {
+    detailLines.push(...result.deletedPaths);
+  } else {
+    detailLines.push('No database files were present.');
+  }
+
+  await dialog.showMessageBox({
+    type: 'info',
+    title: 'Database Wipe Complete',
+    message: 'Local database files were removed successfully.',
     detail: detailLines.join('\n'),
   });
 
@@ -455,6 +526,7 @@ function startNextServer(port) {
       NODE_ENV: 'production',
       ELECTRON_RUN_AS_NODE: '1',
       DATABASE_PATH: dbPath,
+      [FORCE_LOCAL_SUPER_ADMIN_ENV_NAME]: '1',
       NODE_PATH: getRuntimeNodePath(),
     },
   });
@@ -499,6 +571,16 @@ ipcMain.handle('clinic-desk:get-network-status', () => getNetworkAccessInfo(acti
 
 app.whenReady().then(async () => {
   try {
+    if (shouldRunSuperAdminReset && shouldNukeDatabase) {
+      throw new Error('Use either --reset-super-admin or --nuke-database, not both.');
+    }
+
+    if (shouldNukeDatabase) {
+      await runDatabaseNukeFlow();
+      app.quit();
+      return;
+    }
+
     if (shouldRunSuperAdminReset) {
       await runSuperAdminResetFlow();
       app.quit();

@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       user.id,
       user.clinicId,
       user.role as "doctor" | "frontdesk",
+      request,
     );
 
     return NextResponse.json({

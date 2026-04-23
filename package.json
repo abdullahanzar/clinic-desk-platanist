@@ -13,9 +13,11 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "node scripts/rebuild-db.cjs",
+    "db:sync-native": "pnpm rebuild better-sqlite3",
+    "electron:sync-native": "pnpm exec electron-rebuild -f -w better-sqlite3",
     "build:next": "next build",
-    "build:electron": "pnpm run db:generate && pnpm run build:next && node electron/prepare-standalone.cjs",
-    "electron:dev": "pnpm run db:generate && node electron/run-dev.cjs",
+    "build:electron": "pnpm run db:generate && pnpm run db:sync-native && pnpm run build:next && pnpm run electron:sync-native && node electron/prepare-standalone.cjs",
+    "electron:dev": "pnpm run db:generate && pnpm run db:sync-native && node electron/run-dev.cjs",
     "electron:pack": "pnpm run build:electron && electron-builder --dir",
     "electron:dist": "pnpm run build:electron && electron-builder",
     "electron:dist:win": "pnpm run build:electron && electron-builder --win nsis"
@@ -32,6 +34,7 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.13",
@@ -58,6 +61,7 @@
     "appId": "com.platanist.clinicdesk",
     "productName": "Clinic Desk",
     "icon": "build/icon.png",
+    "afterPack": "electron/after-pack.cjs",
     "asar": true,
     "asarUnpack": [
       ".next/standalone/**/*",

@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { SessionPayload, UserRole } from "@/types";
+import { shouldUseSecureCookies } from "@/lib/auth/cookie-security";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const key = new TextEncoder().encode(SECRET_KEY);
@@ -11,7 +12,8 @@ const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours in ms
 export async function createSession(
   userId: string,
   clinicId: string,
-  role: UserRole
+  role: UserRole,
+  request?: Request,
 ): Promise<string> {
   const expiresAt = new Date(Date.now() + SESSION_DURATION);
 
@@ -29,7 +31,7 @@ export async function createSession(
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(request),
     sameSite: "lax",
     expires: expiresAt,
     path: "/",

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       username: updatedSuperAdmin.username,
       authSource: "database",
       mustChangeCredentials: false,
-    });
+    }, request);
 
     return NextResponse.json({
       success: true,

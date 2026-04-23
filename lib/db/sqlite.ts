@@ -14,6 +14,7 @@ let _defaultSuperAdminEnsured = false;
 
 const DEFAULT_SUPER_ADMIN_USERNAME = "admin";
 const DEFAULT_SUPER_ADMIN_PASSWORD = "admin123";
+const FORCE_LOCAL_SUPER_ADMIN_ENV_NAME = "CLINIC_DESK_FORCE_LOCAL_SUPER_ADMIN";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -93,6 +94,8 @@ function ensureDefaultSuperAdmin(db: ReturnType<typeof drizzle>) {
     return;
   }
 
+  const shouldForceLocalSuperAdmin =
+    process.env[FORCE_LOCAL_SUPER_ADMIN_ENV_NAME] === "1";
   const hasEnvironmentCredentials = Boolean(
     process.env.SUPER_ADMIN_USERNAME && process.env.SUPER_ADMIN_PASSWORD
   );
@@ -101,7 +104,7 @@ function ensureDefaultSuperAdmin(db: ReturnType<typeof drizzle>) {
     .from(schema.superAdmins)
     .get();
 
-  if (!existingSuperAdmin && !hasEnvironmentCredentials) {
+  if (!existingSuperAdmin && (!hasEnvironmentCredentials || shouldForceLocalSuperAdmin)) {
     const now = new Date().toISOString();
     db.insert(schema.superAdmins)
       .values({

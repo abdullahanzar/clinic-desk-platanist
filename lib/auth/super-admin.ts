@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/sqlite";
 import { superAdmins } from "@/lib/db/schema";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { shouldUseSecureCookies } from "@/lib/auth/cookie-security";
 import type {
   LoginHistoryEntry,
   SuperAdminRecord,
@@ -100,7 +101,8 @@ export async function validateSuperAdminCredentials(
 }
 
 export async function createSuperAdminSession(
-  session: Omit<SuperAdminSessionPayload, "isSuperAdmin" | "exp">
+  session: Omit<SuperAdminSessionPayload, "isSuperAdmin" | "exp">,
+  request?: Request,
 ): Promise<string> {
   const expiresAt = new Date(Date.now() + SESSION_DURATION);
 
@@ -119,7 +121,7 @@ export async function createSuperAdminSession(
   const cookieStore = await cookies();
   cookieStore.set(SUPER_ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(request),
     sameSite: "strict",
     expires: expiresAt,
     path: "/",

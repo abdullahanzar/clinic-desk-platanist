@@ -21,19 +21,19 @@ function SourceBadge({ source }: { source: string }) {
   switch (source) {
     case "allopathic":
       return (
-        <span className="inline-flex items-center gap-0.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+        <span className="inline-flex items-center gap-0.5 rounded border border-info-border bg-info-bg px-1.5 py-0.5 text-xs text-info-text">
           <Pill className="w-3 h-3" />
         </span>
       );
     case "homeopathic":
       return (
-        <span className="inline-flex items-center gap-0.5 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+        <span className="inline-flex items-center gap-0.5 rounded border border-success-border bg-success-bg px-1.5 py-0.5 text-xs text-success-text">
           <Leaf className="w-3 h-3" />
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-0.5 text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+        <span className="inline-flex items-center gap-0.5 rounded border border-selected-border bg-selected-bg px-1.5 py-0.5 text-xs text-selected-text">
           <User className="w-3 h-3" />
         </span>
       );
@@ -315,7 +315,6 @@ function MedicationPanel() {
   } = usePrescription();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [showHomeopathicDisclaimer, setShowHomeopathicDisclaimer] = useState(false);
 
   const filteredTemplates = useMemo(() => {
     let templates = medicationTemplates;
@@ -333,15 +332,10 @@ function MedicationPanel() {
       templates = templates.filter((t) => t.category === activeCategory);
     }
     
-    // Check if any filtered results are homeopathic
-    if (templates.some((t) => t.source === "homeopathic")) {
-      setShowHomeopathicDisclaimer(true);
-    } else {
-      setShowHomeopathicDisclaimer(false);
-    }
-    
     return templates;
   }, [medicationTemplates, searchQuery, activeCategory]);
+
+  const showHomeopathicDisclaimer = filteredTemplates.some((template) => template.source === "homeopathic");
 
   // Recently used
   const recentlyUsed = useMemo(() => {
@@ -387,9 +381,9 @@ function MedicationPanel() {
     <div className="space-y-4">
       {/* Homeopathic disclaimer */}
       {showHomeopathicDisclaimer && (
-        <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700 leading-relaxed">
+        <div className="flex items-start gap-2 rounded-lg border border-warning-border bg-warning-bg px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-text" />
+          <p className="text-xs leading-relaxed text-warning-text">
             This information is provided for documentation purposes only and does not constitute medical advice. For serious, acute, or potentially life-threatening conditions, patients should seek appropriate emergency or conventional medical care.
           </p>
         </div>

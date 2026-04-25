@@ -180,7 +180,7 @@ export default function ClinicDetailPage({
           <p className="text-slate-400 mb-4">Clinic not found</p>
           <button
             onClick={() => router.push("/admin/dashboard")}
-            className="text-red-400 hover:text-red-300"
+            className="text-error-text transition-colors hover:text-red-200"
           >
             Go back
           </button>
@@ -207,7 +207,7 @@ export default function ClinicDetailPage({
             </div>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-error-text transition-colors hover:bg-error-bg"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -219,13 +219,13 @@ export default function ClinicDetailPage({
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="mb-6 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="mb-6 rounded-xl border border-success-border bg-success-bg px-4 py-3 text-sm text-success-text">
             {successMessage}
           </div>
         )}
@@ -522,7 +522,7 @@ export default function ClinicDetailPage({
                             {user.role}
                           </span>
                           {!user.isActive && (
-                            <span className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400">
+                            <span className="rounded px-2 py-0.5 text-xs bg-error-bg text-error-text">
                               Revoked
                             </span>
                           )}
@@ -534,8 +534,8 @@ export default function ClinicDetailPage({
                         }
                         className={`p-2 rounded-lg transition-colors ${
                           user.isActive
-                            ? "text-red-400 hover:bg-red-500/10"
-                            : "text-green-400 hover:bg-green-500/10"
+                            ? "text-error-text hover:bg-error-bg"
+                            : "text-success-text hover:bg-success-bg"
                         }`}
                         title={user.isActive ? "Revoke Access" : "Restore Access"}
                       >
@@ -584,8 +584,8 @@ export default function ClinicDetailPage({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-error-border bg-error-bg">
+                <AlertTriangle className="w-6 h-6 text-error-text" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white">Delete Clinic</h2>

@@ -132,7 +132,7 @@ export default function EnhancedPrescriptionForm({
 
   if (isFinalized) {
     return (
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-xl border border-warning-border bg-warning-bg p-4 text-warning-text">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <p>This prescription has been finalized and cannot be edited.</p>
       </div>
@@ -142,7 +142,7 @@ export default function EnhancedPrescriptionForm({
   return (
     <div className="space-y-4 sm:space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
           {error}
         </div>
       )}

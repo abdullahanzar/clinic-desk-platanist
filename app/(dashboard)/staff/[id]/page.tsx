@@ -227,8 +227,8 @@ export default function StaffDetailPage({
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                   staff.role === "doctor"
-                    ? "bg-purple-100 text-purple-700"
-                    : "bg-blue-100 text-blue-700"
+                    ? "border border-selected-border bg-selected-bg text-selected-text"
+                    : "border border-info-border bg-info-bg text-info-text"
                 }`}
               >
                 {staff.role === "doctor" ? (
@@ -241,8 +241,8 @@ export default function StaffDetailPage({
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                   staff.isActive
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    ? "border border-success-border bg-success-bg text-success-text"
+                    : "border border-error-border bg-error-bg text-error-text"
                 }`}
               >
                 {staff.isActive ? "Active" : "Inactive"}
@@ -255,8 +255,8 @@ export default function StaffDetailPage({
                 onClick={handleToggleActive}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   staff.isActive
-                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                    ? "border border-warning-border bg-warning-bg text-warning-text hover:bg-amber-100 dark:hover:bg-amber-950"
+                    : "border border-success-border bg-success-bg text-success-text hover:bg-green-100 dark:hover:bg-green-950"
                 }`}
               >
                 {staff.isActive ? (
@@ -326,7 +326,7 @@ export default function StaffDetailPage({
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">
+              <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
                 {error}
               </div>
             )}
@@ -377,7 +377,7 @@ export default function StaffDetailPage({
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-error-border bg-error-bg px-4 py-3 font-medium text-error-text transition-colors hover:bg-red-100 dark:hover:bg-red-950 disabled:opacity-50"
                 >
                   {deleting ? (
                     <>

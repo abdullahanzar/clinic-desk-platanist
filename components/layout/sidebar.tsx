@@ -45,7 +45,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
         {/* Clinic Branding */}
         <div className="p-5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/20">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
 
         {/* Role Badge */}
         <div className="px-5 py-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-selected-bg text-selected-text border border-selected-border">
             {role === "doctor" ? <Stethoscope className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
             <span className="capitalize">{role}</span>
           </span>
@@ -90,7 +90,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       isActive
-                        ? "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-medium shadow-sm"
+                        ? "border border-selected-border bg-selected-bg text-selected-text font-medium shadow-sm"
                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                   >
@@ -123,7 +123,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-md">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-brand-500 to-brand-600 shadow-md">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
@@ -157,29 +157,29 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
           {navItems.slice(0, 5).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
-              <li key={item.href} className="flex-shrink-0">
+              <li key={item.href} className="shrink-0">
                 <Link
                   href={item.href}
-                  className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
+                  className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                     isActive
-                      ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                      ? "border border-selected-border bg-selected-bg text-selected-text"
                       : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
-                  <span className="text-[10px] font-medium leading-tight truncate max-w-[56px]">{item.label}</span>
+                  <span className="max-w-14 truncate text-[10px] font-medium leading-tight">{item.label}</span>
                 </Link>
               </li>
             );
           })}
           {/* More menu for additional items on mobile */}
           {navItems.length > 5 && (
-            <li className="flex-shrink-0">
+            <li className="shrink-0">
               <Link
                 href={navItems[5].href}
-                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 py-1.5 rounded-lg transition-all ${
+                className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                   navItems.slice(5).some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
-                    ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                    ? "border border-selected-border bg-selected-bg text-selected-text"
                     : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                 }`}
               >

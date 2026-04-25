@@ -53,10 +53,22 @@ interface VisitsHistoryProps {
 }
 
 const statusConfig = {
-  waiting: { bg: "bg-amber-100 dark:bg-amber-950", text: "text-amber-800 dark:text-amber-300", dot: "bg-amber-500" },
-  "in-consultation": { bg: "bg-teal-100 dark:bg-teal-950", text: "text-teal-800 dark:text-teal-300", dot: "bg-teal-500" },
-  completed: { bg: "bg-emerald-100 dark:bg-emerald-950", text: "text-emerald-800 dark:text-emerald-300", dot: "bg-emerald-500" },
-  cancelled: { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-600 dark:text-slate-400", dot: "bg-slate-400" },
+  waiting: {
+    bg: "border border-warning-border bg-warning-bg",
+    text: "text-warning-text",
+    dot: "bg-warning-text",
+  },
+  "in-consultation": {
+    bg: "border border-selected-border bg-selected-bg",
+    text: "text-selected-text",
+    dot: "bg-selected-text",
+  },
+  completed: {
+    bg: "border border-success-border bg-success-bg",
+    text: "text-success-text",
+    dot: "bg-success-text",
+  },
+  cancelled: { bg: "border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800", text: "text-slate-600 dark:text-slate-400", dot: "bg-slate-400" },
 };
 
 function formatTime(date: Date | string): string {
@@ -298,7 +310,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
           {isToday && viewMode === "day" && !debouncedSearch && (
             <button
               onClick={() => setShowNewVisitForm(true)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all shadow-lg shadow-brand-500/20 font-medium"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-5 py-3 font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800"
             >
               <UserPlus className="w-5 h-5" />
               <span>New Visit</span>
@@ -335,7 +347,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
               onClick={() => setViewMode("day")}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 viewMode === "day"
-                  ? "bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300"
+                  ? "border border-selected-border bg-selected-bg text-selected-text shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -346,7 +358,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
               onClick={() => setViewMode("month")}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 viewMode === "month"
-                  ? "bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300"
+                  ? "border border-selected-border bg-selected-bg text-selected-text shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -415,17 +427,17 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
         {/* Stats Summary */}
         {visits.length > 0 && !debouncedSearch && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-emerald-50 dark:bg-emerald-950 rounded-xl p-3 border border-emerald-100 dark:border-emerald-800">
-              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{stats.completed}</p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">Completed</p>
+            <div className="bg-success-bg rounded-xl border border-success-border p-3">
+              <p className="text-2xl font-bold text-success-text">{stats.completed}</p>
+              <p className="text-xs text-success-text/80">Completed</p>
             </div>
-            <div className="bg-amber-50 dark:bg-amber-950 rounded-xl p-3 border border-amber-100 dark:border-amber-800">
-              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.waiting}</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">Waiting</p>
+            <div className="bg-warning-bg rounded-xl border border-warning-border p-3">
+              <p className="text-2xl font-bold text-warning-text">{stats.waiting}</p>
+              <p className="text-xs text-warning-text/80">Waiting</p>
             </div>
-            <div className="bg-teal-50 dark:bg-teal-950 rounded-xl p-3 border border-teal-100 dark:border-teal-800">
-              <p className="text-2xl font-bold text-teal-700 dark:text-teal-300">{stats.inConsultation}</p>
-              <p className="text-xs text-teal-600 dark:text-teal-400">In Consultation</p>
+            <div className="bg-selected-bg rounded-xl border border-selected-border p-3">
+              <p className="text-2xl font-bold text-selected-text">{stats.inConsultation}</p>
+              <p className="text-xs text-selected-muted-text">In Consultation</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
               <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">{stats.cancelled}</p>
@@ -490,7 +502,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                 className="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-brand-100 to-brand-200 text-brand-700 font-bold rounded-xl flex items-center justify-center text-lg">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-100 to-brand-200 text-lg font-bold text-brand-700">
                     {visit.tokenNumber}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -505,7 +517,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                         </p>
                       </div>
                       <span
-                        className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${
+                        className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${
                           statusConfig[visit.status].bg
                         } ${statusConfig[visit.status].text}`}
                       >
@@ -561,7 +573,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                   {visits.map((visit) => (
                     <tr key={visit.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-brand-100 to-brand-200 text-brand-700 font-bold rounded-xl">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-brand-100 to-brand-200 font-bold text-brand-700">
                           {visit.tokenNumber}
                         </span>
                       </td>
@@ -696,7 +708,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                       <span className="text-sm text-slate-600 dark:text-slate-400">
                         {dayStats.total} visit{dayStats.total !== 1 ? "s" : ""}
                       </span>
-                      <span className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                      <span className="rounded-full border border-success-border bg-success-bg px-2 py-1 text-xs text-success-text">
                         {dayStats.completed} completed
                       </span>
                       <button
@@ -734,7 +746,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                             </p>
                           </div>
                           <span
-                            className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
+                            className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
                               statusConfig[visit.status].bg
                             } ${statusConfig[visit.status].text}`}
                           >
@@ -791,7 +803,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
               {/* Form */}
               <form onSubmit={handleNewVisitSubmit} className="p-5 space-y-5">
                 {formError && (
-                  <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm">
+                  <div className="bg-error-bg border border-error-border px-4 py-3 text-error-text rounded-xl text-sm">
                     {formError}
                   </div>
                 )}
@@ -898,7 +910,7 @@ export default function VisitsHistory({ role, initialVisits, initialPagination }
                   <button
                     type="submit"
                     disabled={formLoading}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all disabled:opacity-50 shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-4 py-2.5 font-semibold text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800 disabled:opacity-50"
                   >
                     {formLoading ? (
                       <>

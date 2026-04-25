@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "electron/**/*.cjs",
+    "patch.js",
+    "patch2.js",
   ]),
 ]);
 

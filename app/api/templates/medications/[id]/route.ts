@@ -161,7 +161,6 @@ export async function DELETE(
     const { id } = await params;
     const db = getDb();
 
-    // Check if it's a default medication
     const template = db
       .select()
       .from(medicationTemplates)
@@ -175,13 +174,6 @@ export async function DELETE(
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
-    }
-
-    if (template.isDefault) {
-      return NextResponse.json(
-        { error: "Cannot delete default medications. You can only delete custom medications." },
-        { status: 403 }
-      );
     }
 
     db.delete(medicationTemplates)

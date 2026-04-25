@@ -15,12 +15,13 @@ import {
   User,
   AlertTriangle,
   Download,
-  Lock,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 20;
+
+type DefaultMedicationSource = "allopathic" | "homeopathic";
 
 interface MedicationTemplate {
   id: string;
@@ -76,8 +77,7 @@ const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean
     <div className="flex items-center gap-1.5">
       {badge}
       {isDefault && (
-        <span className="inline-flex items-center gap-0.5 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md">
-          <Lock className="w-2.5 h-2.5" />
+        <span className="inline-flex items-center text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md">
           Default
         </span>
       )}
@@ -103,6 +103,14 @@ export default function MedicationsTab() {
   // Stats state
   const [stats, setStats] = useState<MedicationStats | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const [clearingDefaults, setClearingDefaults] = useState(false);
+  const [selectedLoadSources, setSelectedLoadSources] = useState<DefaultMedicationSource[]>([
+    "allopathic",
+  ]);
+  const [catalogMessage, setCatalogMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -136,21 +144,81 @@ export default function MedicationsTab() {
   }, []);
 
   const seedDefaultMedications = async () => {
+    if (selectedLoadSources.length === 0) return;
+
     setSeeding(true);
+    setCatalogMessage(null);
     try {
       const res = await fetch("/api/templates/medications/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: false }),
+        body: JSON.stringify({ force: false, sources: selectedLoadSources }),
       });
-      if (res.ok) {
-        await fetchStats();
-        await fetchTemplates();
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCatalogMessage({
+          type: "error",
+          text: data.error || "Failed to load medications",
+        });
+        return;
       }
+
+      setCatalogMessage({
+        type: "success",
+        text: data.message || "Medications loaded",
+      });
+      await fetchStats();
+      await fetchTemplates();
     } catch (error) {
       console.error("Error seeding medications:", error);
+      setCatalogMessage({
+        type: "error",
+        text: "Failed to load medications",
+      });
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const clearLoadedMedications = async () => {
+    if (selectedLoadSources.length === 0) return;
+
+    setClearingDefaults(true);
+    setCatalogMessage(null);
+
+    try {
+      const res = await fetch("/api/templates/medications/seed", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sources: selectedLoadSources }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCatalogMessage({
+          type: "error",
+          text: data.error || "Failed to clear medications",
+        });
+        return;
+      }
+
+      setCatalogMessage({
+        type: "success",
+        text: data.message || "Medications cleared",
+      });
+      await fetchStats();
+      await fetchTemplates();
+    } catch (error) {
+      console.error("Error clearing medications:", error);
+      setCatalogMessage({
+        type: "error",
+        text: "Failed to clear medications",
+      });
+    } finally {
+      setClearingDefaults(false);
     }
   };
 
@@ -207,6 +275,18 @@ export default function MedicationsTab() {
   const filteredCategories = categories.filter((cat) =>
     cat.toLowerCase().includes(categorySearch.toLowerCase())
   );
+
+  const toggleLoadSource = (source: DefaultMedicationSource) => {
+    setSelectedLoadSources((prev) =>
+      prev.includes(source)
+        ? prev.filter((value) => value !== source)
+        : [...prev, source]
+    );
+  };
+
+  const selectedLoadedCount = stats
+    ? selectedLoadSources.reduce((total, source) => total + stats[source], 0)
+    : 0;
 
   const openAddModal = () => {
     setEditingTemplate(null);
@@ -280,6 +360,7 @@ export default function MedicationsTab() {
 
       if (res.ok) {
         setTemplates((prev) => prev.filter((t) => t.id !== id));
+        await Promise.all([fetchStats(), fetchTemplates()]);
       } else {
         const data = await res.json();
         setDeleteError(data.error || "Failed to delete medication");
@@ -298,7 +379,7 @@ export default function MedicationsTab() {
       {/* Stats & Seed Section */}
       {stats && (
         <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <h4 className="text-sm font-medium text-slate-900 mb-2">Medication Database</h4>
               <div className="flex flex-wrap gap-3 text-sm">
@@ -316,24 +397,106 @@ export default function MedicationsTab() {
                 </span>
               </div>
             </div>
-            {(stats.allopathic === 0 && stats.homeopathic === 0) && (
-              <button
-                onClick={seedDefaultMedications}
-                disabled={seeding}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50"
+
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-slate-800 mb-2">
+                  Select default medicine libraries to manage
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <label
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                      selectedLoadSources.includes("allopathic")
+                        ? "border-blue-300 bg-blue-50 text-blue-700"
+                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      checked={selectedLoadSources.includes("allopathic")}
+                      onChange={() => toggleLoadSource("allopathic")}
+                    />
+                    <Pill className="w-4 h-4" />
+                    Allopathic
+                  </label>
+                  <label
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                      selectedLoadSources.includes("homeopathic")
+                        ? "border-green-300 bg-green-50 text-green-700"
+                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      checked={selectedLoadSources.includes("homeopathic")}
+                      onChange={() => toggleLoadSource("homeopathic")}
+                    />
+                    <Leaf className="w-4 h-4" />
+                    Homeopathic
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {selectedLoadSources.length === 0
+                    ? "Select at least one default library to load or clear."
+                    : `${selectedLoadedCount} selected default medication${selectedLoadedCount === 1 ? " is" : "s are"} currently loaded.`}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={seedDefaultMedications}
+                  disabled={seeding || clearingDefaults || selectedLoadSources.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {seeding ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading selected...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Load Selected
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={clearLoadedMedications}
+                  disabled={
+                    seeding ||
+                    clearingDefaults ||
+                    selectedLoadSources.length === 0 ||
+                    selectedLoadedCount === 0
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {clearingDefaults ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Clearing selected...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Clear Selected
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {catalogMessage && (
+              <div
+                className={`rounded-lg px-3 py-2 text-sm border ${
+                  catalogMessage.type === "success"
+                    ? "bg-green-50 text-green-700 border-green-200"
+                    : "bg-red-50 text-red-700 border-red-200"
+                }`}
               >
-                {seeding ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading medications...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Load Default Medications
-                  </>
-                )}
-              </button>
+                {catalogMessage.text}
+              </div>
             )}
           </div>
         </div>
@@ -342,7 +505,7 @@ export default function MedicationsTab() {
       {/* Homeopathic Disclaimer - only show when filtering by homeopathic */}
       {selectedSource === "homeopathic" && (
         <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800 leading-relaxed">
             {HOMEOPATHIC_DISCLAIMER}
           </p>
@@ -352,7 +515,7 @@ export default function MedicationsTab() {
       {/* Delete error toast */}
       {deleteError && (
         <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {deleteError}
         </div>
       )}
@@ -391,7 +554,7 @@ export default function MedicationsTab() {
         <select
           value={selectedSource}
           onChange={(e) => setSelectedSource(e.target.value)}
-          className="flex-shrink-0 w-full sm:w-36 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+          className="shrink-0 w-full sm:w-36 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
         >
           <option value="">All Types</option>
           <option value="allopathic">Allopathic</option>
@@ -399,12 +562,12 @@ export default function MedicationsTab() {
           <option value="custom">Custom</option>
         </select>
         {categories.length > 0 && (
-          <div ref={categoryRef} className="relative flex-shrink-0 w-full sm:w-56">
+          <div ref={categoryRef} className="relative shrink-0 w-full sm:w-56">
             <div
               className="flex items-center gap-2 px-3 py-2.5 border border-slate-300 rounded-xl text-sm cursor-pointer hover:border-slate-400 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white"
               onClick={() => setShowCategoryDropdown(true)}
             >
-              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="text"
                 value={showCategoryDropdown ? categorySearch : (selectedCategory || "")}
@@ -541,41 +704,39 @@ export default function MedicationsTab() {
                 </div>
                 <div className="flex items-center gap-1">
                   {!template.isDefault && (
-                    <>
+                    <button
+                      onClick={() => openEditModal(template)}
+                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  {deleteConfirm === template.id ? (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => openEditModal(template)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                        title="Edit"
+                        onClick={() => handleDelete(template.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Confirm delete"
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Check className="w-4 h-4" />
                       </button>
-                      {deleteConfirm === template.id ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleDelete(template.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Confirm delete"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
-                            title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(template.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                        title="Cancel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(template.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title={template.isDefault ? "Remove" : "Delete"}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -631,7 +792,7 @@ export default function MedicationsTab() {
             <div className="p-5 space-y-4">
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
               )}

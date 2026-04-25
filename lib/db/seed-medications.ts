@@ -5,6 +5,17 @@ import type { MedicationSource } from "@/types";
 import * as fs from "fs";
 import * as path from "path";
 
+export type DefaultMedicationSource = Exclude<MedicationSource, "custom">;
+
+const DEFAULT_MEDICATION_FILES: Record<DefaultMedicationSource, string> = {
+  allopathic: "default_allopathic_medications.csv",
+  homeopathic: "default_homeopathic_medications.csv",
+};
+
+const DEFAULT_MEDICATION_SOURCES = Object.keys(
+  DEFAULT_MEDICATION_FILES
+) as DefaultMedicationSource[];
+
 interface CSVMedication {
   name: string;
   dosage: string;
@@ -61,10 +72,13 @@ function parseCSV(csvContent: string): CSVMedication[] {
 
 export async function seedDefaultMedications(
   clinicId: string,
-  createdBy: string
+  createdBy: string,
+  sources: DefaultMedicationSource[] = DEFAULT_MEDICATION_SOURCES
 ): Promise<{ allopathic: number; homeopathic: number; skipped: number }> {
   const db = getDb();
   const now = new Date().toISOString();
+  const selectedSources =
+    sources.length > 0 ? Array.from(new Set(sources)) : DEFAULT_MEDICATION_SOURCES;
 
   let allopathicCount = 0;
   let homeopathicCount = 0;
@@ -134,22 +148,68 @@ export async function seedDefaultMedications(
     return count;
   };
 
-  // Seed allopathic medications
-  allopathicCount = seedMedications(
-    "default_allopathic_medications.csv",
-    "allopathic"
-  );
+  if (selectedSources.includes("allopathic")) {
+    allopathicCount = seedMedications(
+      DEFAULT_MEDICATION_FILES.allopathic,
+      "allopathic"
+    );
+  }
 
-  // Seed homeopathic medications
-  homeopathicCount = seedMedications(
-    "default_homeopathic_medications.csv",
-    "homeopathic"
-  );
+  if (selectedSources.includes("homeopathic")) {
+    homeopathicCount = seedMedications(
+      DEFAULT_MEDICATION_FILES.homeopathic,
+      "homeopathic"
+    );
+  }
 
   return {
     allopathic: allopathicCount,
     homeopathic: homeopathicCount,
     skipped: skippedCount,
+  };
+}
+
+export async function clearDefaultMedications(
+  clinicId: string,
+  sources: DefaultMedicationSource[] = DEFAULT_MEDICATION_SOURCES
+): Promise<{ allopathic: number; homeopathic: number; total: number }> {
+  const db = getDb();
+  const selectedSources =
+    sources.length > 0 ? Array.from(new Set(sources)) : DEFAULT_MEDICATION_SOURCES;
+
+  let allopathic = 0;
+  let homeopathic = 0;
+
+  if (selectedSources.includes("allopathic")) {
+    allopathic = db
+      .delete(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.clinicId, clinicId),
+          eq(medicationTemplates.isDefault, true),
+          eq(medicationTemplates.source, "allopathic")
+        )
+      )
+      .run().changes;
+  }
+
+  if (selectedSources.includes("homeopathic")) {
+    homeopathic = db
+      .delete(medicationTemplates)
+      .where(
+        and(
+          eq(medicationTemplates.clinicId, clinicId),
+          eq(medicationTemplates.isDefault, true),
+          eq(medicationTemplates.source, "homeopathic")
+        )
+      )
+      .run().changes;
+  }
+
+  return {
+    allopathic,
+    homeopathic,
+    total: allopathic + homeopathic,
   };
 }
 

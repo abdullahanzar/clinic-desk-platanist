@@ -49,14 +49,14 @@ const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean
     switch (source) {
       case "allopathic":
         return (
-          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
+          <span className="inline-flex items-center gap-1 rounded-md border border-info-border bg-info-bg px-2 py-0.5 text-xs text-info-text">
             <Pill className="w-3 h-3" />
             Allopathic
           </span>
         );
       case "homeopathic":
         return (
-          <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-md">
+          <span className="inline-flex items-center gap-1 rounded-md border border-success-border bg-success-bg px-2 py-0.5 text-xs text-success-text">
             <Leaf className="w-3 h-3" />
             Homeopathic
           </span>
@@ -64,7 +64,7 @@ const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean
       case "custom":
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md">
+          <span className="inline-flex items-center gap-1 rounded-md border border-selected-border bg-selected-bg px-2 py-0.5 text-xs text-selected-text">
             <User className="w-3 h-3" />
             Custom
           </span>
@@ -76,7 +76,7 @@ const SourceBadge = ({ source, isDefault }: { source: string; isDefault: boolean
     <div className="flex items-center gap-1.5">
       {badge}
       {isDefault && (
-        <span className="inline-flex items-center gap-0.5 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md">
+        <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-200 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
           <Lock className="w-2.5 h-2.5" />
           Default
         </span>
@@ -341,9 +341,9 @@ export default function MedicationsTab() {
 
       {/* Homeopathic Disclaimer - only show when filtering by homeopathic */}
       {selectedSource === "homeopathic" && (
-        <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800 leading-relaxed">
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-warning-border bg-warning-bg p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-text" />
+          <p className="text-sm leading-relaxed text-warning-text">
             {HOMEOPATHIC_DISCLAIMER}
           </p>
         </div>
@@ -351,8 +351,8 @@ export default function MedicationsTab() {
 
       {/* Delete error toast */}
       {deleteError && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-error-border bg-error-bg p-3 text-sm text-error-text">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {deleteError}
         </div>
       )}
@@ -391,7 +391,7 @@ export default function MedicationsTab() {
         <select
           value={selectedSource}
           onChange={(e) => setSelectedSource(e.target.value)}
-          className="flex-shrink-0 w-full sm:w-36 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+          className="w-full shrink-0 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500 sm:w-36"
         >
           <option value="">All Types</option>
           <option value="allopathic">Allopathic</option>
@@ -399,12 +399,12 @@ export default function MedicationsTab() {
           <option value="custom">Custom</option>
         </select>
         {categories.length > 0 && (
-          <div ref={categoryRef} className="relative flex-shrink-0 w-full sm:w-56">
+          <div ref={categoryRef} className="relative w-full shrink-0 sm:w-56">
             <div
               className="flex items-center gap-2 px-3 py-2.5 border border-slate-300 rounded-xl text-sm cursor-pointer hover:border-slate-400 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white"
               onClick={() => setShowCategoryDropdown(true)}
             >
-              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <Search className="h-4 w-4 shrink-0 text-slate-400" />
               <input
                 type="text"
                 value={showCategoryDropdown ? categorySearch : (selectedCategory || "")}
@@ -553,7 +553,7 @@ export default function MedicationsTab() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleDelete(template._id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="rounded-lg p-2 text-error-text transition-colors hover:bg-error-bg"
                             title="Confirm delete"
                           >
                             <Check className="w-4 h-4" />
@@ -569,7 +569,7 @@ export default function MedicationsTab() {
                       ) : (
                         <button
                           onClick={() => setDeleteConfirm(template._id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-error-bg hover:text-error-text"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -630,8 +630,8 @@ export default function MedicationsTab() {
 
             <div className="p-5 space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg border border-error-border bg-error-bg p-3 text-sm text-error-text">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}

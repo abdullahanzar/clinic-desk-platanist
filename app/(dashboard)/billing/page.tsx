@@ -185,7 +185,7 @@ export default async function BillingDashboardPage() {
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
         {/* Today's Collection */}
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4 sm:p-5">
+        <div className="rounded-2xl border border-emerald-200 bg-linear-to-br from-emerald-50 to-emerald-100 p-4 sm:p-5 dark:border-emerald-800 dark:from-emerald-950 dark:to-emerald-900">
           <div className="flex items-center justify-between mb-2">
             <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Today</span>
@@ -195,20 +195,20 @@ export default async function BillingDashboardPage() {
         </div>
 
         {/* This Month */}
-        <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 rounded-2xl border border-teal-200 dark:border-teal-800 p-4 sm:p-5">
+        <div className="rounded-2xl border border-selected-border bg-linear-to-br from-brand-50 to-brand-100 p-4 sm:p-5 dark:from-selected-bg dark:to-slate-900">
           <div className="flex items-center justify-between mb-2">
-            <Calendar className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+            <Calendar className="w-6 h-6 text-brand-600 dark:text-selected-text" />
             <span className={`text-xs font-medium flex items-center gap-1 ${monthGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
               {monthGrowth >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {monthGrowth}%
             </span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-teal-700 dark:text-teal-300">₹{thisMonthRevenue.toLocaleString()}</p>
-          <p className="text-xs sm:text-sm text-teal-600 dark:text-teal-400 mt-1">This month</p>
+          <p className="text-2xl sm:text-3xl font-bold text-brand-700 dark:text-selected-text">₹{thisMonthRevenue.toLocaleString()}</p>
+          <p className="mt-1 text-xs sm:text-sm text-brand-600 dark:text-selected-muted-text">This month</p>
         </div>
 
         {/* Outstanding */}
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 sm:p-5">
+        <div className="rounded-2xl border border-amber-200 bg-linear-to-br from-amber-50 to-amber-100 p-4 sm:p-5 dark:border-amber-800 dark:from-amber-950 dark:to-amber-900">
           <div className="flex items-center justify-between mb-2">
             <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-medium">
@@ -220,7 +220,7 @@ export default async function BillingDashboardPage() {
         </div>
 
         {/* Net Profit */}
-        <div className={`bg-gradient-to-br rounded-2xl border p-4 sm:p-5 ${
+        <div className={`bg-linear-to-br rounded-2xl border p-4 sm:p-5 ${
           netProfit >= 0 
             ? "from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 border-violet-200 dark:border-violet-800" 
             : "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800"
@@ -245,7 +245,7 @@ export default async function BillingDashboardPage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <Target className="w-5 h-5 text-brand-600 dark:text-selected-text" />
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Target Progress</h3>
             </div>
             <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -257,12 +257,12 @@ export default async function BillingDashboardPage() {
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   budgetProgress >= 100 
-                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600" 
+                    ? "bg-linear-to-r from-emerald-500 to-emerald-600" 
                     : budgetProgress >= 75 
-                    ? "bg-gradient-to-r from-teal-500 to-teal-600"
+                    ? "bg-linear-to-r from-brand-500 to-brand-600"
                     : budgetProgress >= 50
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600"
-                    : "bg-gradient-to-r from-red-500 to-red-600"
+                    ? "bg-linear-to-r from-amber-500 to-amber-600"
+                    : "bg-linear-to-r from-red-500 to-red-600"
                 }`}
                 style={{ width: `${budgetProgress}%` }}
               />
@@ -317,15 +317,15 @@ export default async function BillingDashboardPage() {
               className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-selected-border bg-selected-bg">
+                  <BarChart3 className="w-5 h-5 text-brand-600 dark:text-selected-text" />
                 </div>
                 <div>
                   <p className="font-medium text-slate-900 dark:text-slate-100">View Analytics</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400">Charts & trends</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300" />
             </Link>
 
             <Link
@@ -341,7 +341,7 @@ export default async function BillingDashboardPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400">{unpaidCount} pending receipts</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300" />
             </Link>
 
             <Link
@@ -357,7 +357,7 @@ export default async function BillingDashboardPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400">Monthly & yearly</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300" />
             </Link>
 
             <Link
@@ -373,7 +373,7 @@ export default async function BillingDashboardPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400">₹{monthlyExpenses.toLocaleString()} this month</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+              <ArrowRight className="w-5 h-5 text-slate-400 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-300" />
             </Link>
           </div>
         </div>
@@ -382,7 +382,7 @@ export default async function BillingDashboardPage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Recent Receipts</h3>
-            <Link href="/receipts" className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium">
+            <Link href="/receipts" className="text-sm font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200">
               View all
             </Link>
           </div>
@@ -400,7 +400,7 @@ export default async function BillingDashboardPage() {
                   className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    <div className={`h-2 w-2 shrink-0 rounded-full ${
                       receipt.isPaid ? "bg-emerald-500" : "bg-amber-500"
                     }`} />
                     <div className="min-w-0">
@@ -410,7 +410,7 @@ export default async function BillingDashboardPage() {
                       <p className="text-xs text-slate-500 dark:text-slate-400">{receipt.receiptNumber}</p>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="shrink-0 text-right">
                     <p className="font-semibold text-slate-900 dark:text-slate-100">₹{receipt.totalAmount}</p>
                     <p className={`text-xs ${receipt.isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                       {receipt.isPaid ? "Paid" : "Pending"}

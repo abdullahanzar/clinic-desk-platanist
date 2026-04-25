@@ -104,7 +104,7 @@ export default async function DashboardPage() {
           {session.role === "frontdesk" && (
             <Link
               href="/visits/new"
-              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all shadow-lg shadow-brand-500/20 font-medium"
+              className="flex items-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-5 py-3 font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800"
             >
               <UserPlus className="w-5 h-5" />
               <span>New Patient Visit</span>
@@ -151,10 +151,10 @@ function StatCard({
   variant: "brand" | "warning" | "success" | "purple";
 }) {
   const variantClasses = {
-    brand: "bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
-    warning: "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-    success: "bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-    purple: "bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800",
+    brand: "bg-linear-to-br from-brand-50 to-brand-100 dark:from-selected-bg dark:to-slate-900 text-brand-700 dark:text-selected-text border-brand-200 dark:border-selected-border",
+    warning: "bg-linear-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    success: "bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    purple: "bg-linear-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800",
   };
 
   return (

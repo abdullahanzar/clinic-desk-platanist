@@ -117,7 +117,7 @@ export default function ReceiptForm({
   return (
     <div className="space-y-4 sm:space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 dark:border-red-900 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
           {error}
         </div>
       )}
@@ -185,7 +185,7 @@ export default function ReceiptForm({
                 placeholder="Description"
                 className="flex-1 px-3 sm:px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               />
-              <div className="relative flex-shrink-0">
+              <div className="relative shrink-0">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
                   ₹
                 </span>
@@ -203,7 +203,7 @@ export default function ReceiptForm({
                 <button
                   type="button"
                   onClick={() => removeLineItem(index)}
-                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-error-text transition-colors hover:bg-error-bg"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -261,7 +261,7 @@ export default function ReceiptForm({
             <select
               value={paymentMode}
               onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-              className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 appearance-none bg-white"
+              className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="">Select</option>
               <option value="cash">Cash</option>
@@ -285,7 +285,7 @@ export default function ReceiptForm({
       </div>
 
       {/* Summary */}
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 to-slate-100 p-5 sm:p-6">
         <div className="space-y-2">
           <div className="flex justify-between text-slate-600 dark:text-slate-400">
             <span>Subtotal</span>
@@ -315,7 +315,7 @@ export default function ReceiptForm({
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all disabled:opacity-50 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 sm:flex-none"
         >
           {loading ? (
             <>

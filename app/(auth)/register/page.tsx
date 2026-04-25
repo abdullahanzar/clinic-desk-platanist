@@ -94,7 +94,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-sky-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-brand-50 via-white to-sky-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="mx-auto grid min-h-screen max-w-7xl gap-10 px-4 py-8 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:py-12">
         <section className="hidden rounded-[2rem] border border-white/70 bg-white/70 p-8 shadow-xl shadow-slate-900/5 backdrop-blur lg:flex lg:flex-col dark:border-slate-800/80 dark:bg-slate-950/70">
           <div className="flex items-center gap-4">
@@ -183,7 +183,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-8 px-6 py-6 sm:px-8 sm:py-8">
             {error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
+              <div className="rounded-2xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
                 {error}
               </div>
             ) : null}

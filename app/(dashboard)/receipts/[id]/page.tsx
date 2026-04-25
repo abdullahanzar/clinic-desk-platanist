@@ -77,7 +77,7 @@ export default async function ReceiptDetailPage({
       {/* Receipt Content */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-6 printable-receipt">
         {/* Clinic Header */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-5 sm:p-6 text-center print:bg-teal-700 print:from-teal-700 print:to-teal-700">
+        <div className="bg-linear-to-r from-brand-600 to-brand-700 p-5 text-center text-white sm:p-6 print:bg-teal-700 print:from-teal-700 print:to-teal-700">
           <h2 className="text-lg sm:text-xl font-bold">{clinic?.name}</h2>
           {clinic?.headerText && (
             <p className="text-brand-100 text-xs mt-0.5">{clinic.headerText}</p>

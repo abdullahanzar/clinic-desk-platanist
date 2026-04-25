@@ -39,18 +39,18 @@ const SourceBadge = ({ isDefault }: { isDefault: boolean }) => {
   if (isDefault) {
     return (
       <div className="flex items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
+        <span className="inline-flex items-center gap-1 rounded-md border border-info-border bg-info-bg px-2 py-0.5 text-xs text-info-text">
           <FileText className="w-3 h-3" />
           Default
         </span>
-        <span className="inline-flex items-center gap-0.5 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md">
+        <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-200 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
           <Lock className="w-2.5 h-2.5" />
         </span>
       </div>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md">
+    <span className="inline-flex items-center gap-1 rounded-md border border-selected-border bg-selected-bg px-2 py-0.5 text-xs text-selected-text">
       <User className="w-3 h-3" />
       Custom
     </span>
@@ -302,8 +302,8 @@ export default function DiagnosesTab() {
 
       {/* Delete error toast */}
       {deleteError && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-error-border bg-error-bg p-3 text-sm text-error-text">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {deleteError}
         </div>
       )}
@@ -340,12 +340,12 @@ export default function DiagnosesTab() {
           />
         </div>
         {categories.length > 0 && (
-          <div ref={categoryRef} className="relative flex-shrink-0 w-full sm:w-56">
+          <div ref={categoryRef} className="relative w-full shrink-0 sm:w-56">
             <div
               className="flex items-center gap-2 px-3 py-2.5 border border-slate-300 rounded-xl text-sm cursor-pointer hover:border-slate-400 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 bg-white"
               onClick={() => setShowCategoryDropdown(true)}
             >
-              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <Search className="h-4 w-4 shrink-0 text-slate-400" />
               <input
                 type="text"
                 value={showCategoryDropdown ? categorySearch : (selectedCategory || "")}
@@ -472,7 +472,7 @@ export default function DiagnosesTab() {
                     {template.usageCount !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex shrink-0 items-center gap-1">
                   {!template.isDefault && (
                     <>
                       <button
@@ -486,7 +486,7 @@ export default function DiagnosesTab() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleDelete(template._id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="rounded-lg p-1.5 text-error-text transition-colors hover:bg-error-bg"
                             title="Confirm delete"
                           >
                             <Check className="w-3.5 h-3.5" />
@@ -502,7 +502,7 @@ export default function DiagnosesTab() {
                       ) : (
                         <button
                           onClick={() => setDeleteConfirm(template._id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-error-bg hover:text-error-text"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -563,8 +563,8 @@ export default function DiagnosesTab() {
 
             <div className="p-5 space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg border border-error-border bg-error-bg p-3 text-sm text-error-text">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}

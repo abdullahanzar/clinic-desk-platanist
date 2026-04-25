@@ -146,7 +146,7 @@ export default function VerifySignupPage() {
 
             <form onSubmit={handleVerify} className="mt-8 space-y-5">
               {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
+                <div className="rounded-2xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
                   {error}
                 </div>
               ) : null}

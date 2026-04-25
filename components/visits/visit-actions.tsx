@@ -82,7 +82,7 @@ export function VisitActions({
           <button
             onClick={() => updateStatus("in-consultation")}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all shadow-lg shadow-brand-500/20 font-medium disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-5 py-3 font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800 disabled:opacity-50"
           >
             <Stethoscope className="w-5 h-5" />
             Start Consultation
@@ -92,7 +92,7 @@ export function VisitActions({
         {role === "doctor" && status === "in-consultation" && !hasPrescription && (
           <Link
             href={`/visits/${visitId}/prescription`}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-lg shadow-emerald-500/20 font-medium"
+            className="flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-5 py-3 font-medium text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-700 hover:to-emerald-800"
           >
             <FileText className="w-5 h-5" />
             Write Prescription
@@ -102,7 +102,7 @@ export function VisitActions({
         {role === "doctor" && status === "in-consultation" && hasPrescription && (
           <Link
             href={`/visits/${visitId}/prescription`}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all shadow-lg shadow-brand-500/20 font-medium"
+            className="flex items-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-5 py-3 font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800"
           >
             <PenLine className="w-5 h-5" />
             Edit Prescription
@@ -113,7 +113,7 @@ export function VisitActions({
         {canGenerateReceipt && (
           <Link
             href={`/visits/${visitId}/receipt`}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-700 hover:to-violet-800 transition-all shadow-lg shadow-violet-500/20 font-medium"
+            className="flex items-center gap-2 rounded-xl bg-linear-to-r from-violet-600 to-violet-700 px-5 py-3 font-medium text-white shadow-lg shadow-violet-500/20 transition-all hover:from-violet-700 hover:to-violet-800"
           >
             <Receipt className="w-5 h-5" />
             Generate Receipt
@@ -125,7 +125,7 @@ export function VisitActions({
           <button
             onClick={() => updateStatus("cancelled")}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-3 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl hover:bg-red-100 transition-all font-medium disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-error-border bg-error-bg px-5 py-3 font-medium text-error-text transition-all hover:bg-red-100 dark:hover:bg-red-950 disabled:opacity-50"
           >
             <XCircle className="w-5 h-5" />
             Cancel Visit
@@ -136,7 +136,7 @@ export function VisitActions({
         {role === "doctor" && (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl hover:bg-red-100 dark:hover:bg-red-900 transition-all font-medium"
+            className="flex items-center gap-2 rounded-xl border border-error-border bg-error-bg px-5 py-3 font-medium text-error-text transition-all hover:bg-red-100 dark:hover:bg-red-950"
           >
             <Trash2 className="w-5 h-5" />
             Delete Visit

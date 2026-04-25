@@ -96,7 +96,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
 
         {/* Role Badge */}
         <div className="px-5 py-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-selected-bg text-selected-text border border-selected-border">
             {role === "doctor" ? <Stethoscope className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
             <span className="capitalize">{role}</span>
           </span>
@@ -115,9 +115,9 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
                     onClick={() => handleNavigation(item.href)}
                     className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                       isActive
-                        ? "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-medium shadow-sm"
+                        ? "border border-selected-border bg-selected-bg text-selected-text font-medium shadow-sm"
                         : isNavigating
-                          ? "bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                          ? "border border-selected-border bg-selected-bg text-selected-text"
                           : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
                     }`}
                     aria-current={isActive ? "page" : undefined}
@@ -192,9 +192,9 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
                   onClick={() => handleNavigation(item.href)}
                   className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                     isActive
-                      ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                      ? "border border-selected-border bg-selected-bg text-selected-text"
                       : isNavigating
-                        ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                        ? "border border-selected-border bg-selected-bg text-selected-text"
                         : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                   }`}
                   aria-current={isActive ? "page" : undefined}
@@ -214,7 +214,7 @@ export function Sidebar({ role, clinicName, doctorName }: SidebarProps) {
                 onClick={() => handleNavigation(navItems[5].href)}
                 className={`flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                   navItems.slice(5).some(item => pathname === item.href || pathname.startsWith(item.href + "/"))
-                    ? "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950"
+                    ? "border border-selected-border bg-selected-bg text-selected-text"
                     : "text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
                 }`}
               >

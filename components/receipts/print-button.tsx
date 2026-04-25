@@ -112,7 +112,7 @@ export function PrintButton({ receiptId, className }: PrintButtonProps) {
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
         title="Download PDF"
       >
         {loading ? (

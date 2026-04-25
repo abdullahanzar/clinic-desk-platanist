@@ -178,7 +178,7 @@ export default function BillingReportsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 dark:text-brand-300" />
       </div>
     );
   }
@@ -209,7 +209,7 @@ export default function BillingReportsPage() {
           </div>
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors font-medium"
+            className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 font-medium text-white transition-colors hover:bg-brand-700"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -226,7 +226,7 @@ export default function BillingReportsPage() {
               onClick={() => setReportType("monthly")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 reportType === "monthly"
-                  ? "bg-white dark:bg-slate-600 shadow text-teal-600 dark:text-teal-400"
+                  ? "border border-selected-border bg-selected-bg text-selected-text shadow"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -236,7 +236,7 @@ export default function BillingReportsPage() {
               onClick={() => setReportType("yearly")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 reportType === "yearly"
-                  ? "bg-white dark:bg-slate-600 shadow text-teal-600 dark:text-teal-400"
+                  ? "border border-selected-border bg-selected-bg text-selected-text shadow"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -254,7 +254,7 @@ export default function BillingReportsPage() {
                 <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
               <div className="flex items-center gap-2 px-3">
-                <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <Calendar className="w-4 h-4 text-brand-600 dark:text-brand-300" />
                 <span className="font-medium text-slate-900 dark:text-slate-100 min-w-[120px] text-center">
                   {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
                 </span>
@@ -275,7 +275,7 @@ export default function BillingReportsPage() {
                 <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
               <div className="flex items-center gap-2 px-3">
-                <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <Calendar className="w-4 h-4 text-brand-600 dark:text-brand-300" />
                 <span className="font-medium text-slate-900 dark:text-slate-100">Year {selectedYear}</span>
               </div>
               <button
@@ -290,14 +290,14 @@ export default function BillingReportsPage() {
       </div>
 
       {/* Report Title */}
-      <div className="bg-gradient-to-r from-teal-600 to-teal-700 dark:from-teal-700 dark:to-teal-800 rounded-2xl p-6 mb-6 text-white">
+      <div className="mb-6 rounded-2xl bg-linear-to-r from-brand-600 to-brand-700 p-6 text-white dark:from-brand-700 dark:to-brand-800">
         <div className="flex items-center gap-3 mb-2">
           <FileText className="w-6 h-6" />
           <h2 className="text-lg font-semibold">
             {reportType === "monthly" ? "Monthly" : "Yearly"} Financial Report
           </h2>
         </div>
-        <p className="text-teal-100">{report.period.displayText}</p>
+        <p className="text-brand-100">{report.period.displayText}</p>
       </div>
 
       {/* Revenue Summary */}
@@ -360,7 +360,7 @@ export default function BillingReportsPage() {
         {/* Budget Progress */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6 shadow-sm">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <TrendingUp className="w-5 h-5 text-brand-600 dark:text-brand-300" />
             Budget vs Actual
           </h3>
           {report.budget ? (
@@ -378,7 +378,7 @@ export default function BillingReportsPage() {
                       report.budget.revenueAchieved >= 100
                         ? "bg-emerald-500"
                         : report.budget.revenueAchieved >= 75
-                        ? "bg-teal-500"
+                        ? "bg-brand-500"
                         : "bg-amber-500"
                     }`}
                     style={{ width: `${Math.min(100, report.budget.revenueAchieved)}%` }}
@@ -403,7 +403,7 @@ export default function BillingReportsPage() {
               <p className="text-slate-500 dark:text-slate-400 mb-4">No budget target set for this period</p>
               <Link
                 href="/billing/budget"
-                className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium text-sm"
+                className="text-sm font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
               >
                 Set Budget Target →
               </Link>
@@ -450,7 +450,7 @@ export default function BillingReportsPage() {
               {report.topServices.slice(0, 5).map((service, index) => (
                 <div key={service.service} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-xl">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center text-xs font-bold">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-selected-border bg-selected-bg text-xs font-bold text-selected-text">
                       {index + 1}
                     </span>
                     <span className="font-medium text-slate-700 dark:text-slate-200">{service.service}</span>
@@ -477,12 +477,12 @@ export default function BillingReportsPage() {
         {report.expenses.byCategory.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {report.expenses.byCategory.map((expense) => (
-              <div key={expense.category} className="p-4 bg-red-50 dark:bg-red-900/30 rounded-xl">
-                <p className="text-xs text-red-600 dark:text-red-400 uppercase tracking-wide">
+              <div key={expense.category} className="rounded-xl border border-error-border bg-error-bg p-4">
+                <p className="text-xs uppercase tracking-wide text-error-text">
                   {CATEGORY_LABELS[expense.category] || expense.category}
                 </p>
-                <p className="text-lg font-bold text-red-700 dark:text-red-300">₹{expense.total.toLocaleString()}</p>
-                <p className="text-xs text-red-600 dark:text-red-400">{expense.count} transactions</p>
+                <p className="text-lg font-bold text-error-text">₹{expense.total.toLocaleString()}</p>
+                <p className="text-xs text-error-text/80">{expense.count} transactions</p>
               </div>
             ))}
           </div>

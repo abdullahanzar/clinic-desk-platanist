@@ -155,8 +155,8 @@ export default function SuperAdminDashboard() {
           </div>
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-green-400" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-success-border bg-success-bg">
+                <Users className="w-6 h-6 text-success-text" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{users.length}</p>
@@ -234,7 +234,7 @@ export default function SuperAdminDashboard() {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="mb-6 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
             {error}
           </div>
         )}
@@ -295,7 +295,7 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-4 py-4 text-slate-300">{clinic.phone}</td>
                       <td className="px-4 py-4">
-                        <span className="text-green-400">{clinic.activeUserCount}</span>
+                        <span className="text-success-text">{clinic.activeUserCount}</span>
                         <span className="text-slate-500"> / {clinic.userCount}</span>
                       </td>
                       <td className="px-4 py-4 text-slate-400 text-sm">
@@ -371,12 +371,12 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-4 py-4">
                         {user.isActive ? (
-                          <span className="flex items-center gap-1 text-green-400 text-sm">
+                          <span className="flex items-center gap-1 text-sm text-success-text">
                             <CheckCircle className="w-4 h-4" />
                             Active
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 text-red-400 text-sm">
+                          <span className="flex items-center gap-1 text-sm text-error-text">
                             <Ban className="w-4 h-4" />
                             Revoked
                           </span>
@@ -395,8 +395,8 @@ export default function SuperAdminDashboard() {
                             }
                             className={`p-2 rounded-lg transition-colors ${
                               user.isActive
-                                ? "text-red-400 hover:bg-red-500/10"
-                                : "text-green-400 hover:bg-green-500/10"
+                                ? "text-error-text hover:bg-error-bg"
+                                : "text-success-text hover:bg-success-bg"
                             }`}
                             title={user.isActive ? "Revoke Access" : "Restore Access"}
                           >
@@ -572,7 +572,7 @@ function CreateClinicModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+            <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
               {error}
             </div>
           )}
@@ -1011,7 +1011,7 @@ function CreateUserModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+            <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
               {error}
             </div>
           )}

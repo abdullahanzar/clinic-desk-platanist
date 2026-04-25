@@ -210,7 +210,7 @@ export default function ExpensesPage() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 dark:text-brand-300" />
       </div>
     );
   }
@@ -267,7 +267,7 @@ export default function ExpensesPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 rounded-2xl border border-red-200 dark:border-red-800 p-4 sm:p-5">
+        <div className="rounded-2xl border border-red-200 bg-linear-to-br from-red-50 to-red-100 p-4 sm:p-5 dark:border-red-800 dark:from-red-950 dark:to-red-900">
           <div className="flex items-center gap-2 mb-2">
             <Wallet className="w-5 h-5 text-red-600 dark:text-red-400" />
             <span className="text-xs text-red-600 dark:text-red-400">Total Expenses</span>
@@ -327,7 +327,7 @@ export default function ExpensesPage() {
           <p className="text-slate-500 dark:text-slate-400 mb-4">Start tracking your clinic expenses</p>
           <button
             onClick={openAddModal}
-            className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
+            className="font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
           >
             Add your first expense →
           </button>
@@ -387,13 +387,13 @@ export default function ExpensesPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => openEditModal(expense)}
-                          className="p-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
+                          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-selected-bg hover:text-brand-600 dark:hover:text-brand-300"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(expense._id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-error-bg hover:text-error-text"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

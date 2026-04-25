@@ -109,16 +109,16 @@ export default function OutstandingPaymentsPage() {
   };
 
   const getOverdueColor = (days: number) => {
-    if (days === 0) return "text-slate-600 bg-slate-100";
-    if (days <= 7) return "text-amber-700 bg-amber-100";
-    if (days <= 30) return "text-orange-700 bg-orange-100";
-    return "text-red-700 bg-red-100";
+    if (days === 0) return "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
+    if (days <= 7) return "bg-warning-bg text-warning-text";
+    if (days <= 30) return "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300";
+    return "bg-error-bg text-error-text";
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 dark:text-brand-300" />
       </div>
     );
   }
@@ -148,7 +148,7 @@ export default function OutstandingPaymentsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 sm:p-5">
+        <div className="bg-linear-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <span className="text-xs text-amber-600 dark:text-amber-400">Total Pending</span>
@@ -193,7 +193,7 @@ export default function OutstandingPaymentsPage() {
                 Deselect
               </button>
               {selectedIds.length > 0 && (
-                <span className="text-sm text-teal-600 dark:text-teal-400 font-medium">
+                <span className="text-sm font-medium text-brand-600 dark:text-brand-300">
                   {selectedIds.length} selected
                 </span>
               )}
@@ -205,7 +205,7 @@ export default function OutstandingPaymentsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                 >
                   <option value="date">Sort by Date</option>
                   <option value="amount">Sort by Amount</option>
@@ -218,7 +218,7 @@ export default function OutstandingPaymentsPage() {
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-                    className="text-sm border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="cash">Cash</option>
                     <option value="upi">UPI</option>
@@ -262,7 +262,7 @@ export default function OutstandingPaymentsPage() {
                 key={receipt._id}
                 className={`bg-white dark:bg-slate-800 rounded-xl border p-4 transition-all ${
                   selectedIds.includes(receipt._id)
-                    ? "border-teal-500 ring-2 ring-teal-100 dark:ring-teal-900/30"
+                    ? "border-selected-border bg-selected-bg ring-2 ring-selected-border/35"
                     : "border-slate-200 dark:border-slate-700"
                 }`}
               >
@@ -271,7 +271,7 @@ export default function OutstandingPaymentsPage() {
                     type="checkbox"
                     checked={selectedIds.includes(receipt._id)}
                     onChange={() => toggleSelect(receipt._id)}
-                    className="mt-1 w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
+                    className="mt-1 h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
@@ -292,7 +292,7 @@ export default function OutstandingPaymentsPage() {
                   </div>
                   <Link
                     href={`/receipts/${receipt._id}`}
-                    className="p-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400"
+                    className="p-2 text-slate-400 transition-colors hover:text-brand-600 dark:hover:text-brand-300"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </Link>
@@ -313,7 +313,7 @@ export default function OutstandingPaymentsPage() {
                       onChange={() =>
                         selectedIds.length === data.receipts.length ? deselectAll() : selectAll()
                       }
-                      className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
+                      className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
                     />
                   </th>
                   <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -341,7 +341,7 @@ export default function OutstandingPaymentsPage() {
                   <tr
                     key={receipt._id}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                      selectedIds.includes(receipt._id) ? "bg-teal-50 dark:bg-teal-900/20" : ""
+                      selectedIds.includes(receipt._id) ? "bg-selected-bg" : ""
                     }`}
                   >
                     <td className="px-4 py-4">
@@ -349,7 +349,7 @@ export default function OutstandingPaymentsPage() {
                         type="checkbox"
                         checked={selectedIds.includes(receipt._id)}
                         onChange={() => toggleSelect(receipt._id)}
-                        className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-teal-600 focus:ring-teal-500"
+                        className="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
                       />
                     </td>
                     <td className="px-4 py-4 font-mono text-sm text-slate-900 dark:text-slate-100">
@@ -374,7 +374,7 @@ export default function OutstandingPaymentsPage() {
                     <td className="px-4 py-4">
                       <Link
                         href={`/receipts/${receipt._id}`}
-                        className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium text-sm flex items-center gap-1"
+                        className="flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
                       >
                         View <ChevronRight className="w-4 h-4" />
                       </Link>

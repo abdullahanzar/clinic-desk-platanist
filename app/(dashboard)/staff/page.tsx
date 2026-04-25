@@ -265,8 +265,8 @@ export default function StaffPage() {
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                           member.role === "doctor"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
+                            ? "border border-selected-border bg-selected-bg text-selected-text"
+                            : "border border-info-border bg-info-bg text-info-text"
                         }`}
                       >
                         {member.role === "doctor" ? (
@@ -281,8 +281,8 @@ export default function StaffPage() {
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                           member.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                            ? "border border-success-border bg-success-bg text-success-text"
+                            : "border border-error-border bg-error-bg text-error-text"
                         }`}
                       >
                         {member.isActive ? (
@@ -336,8 +336,8 @@ export default function StaffPage() {
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                           member.role === "doctor"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
+                            ? "border border-selected-border bg-selected-bg text-selected-text"
+                            : "border border-info-border bg-info-bg text-info-text"
                         }`}
                       >
                         {member.role === "doctor" ? (
@@ -350,8 +350,8 @@ export default function StaffPage() {
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                           member.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                            ? "border border-success-border bg-success-bg text-success-text"
+                            : "border border-error-border bg-error-bg text-error-text"
                         }`}
                       >
                         {member.isActive ? "Active" : "Inactive"}
@@ -452,7 +452,7 @@ export default function StaffPage() {
                     <button
                       onClick={() => handleDelete(member)}
                       disabled={deletingId === member.id}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error-text hover:bg-error-bg"
                     >
                       <Trash2 className="w-4 h-4" />
                       {deletingId === member.id ? "Deleting..." : "Delete"}

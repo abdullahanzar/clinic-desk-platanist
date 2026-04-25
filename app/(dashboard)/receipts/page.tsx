@@ -62,8 +62,8 @@ export default async function ReceiptsPage() {
                           {receipt.receiptNumber}
                         </span>
                         {isShared && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 rounded-full">
-                            <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-selected-border bg-selected-bg px-2 py-0.5 text-xs text-selected-text">
+                            <span className="h-1.5 w-1.5 rounded-full bg-selected-text animate-pulse" />
                             Shared
                           </span>
                         )}
@@ -72,7 +72,7 @@ export default async function ReceiptsPage() {
                         {receipt.patientSnapshot.name}
                       </p>
                     </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="shrink-0 text-right">
                       <p className="font-bold text-lg text-slate-900 dark:text-slate-100">
                         ₹{receipt.totalAmount}
                       </p>
@@ -134,8 +134,8 @@ export default async function ReceiptsPage() {
                               {receipt.receiptNumber}
                             </span>
                             {isShared && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 rounded-full">
-                                <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
+                              <span className="inline-flex items-center gap-1 rounded-full border border-selected-border bg-selected-bg px-2 py-0.5 text-xs text-selected-text">
+                                <span className="h-1.5 w-1.5 rounded-full bg-selected-text animate-pulse" />
                                 Shared
                               </span>
                             )}

@@ -217,7 +217,7 @@ export default function AdviceAutosuggest({
                   <button
                     type="button"
                     onClick={() => appendAdvice(suggestion)}
-                    className="p-1.5 rounded-md bg-brand-50 text-brand-600 hover:bg-brand-100 flex-shrink-0"
+                    className="shrink-0 rounded-md bg-brand-50 p-1.5 text-brand-600 hover:bg-brand-100"
                     title="Append to advice"
                   >
                     <Plus className="w-4 h-4" />

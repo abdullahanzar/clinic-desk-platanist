@@ -44,8 +44,16 @@ function subscribeToSystemTheme(onStoreChange: () => void) {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getStoredTheme);
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const systemTheme = useSyncExternalStore(subscribeToSystemTheme, getSystemThemeSnapshot, () => "light");
-  const resolvedTheme = theme === "system" ? systemTheme : theme;
+  const systemTheme = useSyncExternalStore<"light" | "dark">(
+    subscribeToSystemTheme,
+    getSystemThemeSnapshot,
+    () => "light",
+  );
+  const resolvedTheme: "light" | "dark" = theme === "system"
+    ? systemTheme
+    : theme === "dark"
+      ? "dark"
+      : "light";
 
   // Set theme and persist
   const setTheme = (newTheme: Theme) => {

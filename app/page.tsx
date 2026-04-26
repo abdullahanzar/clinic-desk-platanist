@@ -55,7 +55,7 @@ const desktopDownloads = [
     platform: "macOS",
     format: "DMG package",
     description: "Desktop package for macOS workstations and laptops.",
-    filename: `Clinic-Desk-${APP_VERSION}.dmg`,
+    filename: `Clinic-Desk-${APP_VERSION}-arm64.dmg`,
   },
   {
     platform: "Linux",

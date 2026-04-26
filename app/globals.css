@@ -225,6 +225,65 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* App-wide dark mode fallbacks for screens that still use light-only utilities */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.dark textarea,
+.dark select {
+  background: var(--surface-elevated);
+  border-color: var(--border);
+  color: var(--foreground);
+  caret-color: var(--foreground);
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"])::placeholder,
+.dark textarea::placeholder,
+.dark select:invalid {
+  color: #8ca0b3;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):disabled,
+.dark textarea:disabled,
+.dark select:disabled {
+  background: var(--surface);
+  color: #9bb0c2;
+}
+
+.dark :where(.bg-white, [class*="bg-white/"]):not([class*="dark:bg-"]) {
+  background-color: var(--surface-elevated) !important;
+}
+
+.dark :where(.bg-slate-50, [class*="bg-slate-50/"], .bg-slate-100, [class*="bg-slate-100/"]):not([class*="dark:bg-"]) {
+  background-color: var(--surface) !important;
+}
+
+.dark :where(.bg-blue-50, [class*="bg-blue-50/"], .bg-blue-100, [class*="bg-blue-100/"]):not([class*="dark:bg-"]) {
+  background-color: color-mix(in srgb, var(--info-bg) 72%, var(--surface-elevated)) !important;
+}
+
+.dark :where(.border-white, [class*="border-white/"], .border-slate-100, .border-slate-200, .border-slate-300, [class*="border-slate-200/"], [class*="border-slate-300/"]):not([class*="dark:border-"]) {
+  border-color: var(--border) !important;
+}
+
+.dark :where(.border-blue-100, .border-blue-200, [class*="border-blue-100/"], [class*="border-blue-200/"]):not([class*="dark:border-"]) {
+  border-color: color-mix(in srgb, var(--info-border) 70%, var(--border)) !important;
+}
+
+.dark :where(.text-slate-900, .text-slate-800, .text-slate-700):not([class*="dark:text-"]) {
+  color: var(--foreground) !important;
+}
+
+.dark :where(.text-slate-600, .text-slate-500, .text-slate-400):not([class*="dark:text-"]) {
+  color: #9bb0c2 !important;
+}
+
+.dark :where(.text-blue-900, .text-blue-800, .text-blue-700):not([class*="dark:text-"]) {
+  color: #bfdbfe !important;
+}
+
+.dark :where(.text-blue-600, .text-blue-500):not([class*="dark:text-"]) {
+  color: #93c5fd !important;
+}
+
 /* Focus styles */
 *:focus-visible {
   outline: 2px solid var(--brand-500);

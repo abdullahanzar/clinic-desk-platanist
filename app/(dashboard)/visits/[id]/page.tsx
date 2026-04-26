@@ -55,7 +55,7 @@ export default async function VisitDetailPage({
       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-100 to-brand-200 text-brand-700 text-xl sm:text-2xl font-bold rounded-2xl flex items-center justify-center">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-100 to-brand-200 text-xl font-bold text-brand-700 sm:h-16 sm:w-16 sm:text-2xl">
               {visit.tokenNumber}
             </div>
             <div>

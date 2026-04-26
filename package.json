@@ -1,6 +1,7 @@
 {
   "name": "clinic-desk-by-platanist",
   "version": "0.1.0",
+  "description": "Modern clinic management system by Platanist.",
   "private": true,
   "author": {
     "name": "Platanist",
@@ -20,6 +21,7 @@
     "electron:dev": "pnpm run db:generate && pnpm run db:sync-native && node electron/run-dev.cjs",
     "electron:pack": "pnpm run build:electron && electron-builder --dir",
     "electron:dist": "pnpm run build:electron && electron-builder",
+    "electron:dist:mac": "pnpm run build:electron && electron-builder --mac --publish never",
     "electron:dist:win": "pnpm run build:electron && electron-builder --win nsis"
   },
   "dependencies": {
@@ -60,7 +62,7 @@
   "build": {
     "appId": "com.platanist.clinicdesk",
     "productName": "Clinic Desk",
-    "icon": "build/icon.png",
+    "icon": "electron/build/icon.png",
     "afterPack": "electron/after-pack.cjs",
     "asar": true,
     "asarUnpack": [
@@ -69,7 +71,8 @@
       "public/**/*"
     ],
     "directories": {
-      "output": "electron-dist"
+      "output": "electron-dist",
+      "buildResources": "electron/build"
     },
     "files": [
       "electron/**/*",
@@ -87,10 +90,11 @@
         "dmg",
         "zip"
       ],
+      "icon": "electron/build/icon.icns",
       "category": "public.app-category.medical"
     },
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "electron/build/icon.ico",
       "target": [
         "nsis",
         "portable"

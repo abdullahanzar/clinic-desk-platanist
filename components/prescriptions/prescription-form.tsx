@@ -115,7 +115,7 @@ export default function PrescriptionForm({
   if (isFinalized) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-center gap-3">
-        <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+        <AlertTriangle className="h-5 w-5 shrink-0" />
         <p>This prescription has been finalized and cannot be edited.</p>
       </div>
     );
@@ -124,7 +124,7 @@ export default function PrescriptionForm({
   return (
     <div className="space-y-4 sm:space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 dark:border-red-900 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
           {error}
         </div>
       )}
@@ -147,7 +147,7 @@ export default function PrescriptionForm({
                 setFormData({ ...formData, chiefComplaints: e.target.value })
               }
               rows={2}
-              className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400 resize-none"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition-all placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               placeholder="Patient's main complaints..."
             />
           </div>
@@ -240,7 +240,7 @@ export default function PrescriptionForm({
               onChange={(e) =>
                 setFormData({ ...formData, followUpDate: e.target.value })
               }
-              className="w-full sm:w-auto px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-900 dark:text-slate-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function PrescriptionForm({
         <button
           onClick={() => handleSave(true)}
           disabled={loading}
-          className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all disabled:opacity-50 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 sm:flex-none"
         >
           {loading ? (
             <>

@@ -192,7 +192,7 @@ export default function UserDetailPage({
           <p className="text-slate-400 mb-4">User not found</p>
           <button
             onClick={() => router.push("/admin/dashboard")}
-            className="text-red-400 hover:text-red-300"
+            className="text-error-text transition-colors hover:text-red-200"
           >
             Go back
           </button>
@@ -219,7 +219,7 @@ export default function UserDetailPage({
             </div>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-error-text transition-colors hover:bg-error-bg"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -231,13 +231,13 @@ export default function UserDetailPage({
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="mb-6 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="mb-6 rounded-xl border border-success-border bg-success-bg px-4 py-3 text-sm text-success-text">
             {successMessage}
           </div>
         )}
@@ -249,21 +249,21 @@ export default function UserDetailPage({
             <div
               className={`p-4 rounded-xl border ${
                 user.isActive
-                  ? "bg-green-500/10 border-green-500/30"
-                  : "bg-red-500/10 border-red-500/30"
+                  ? "bg-success-bg border-success-border"
+                    : "bg-error-bg border-error-border"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {user.isActive ? (
-                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    <CheckCircle className="w-6 h-6 text-success-text" />
                   ) : (
-                    <Ban className="w-6 h-6 text-red-400" />
+                    <Ban className="w-6 h-6 text-error-text" />
                   )}
                   <div>
                     <p
                       className={`font-medium ${
-                        user.isActive ? "text-green-400" : "text-red-400"
+                        user.isActive ? "text-success-text" : "text-error-text"
                       }`}
                     >
                       {user.isActive ? "Active Account" : "Revoked Account"}
@@ -477,8 +477,8 @@ export default function UserDetailPage({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-error-border bg-error-bg">
+                <AlertTriangle className="w-6 h-6 text-error-text" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white">Delete User</h2>

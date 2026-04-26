@@ -221,7 +221,7 @@ export default function BudgetTargetsPage() {
       </div>
 
       {/* Overall Progress */}
-      <div className="bg-gradient-to-r from-brand-600 to-brand-700 rounded-2xl p-6 mb-6 text-white">
+      <div className="mb-6 rounded-2xl bg-linear-to-r from-brand-600 to-brand-700 p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h3 className="text-lg font-semibold">Yearly Progress</h3>

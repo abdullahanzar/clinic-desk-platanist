@@ -52,7 +52,7 @@ export default function SuperAdminLoginPage() {
           {/* Header */}
           <div className="bg-linear-to-r from-red-600 to-red-700 px-8 py-8 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-800 rounded-2xl shadow-lg mb-4">
-              <Shield className="w-10 h-10 text-red-400" />
+              <Shield className="w-10 h-10 text-error-text" />
             </div>
             <h1 className="text-2xl font-bold text-white">Super Admin</h1>
             <p className="text-red-200 text-sm mt-1">Restricted Access</p>
@@ -60,7 +60,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Warning Banner */}
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
             <p className="text-amber-400 text-xs">
               This area is restricted to system administrators only.
               All actions are logged.
@@ -80,7 +80,7 @@ export default function SuperAdminLoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+                <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
                   {error}
                 </div>
               )}
@@ -126,7 +126,7 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="w-full rounded-xl bg-linear-to-r from-red-600 to-red-700 px-4 py-3.5 font-semibold text-white shadow-lg transition-all hover:from-red-700 hover:to-red-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">

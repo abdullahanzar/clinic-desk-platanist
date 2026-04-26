@@ -58,12 +58,12 @@ export default function NewVisitPage() {
           Back to Queue
         </Link>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900">New Patient Visit</h1>
-        <p className="text-sm text-slate-500 mt-1">Register a new patient for today's queue</p>
+        <p className="text-sm text-slate-500 mt-1">Register a new patient for today&apos;s queue</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+          <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
             {error}
           </div>
         )}
@@ -182,7 +182,7 @@ export default function NewVisitPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all disabled:opacity-50 shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-6 py-3 font-semibold text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 sm:flex-none"
           >
             {loading ? (
               <>

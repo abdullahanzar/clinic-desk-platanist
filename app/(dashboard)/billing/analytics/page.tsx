@@ -89,7 +89,7 @@ export default function BillingAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 dark:text-brand-300" />
       </div>
     );
   }
@@ -132,7 +132,7 @@ export default function BillingAnalyticsPage() {
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <Calendar className="w-5 h-5 text-brand-600 dark:text-brand-300" />
             <span className="font-semibold text-slate-900 dark:text-slate-100">
               {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
             </span>
@@ -166,7 +166,7 @@ export default function BillingAnalyticsPage() {
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            <BarChart3 className="w-5 h-5 text-brand-600 dark:text-brand-300" />
             <span className="text-sm text-slate-500 dark:text-slate-400">This Month&apos;s Revenue</span>
           </div>
           <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -208,13 +208,13 @@ export default function BillingAnalyticsPage() {
                   <div
                     className={`w-full rounded-t-lg transition-all ${
                       isCurrentMonth 
-                        ? "bg-gradient-to-t from-teal-600 to-teal-500 dark:from-teal-500 dark:to-teal-400" 
-                        : "bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500"
+                        ? "bg-linear-to-t from-brand-600 to-brand-500 dark:from-brand-500 dark:to-brand-400" 
+                        : "bg-linear-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500"
                     }`}
                     style={{ height: `${Math.max(height, 4)}%` }}
                   />
                 </div>
-                <span className={`text-xs ${isCurrentMonth ? "text-teal-600 dark:text-teal-400 font-medium" : "text-slate-500 dark:text-slate-400"}`}>
+                <span className={`text-xs ${isCurrentMonth ? "font-medium text-brand-600 dark:text-brand-300" : "text-slate-500 dark:text-slate-400"}`}>
                   {MONTH_NAMES[month.month - 1].slice(0, 3)}
                 </span>
               </div>
@@ -235,10 +235,10 @@ export default function BillingAnalyticsPage() {
               return (
                 <div
                   key={day.date}
-                  className="flex-shrink-0 w-4 flex flex-col items-center group relative"
+                  className="group relative flex w-4 shrink-0 flex-col items-center"
                 >
                   <div
-                    className="w-full bg-teal-500 dark:bg-teal-400 rounded-t transition-all hover:bg-teal-600 dark:hover:bg-teal-300"
+                    className="w-full rounded-t bg-brand-500 transition-all hover:bg-brand-600 dark:bg-brand-400 dark:hover:bg-brand-300"
                     style={{ height: `${Math.max(height, 2)}%` }}
                   />
                   {dayNum % 5 === 1 && (
@@ -297,7 +297,7 @@ export default function BillingAnalyticsPage() {
                   key={day.date}
                   className={`p-4 rounded-xl ${
                     index === 0 
-                      ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-2 border-amber-200 dark:border-amber-800" 
+                      ? "bg-linear-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-2 border-amber-200 dark:border-amber-800" 
                       : "bg-slate-50 dark:bg-slate-700"
                   }`}
                 >

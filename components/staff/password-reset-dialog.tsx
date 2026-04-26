@@ -93,8 +93,8 @@ export function PasswordResetDialog({ user, onClose }: PasswordResetDialogProps)
 
         {success ? (
           <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-success-border bg-success-bg">
+              <Check className="h-8 w-8 text-success-text" />
             </div>
             <h3 className="text-lg font-medium text-slate-900">
               Password Reset Successfully
@@ -137,7 +137,7 @@ export function PasswordResetDialog({ user, onClose }: PasswordResetDialogProps)
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">
+              <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
                 {error}
               </div>
             )}

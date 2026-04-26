@@ -313,8 +313,8 @@ Follow-up,"Come for follow-up if symptoms persist or worsen after 3 days",Genera
         </h4>
 
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm mb-4">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-error-border bg-error-bg p-3 text-sm text-error-text">
+            <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
@@ -324,9 +324,9 @@ Follow-up,"Come for follow-up if symptoms persist or worsen after 3 days",Genera
             result.imported > 0 ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
           }`}>
             {result.imported > 0 ? (
-              <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             )}
             <div>
               <p className="font-medium">

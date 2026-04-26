@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "electron/**/*.cjs",
     "electron-dist*/**",
     "electron-dir-verify/**",
+    "patch.js",
+    "patch2.js",
   ]),
 ]);
 

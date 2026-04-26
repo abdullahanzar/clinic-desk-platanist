@@ -78,7 +78,7 @@ export function ShareReceiptButton({
     <button
       onClick={handleShare}
       disabled={loading}
-      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all disabled:opacity-50 shadow-lg shadow-brand-500/20"
+      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-600 to-brand-700 px-6 py-3 font-semibold text-white shadow-lg shadow-brand-500/20 transition-all hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 sm:flex-none"
     >
       {loading ? (
         <>

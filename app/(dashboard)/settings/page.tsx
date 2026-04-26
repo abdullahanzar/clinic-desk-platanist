@@ -221,7 +221,7 @@ export default function ClinicSettingsPage() {
         </div>
       )}
       {error && (
-        <div className="mb-4 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm border border-red-200 dark:border-red-900">
+        <div className="mb-4 rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
           {error}
         </div>
       )}
@@ -234,7 +234,7 @@ export default function ClinicSettingsPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === tab.id
-                ? "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300"
+                ? "border border-selected-border bg-selected-bg text-selected-text"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >

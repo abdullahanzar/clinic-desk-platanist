@@ -104,6 +104,9 @@ pnpm electron:pack
 # Build distributable installers/packages
 pnpm electron:dist
 
+# Build macOS distributables (DMG and ZIP)
+pnpm electron:dist:mac
+
 # Build only the Windows NSIS installer
 pnpm electron:dist:win
 ```
@@ -113,6 +116,8 @@ Generated artifacts are written to `electron-dist/` and include targets for:
 - Windows: NSIS installer and portable executable
 - macOS: DMG and ZIP
 - Linux: AppImage and DEB
+
+On macOS, a local Developer ID certificate will be used automatically when one is available in Keychain. If notarization is not configured, Electron Builder still produces the DMG locally but skips notarization.
 
 > Note: This app still requires runtime environment variables such as `MONGODB_URI` and `JWT_SECRET`. Super admin credentials can be bootstrapped from the login flow, while `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD` remain available as an optional fallback for server-style deployments.
 

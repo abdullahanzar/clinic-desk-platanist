@@ -175,7 +175,7 @@ export default function NewStaffPage() {
 
           {/* Error */}
           {error && (
-            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div className="rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
               {error}
             </div>
           )}

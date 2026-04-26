@@ -17,9 +17,17 @@ interface ClinicDeskDesktopNetworkStatus {
   lastCheckedAt: string;
 }
 
+interface ClinicDeskDesktopRendererMetric {
+  name: string;
+  value: number;
+  href?: string;
+}
+
 interface Window {
   clinicDeskDesktop?: {
     platform: NodeJS.Platform;
     getNetworkStatus: () => Promise<ClinicDeskDesktopNetworkStatus>;
+    getStartupTimings: () => Promise<Record<string, number>>;
+    reportRendererMetric: (metric: ClinicDeskDesktopRendererMetric) => void;
   };
 }

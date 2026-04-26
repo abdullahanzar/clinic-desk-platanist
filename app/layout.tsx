@@ -43,6 +43,39 @@ export default function RootLayout({
             `,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function report(name, value) {
+                  try {
+                    if (window.clinicDeskDesktop && window.clinicDeskDesktop.reportRendererMetric) {
+                      window.clinicDeskDesktop.reportRendererMetric({ name: name, value: value, href: location.href });
+                    }
+                  } catch (e) {}
+                }
+
+                try {
+                  new PerformanceObserver(function(list) {
+                    list.getEntries().forEach(function(entry) {
+                      if (entry.name === 'first-contentful-paint') {
+                        report('first-contentful-paint', entry.startTime);
+                      }
+                    });
+                  }).observe({ type: 'paint', buffered: true });
+                } catch (e) {}
+
+                window.addEventListener('DOMContentLoaded', function() {
+                  report('dom-content-loaded', performance.now());
+                }, { once: true });
+
+                window.addEventListener('load', function() {
+                  report('window-load', performance.now());
+                }, { once: true });
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { getDb, clinics } from "@/lib/db/collections";
 import { eq } from "drizzle-orm";
 import { Sidebar } from "@/components/layout/sidebar";
-import { DesktopNetworkStatus } from "@/components/layout/desktop-network-status";
+import { DeferredDesktopNetworkStatus } from "@/components/layout/deferred-desktop-network-status";
 import { Footer } from "@/components/layout/footer";
 
 export default async function DashboardLayout({
@@ -31,7 +31,7 @@ export default async function DashboardLayout({
       {/* Desktop: offset for sidebar, Mobile: offset for header and bottom nav */}
       <main className="lg:ml-64 pt-16 pb-24 lg:pt-0 lg:pb-0 flex-1">
         <div className="p-4 sm:p-6 lg:p-8">
-          <DesktopNetworkStatus />
+          <DeferredDesktopNetworkStatus />
           {children}
         </div>
       </main>

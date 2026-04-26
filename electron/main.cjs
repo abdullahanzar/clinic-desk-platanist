@@ -1,24 +1,45 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const startupOrigin = Date.now();
+const startupTimings = { processStart: 0 };
+
+function markStartup(name) {
+  startupTimings[name] = Date.now() - startupOrigin;
+  if (process.env.CLINIC_DESK_STARTUP_LOG === '1') {
+    console.log(`[startup] ${name}: ${startupTimings[name]}ms`);
+  }
+}
+
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
 const http = require('http');
-const {
-  DATABASE_NUKE_PASSCODE,
-  FORCE_LOCAL_SUPER_ADMIN_ENV_NAME,
-  PASSCODE_ENV_NAME,
-  loadEnvFiles,
-  nukeDatabaseAtPath,
-  resolveDatabasePath,
-  resetSuperAdminAtPath,
-} = require('./reset-super-admin.cjs');
+
+markStartup('main:modules-loaded');
 
 const isDev = process.env.ELECTRON_DEV === '1';
 const shouldRunSuperAdminReset = process.argv.includes('--reset-super-admin');
 const shouldNukeDatabase = process.argv.includes('--nuke-database');
+const FORCE_LOCAL_SUPER_ADMIN_ENV_NAME = 'CLINIC_DESK_FORCE_LOCAL_SUPER_ADMIN';
 let nextProcess = null;
 let activePort = null;
+let maintenanceModule = null;
+
+if (!isDev) {
+  app.commandLine.appendSwitch('disable-background-networking');
+  app.commandLine.appendSwitch('disable-component-update');
+  app.commandLine.appendSwitch('disable-domain-reliability');
+  app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion,MediaRouter,DialMediaRouteProvider');
+}
+
+function getMaintenanceModule() {
+  if (!maintenanceModule) {
+    maintenanceModule = require('./reset-super-admin.cjs');
+    markStartup('maintenance:module-loaded');
+  }
+
+  return maintenanceModule;
+}
 
 function getRuntimeAppPath() {
   return app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked') : app.getAppPath();
@@ -184,6 +205,133 @@ function createMaintenancePromptHtml(options) {
 </html>`;
 }
 
+function createStartupShellHtml() {
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinic Desk</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at top left, #ccfbf1 0, #f8fafc 42%, #e2e8f0 100%);
+        color: #0f172a;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: radial-gradient(circle at top left, #134e4a 0, #0f172a 42%, #020617 100%);
+          color: #e2e8f0;
+        }
+      }
+
+      .shell {
+        width: min(90vw, 420px);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 24px;
+        padding: 28px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
+        backdrop-filter: blur(18px);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .shell {
+          background: rgba(15, 23, 42, 0.78);
+          box-shadow: 0 24px 80px rgba(2, 6, 23, 0.5);
+        }
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #0d9488, #0f766e);
+        color: white;
+        font-size: 24px;
+        font-weight: 800;
+        box-shadow: 0 16px 40px rgba(13, 148, 136, 0.28);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 0.95rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        p {
+          color: #94a3b8;
+        }
+      }
+
+      .bar {
+        position: relative;
+        overflow: hidden;
+        height: 6px;
+        margin-top: 24px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.28);
+      }
+
+      .bar::after {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 42%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #14b8a6, #0f766e);
+        animation: slide 900ms ease-in-out infinite alternate;
+      }
+
+      @keyframes slide {
+        from { transform: translateX(-20%); }
+        to { transform: translateX(160%); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell" aria-label="Clinic Desk is starting">
+      <div class="brand">
+        <div class="mark">+</div>
+        <div>
+          <h1>Clinic Desk</h1>
+          <p>Opening your clinic workspace…</p>
+        </div>
+      </div>
+      <div class="bar" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>`;
+}
+
 async function promptForMaintenancePasscode(options) {
   return new Promise((resolve) => {
     const resetWindow = new BrowserWindow({
@@ -243,6 +391,8 @@ async function promptForMaintenancePasscode(options) {
 }
 
 function resolveElectronDatabasePath() {
+  const { resolveDatabasePath } = getMaintenanceModule();
+
   return resolveDatabasePath({
     env: process.env,
     cwd: app.getAppPath(),
@@ -251,6 +401,13 @@ function resolveElectronDatabasePath() {
 }
 
 async function runSuperAdminResetFlow() {
+  const {
+    FORCE_LOCAL_SUPER_ADMIN_ENV_NAME: maintenanceForceLocalSuperAdminEnvName,
+    PASSCODE_ENV_NAME,
+    loadEnvFiles,
+    resetSuperAdminAtPath,
+  } = getMaintenanceModule();
+
   loadEnvFiles({ directories: getEnvDirectories(), env: process.env });
 
   const expectedPasscode = process.env[PASSCODE_ENV_NAME];
@@ -285,7 +442,7 @@ async function runSuperAdminResetFlow() {
   const dbPath = resolveElectronDatabasePath();
   const result = resetSuperAdminAtPath(dbPath, {
     ...process.env,
-    [FORCE_LOCAL_SUPER_ADMIN_ENV_NAME]: '1',
+    [maintenanceForceLocalSuperAdminEnvName]: '1',
   });
 
   const detailLines = [
@@ -310,6 +467,11 @@ async function runSuperAdminResetFlow() {
 }
 
 async function runDatabaseNukeFlow() {
+  const {
+    DATABASE_NUKE_PASSCODE,
+    nukeDatabaseAtPath,
+  } = getMaintenanceModule();
+
   const expectedPasscode = DATABASE_NUKE_PASSCODE;
   let providedPasscode = null;
 
@@ -450,7 +612,7 @@ function findFreePort(start = 3000) {
   });
 }
 
-function waitForServer(url, timeoutMs = 120000) {
+function waitForServer(url, timeoutMs = 120000, intervalMs = 75) {
   const start = Date.now();
 
   return new Promise((resolve, reject) => {
@@ -467,7 +629,11 @@ function waitForServer(url, timeoutMs = 120000) {
           return;
         }
 
-        setTimeout(check, 500);
+        setTimeout(check, intervalMs);
+      });
+
+      request.setTimeout(1000, () => {
+        request.destroy();
       });
 
       request.on('error', () => {
@@ -475,7 +641,7 @@ function waitForServer(url, timeoutMs = 120000) {
           reject(new Error('Timed out while waiting for Next.js server to start.'));
           return;
         }
-        setTimeout(check, 500);
+        setTimeout(check, intervalMs);
       });
     };
 
@@ -502,12 +668,14 @@ function startNextServer(port) {
     nextProcess = spawn(command, commandArgs, {
       cwd: runtimeAppPath,
       stdio: 'inherit',
+      windowsHide: true,
       env: {
         ...process.env,
         HOSTNAME: '0.0.0.0',
         PORT: String(port),
       },
     });
+    nextProcess.once('spawn', () => markStartup('next:process-spawned'));
     return;
   }
 
@@ -519,6 +687,7 @@ function startNextServer(port) {
   nextProcess = spawn(process.execPath, [serverPath], {
     cwd: runtimeAppPath,
     stdio: 'inherit',
+    windowsHide: true,
     env: {
       ...process.env,
       PORT: String(port),
@@ -530,6 +699,7 @@ function startNextServer(port) {
       NODE_PATH: getRuntimeNodePath(),
     },
   });
+  nextProcess.once('spawn', () => markStartup('next:process-spawned'));
 }
 
 function stopNextServer() {
@@ -539,19 +709,15 @@ function stopNextServer() {
 }
 
 async function createWindow() {
-  const port = await findFreePort(3000);
-  const url = `http://127.0.0.1:${port}`;
-  activePort = port;
-
-  startNextServer(port);
-  await waitForServer(url);
-
+  markStartup('window:create-start');
   const mainWindow = new BrowserWindow({
     width: 1366,
     height: 900,
     minWidth: 1100,
     minHeight: 700,
     autoHideMenuBar: true,
+    backgroundColor: '#0f172a',
+    show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -560,7 +726,37 @@ async function createWindow() {
     },
   });
 
+  mainWindow.once('ready-to-show', () => {
+    markStartup('shell:ready-to-show');
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.show();
+      markStartup('shell:shown');
+    }
+  });
+
+  const shellLoadPromise = mainWindow
+    .loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(createStartupShellHtml())}`)
+    .then(() => markStartup('shell:loaded'));
+
+  const port = await findFreePort(3000);
+  const url = `http://127.0.0.1:${port}`;
+  activePort = port;
+  markStartup('port:reserved');
+
+  startNextServer(port);
+  markStartup('next:start-requested');
+  await Promise.all([
+    shellLoadPromise,
+    waitForServer(`${url}/favicon.ico?electron-startup=1`),
+  ]);
+  markStartup('next:ready');
+
+  if (mainWindow.isDestroyed()) {
+    return;
+  }
+
   await mainWindow.loadURL(url);
+  markStartup('app:loaded');
 
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
@@ -568,9 +764,23 @@ async function createWindow() {
 }
 
 ipcMain.handle('clinic-desk:get-network-status', () => getNetworkAccessInfo(activePort));
+ipcMain.handle('clinic-desk:get-startup-timings', () => ({ ...startupTimings }));
+ipcMain.on('clinic-desk:renderer-metric', (_event, metric) => {
+  if (!metric || typeof metric.name !== 'string' || typeof metric.value !== 'number') {
+    return;
+  }
+
+  startupTimings[`renderer:${metric.name}`] = Math.round(metric.value);
+  if (process.env.CLINIC_DESK_STARTUP_LOG === '1') {
+    console.log(`[startup] renderer:${metric.name}: ${Math.round(metric.value)}ms`);
+  }
+});
 
 app.whenReady().then(async () => {
   try {
+    markStartup('app:ready');
+    Menu.setApplicationMenu(null);
+
     if (shouldRunSuperAdminReset && shouldNukeDatabase) {
       throw new Error('Use either --reset-super-admin or --nuke-database, not both.');
     }

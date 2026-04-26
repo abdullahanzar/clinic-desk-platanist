@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RouteLoadingScreen } from "@/components/layout/route-loading-screen";
 import {
   ArrowLeft,
-  Loader2,
   Calendar,
   Pill,
   Receipt,
@@ -112,11 +112,13 @@ export default function LoginPage() {
   useEffect(() => {
     router.prefetch("/dashboard");
     router.prefetch("/register");
+    router.prefetch("/register/verify");
   }, [router]);
 
   const loginWithCredentials = async (nextEmail: string, nextPassword: string) => {
     setError("");
     setLoading(true);
+    let shouldResetLoading = true;
     const loadingDelay = new Promise((resolve) => {
       window.setTimeout(resolve, MIN_LOADING_MS);
     });
@@ -134,6 +136,7 @@ export default function LoginPage() {
 
       if (!res.ok) {
         if (data.code === "EMAIL_VERIFICATION_REQUIRED" && data.signupId && data.email) {
+          shouldResetLoading = false;
           router.push(
             `/register/verify?signupId=${encodeURIComponent(data.signupId)}&email=${encodeURIComponent(data.email)}`
           );
@@ -145,12 +148,15 @@ export default function LoginPage() {
       }
 
       // Redirect to dashboard
+      shouldResetLoading = false;
       router.push("/dashboard");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      if (shouldResetLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -164,6 +170,15 @@ export default function LoginPage() {
     setPassword(DEMO_PASSWORD);
     await loginWithCredentials(DEMO_EMAIL, DEMO_PASSWORD);
   };
+
+  if (loading) {
+    return (
+      <RouteLoadingScreen
+        title="Signing you in"
+        message="Verifying your account and preparing the next clinic screen before the page swap completes."
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-br from-brand-50 via-white to-brand-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -368,14 +383,7 @@ export default function LoginPage() {
                     disabled={loading}
                     className="w-full py-3.5 px-4 bg-linear-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
                   >
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Signing in...
-                      </span>
-                    ) : (
-                      "Sign in"
-                    )}
+                    Sign in
                   </button>
 
                   <Link
